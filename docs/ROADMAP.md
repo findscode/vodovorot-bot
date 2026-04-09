@@ -4,6 +4,28 @@
 
 Текущая базовая версия в репозитории на момент составления плана: **1.3.0** (см. [CHANGELOG.md](../CHANGELOG.md)).
 
+## GitHub: milestones и issues
+
+На GitHub созданы **milestones** [v1.4.0](https://github.com/findscode/vodovorot-bot/milestone/1) … [v1.9.0](https://github.com/findscode/vodovorot-bot/milestone/6) и **issues** с телами из [scripts/roadmap-issue-bodies/](../scripts/roadmap-issue-bodies/).
+
+| Roadmap ID | Issue                                                       |
+| ---------- | ----------------------------------------------------------- |
+| v1.4-1     | [#8](https://github.com/findscode/vodovorot-bot/issues/8)   |
+| v1.4-2     | [#9](https://github.com/findscode/vodovorot-bot/issues/9)   |
+| v1.4-3     | [#10](https://github.com/findscode/vodovorot-bot/issues/10) |
+| v1.4-4     | [#11](https://github.com/findscode/vodovorot-bot/issues/11) |
+| v1.5-1     | [#12](https://github.com/findscode/vodovorot-bot/issues/12) |
+| v1.5-2     | [#13](https://github.com/findscode/vodovorot-bot/issues/13) |
+| v1.6-1     | [#14](https://github.com/findscode/vodovorot-bot/issues/14) |
+| v1.7-1     | [#15](https://github.com/findscode/vodovorot-bot/issues/15) |
+| v1.7-2     | [#16](https://github.com/findscode/vodovorot-bot/issues/16) |
+| v1.8-1     | [#17](https://github.com/findscode/vodovorot-bot/issues/17) |
+| v1.8-2     | [#18](https://github.com/findscode/vodovorot-bot/issues/18) |
+| v1.8-3     | [#19](https://github.com/findscode/vodovorot-bot/issues/19) |
+| v1.9-1     | [#20](https://github.com/findscode/vodovorot-bot/issues/20) |
+
+Зависимости в комментариях: [#13](https://github.com/findscode/vodovorot-bot/issues/13) блокируется [#12](https://github.com/findscode/vodovorot-bot/issues/12); [#10](https://github.com/findscode/vodovorot-bot/issues/10) согласовать с [#9](https://github.com/findscode/vodovorot-bot/issues/9).
+
 ## Как использовать с агентом или в GitHub Issues
 
 1. Создайте **milestone** на GitHub с именем релиза (например `v1.4.0`) или работайте по эпику в одном PR.
