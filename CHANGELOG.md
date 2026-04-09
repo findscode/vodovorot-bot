@@ -4,6 +4,19 @@
 
 ## [Unreleased]
 
+## [1.4.1] — 2026-04-09
+
+Патч: документация для настроек бота в BotFather и политика конфиденциальности.
+
+### Added
+
+- [docs/BOTFATHER.md](docs/BOTFATHER.md) — готовые тексты **About** (120 симв.), **Description** (≤512), список команд, URL для **Privacy Policy**.
+- [docs/PRIVACY.md](docs/PRIVACY.md) — текст политики конфиденциальности (Telegram, Cloudflare AI, файл лимита «карта дня»); плейсхолдер контакта оператора.
+
+### Changed
+
+- [docs/BRAND-GUIDE.md](docs/BRAND-GUIDE.md): ссылки на `botCopy`, BotFather и PRIVACY; [README.md](README.md) — ссылка на BOTFATHER.
+
 ## [1.4.0] — 2026-04-09
 
 Минорный релиз по [roadmap v1.4.0](docs/ROADMAP.md): только личка, `/help`, единый копирайт, индикатор набора текста.
@@ -76,7 +89,8 @@
 
 Первая зафиксированная версия после PoC (текущее состояние бота).
 
-[Unreleased]: https://github.com/findscode/vodovorot-bot/compare/v1.4.0...HEAD
+[Unreleased]: https://github.com/findscode/vodovorot-bot/compare/v1.4.1...HEAD
+[1.4.1]: https://github.com/findscode/vodovorot-bot/compare/v1.4.0...v1.4.1
 [1.4.0]: https://github.com/findscode/vodovorot-bot/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/findscode/vodovorot-bot/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/findscode/vodovorot-bot/compare/v1.1.0...v1.2.0

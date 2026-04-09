@@ -2,7 +2,9 @@
 
 **Водоворот** (_Vodovorot_) — Telegram-бот для раскладов Таро. Этот документ задаёт, **как мы говорим с человеком** и **как выглядит готовое толкование** в чате.
 
-Реализация формата ответов модели: `src/brandFormat.ts` → `prompts.ts`; общий тон и язык: `src/ai.ts` (`SYSTEM_PROMPT`). Сообщения самого бота (приветствие, ожидание, ошибки): `src/bot.ts`.
+Реализация формата ответов модели: `src/brandFormat.ts` → `prompts.ts`; общий тон и язык: `src/ai.ts` (`SYSTEM_PROMPT`). Сообщения самого бота (приветствие, ожидание, ошибки): `src/botCopy.ts` и `src/bot.ts`.
+
+**Профиль бота в Telegram:** готовые поля About, Description, Privacy Policy URL и команды — в [docs/BOTFATHER.md](BOTFATHER.md); политика конфиденциальности для ссылки — [docs/PRIVACY.md](PRIVACY.md).
 
 ---
 
@@ -76,4 +78,4 @@
 
 ## 6. Сопровождение
 
-Меняя метки или смысл блоков, обновляйте **одновременно**: `brandFormat.ts` (массив `READING_SECTION_LABELS` и текст промпта), этот файл, `ai.ts`, при необходимости — `prompts.ts`, `readingTelegramHtml.ts`, `bot.ts` и `docs/GLOSSARY.md`.
+Меняя метки или смысл блоков, обновляйте **одновременно**: `brandFormat.ts` (массив `READING_SECTION_LABELS` и текст промпта), этот файл, `ai.ts`, при необходимости — `prompts.ts`, `readingTelegramHtml.ts`, `botCopy.ts`, `bot.ts` и `docs/GLOSSARY.md`. Меняя обещания пользователю на уровне продукта — синхронизируйте [BOTFATHER.md](BOTFATHER.md) и [PRIVACY.md](PRIVACY.md).
