@@ -24,4 +24,4 @@ Telegram-бот Таро на **Node.js 20+**, **TypeScript**, **Telegraf**. Т�
 
 ## Участие
 
-См. [CONTRIBUTING.md](CONTRIBUTING.md).
+См. [CONTRIBUTING.md](CONTRIBUTING.md): стиль сообщений коммитов (Conventional Commits), PR в защищённый `main`, релизы.
