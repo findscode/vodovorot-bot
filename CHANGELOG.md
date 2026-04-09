@@ -4,6 +4,21 @@
 
 ## [Unreleased]
 
+## [1.4.0] — 2026-04-09
+
+Минорный релиз по [roadmap v1.4.0](docs/ROADMAP.md): только личка, `/help`, единый копирайт, индикатор набора текста.
+
+### Added
+
+- Команда **`/help`**: справка по командам, раскладам, лимиту «на день», дисклеймер; учёт whitelist.
+- Модули **`botCopy.ts`** (тексты) и **`typingIndicator.ts`**: периодический `sendChatAction(typing)` на время запроса к Cloudflare AI в раскладах day/spread.
+- Тесты для **`isPublicEntryCommand`** (`botCopy.test.ts`).
+
+### Changed
+
+- **Только private-чаты:** middleware отбрасывает обновления из групп и каналов без ответов.
+- Тексты `/start` и `/menu` вынесены в `botCopy.ts` и согласованы по смыслу со справкой.
+
 ## [1.3.0] — 2026-04-09
 
 Публичная **карта дня** при активном whitelist и суточный лимит для всех.
@@ -57,7 +72,8 @@
 
 Первая зафиксированная версия после PoC (текущее состояние бота).
 
-[Unreleased]: https://github.com/findscode/vodovorot-bot/compare/v1.3.0...HEAD
+[Unreleased]: https://github.com/findscode/vodovorot-bot/compare/v1.4.0...HEAD
+[1.4.0]: https://github.com/findscode/vodovorot-bot/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/findscode/vodovorot-bot/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/findscode/vodovorot-bot/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/findscode/vodovorot-bot/compare/v1.0.0...v1.1.0

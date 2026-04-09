@@ -1,5 +1,15 @@
 import 'dotenv/config';
 import { Telegraf, Markup } from 'telegraf';
+import {
+  ACCESS_DENIED_MESSAGE,
+  DAY_LIMIT_MESSAGE,
+  helpTextHtml,
+  isPublicEntryCommand,
+  menuTextFull,
+  menuTextLimited,
+  startTextFull,
+  startTextLimited,
+} from './botCopy.js';
 import { hasFullBotAccess, loadOptionalAccessWhitelist } from './accessWhitelist.js';
 import { getDayDrawStatePath, tryConsumeDayDrawSlot, utcCalendarDate } from './dayDrawState.js';
 import { drawOne, drawThreeUnique, drawVoiceArchetype, formatDrawnLine } from './deck.js';
@@ -9,6 +19,7 @@ import { cardImageExists } from './cardAssets.js';
 import { cardPhotoInput } from './cardPhotoInput.js';
 import { spreadCompositePhotoInput } from './spreadComposite.js';
 import { formatReadingForTelegram, TELEGRAM_HTML_PARSE } from './readingTelegramHtml.js';
+import { withTypingWhile } from './typingIndicator.js';
 
 const TG_MAX = 4096;
 const TG_CAPTION_MAX = 1024;
@@ -45,19 +56,16 @@ try {
   process.exit(1);
 }
 
-const ACCESS_DENIED_MESSAGE =
-  'Эта функция сейчас доступна только приглашённым пользователям. Карту на день можно вытянуть кнопкой ниже (один раз за сутки по UTC). Если вы тестировщик — попросите владельца добавить ваш user id в ALLOWED_TELEGRAM_USER_IDS.';
-
-const DAY_LIMIT_MESSAGE =
-  'Сегодняшняя карта дня уже была. Новая попытка — после полуночи по времени UTC (дата по Гринвичу).';
-
 const bot = new Telegraf(token);
 
-function isPublicEntryCommand(text: string | undefined): boolean {
-  if (!text) return false;
-  const t = text.trim();
-  return /^\/start(?:@\S+)?(?:\s|$)/i.test(t) || /^\/menu(?:@\S+)?(?:\s|$)/i.test(t);
-}
+/** Только личные чаты: в группах и каналах не отвечаем и не обрабатываем расклады. */
+bot.use(async (ctx, next) => {
+  const chatType = ctx.chat?.type;
+  if (chatType !== undefined && chatType !== 'private') {
+    return;
+  }
+  return next();
+});
 
 if (accessWhitelist !== null) {
   console.log(
@@ -118,28 +126,28 @@ const mainKeyboard = Markup.inlineKeyboard([
 
 const dayOnlyKeyboard = Markup.inlineKeyboard([[Markup.button.callback('На день', 'day')]]);
 
-const START_TEXT_FULL =
-  'Привет, я <b>Водоворот</b>. Ниже можно вытянуть карту на день или расклад «прошлое — настоящее — будущее». Это не гарантия будущего, а повод присмотреться к себе и к картам.';
-
-const START_TEXT_LIMITED =
-  'Привет, я <b>Водоворот</b>. Сейчас ты можешь вытянуть <b>карту на день</b> — не чаще одного раза за календарные сутки по времени UTC. Расклад «прошлое — настоящее — будущее» пока доступен только приглашённым пользователям. Это не гарантия будущего, а повод присмотреться к картам.';
-
 function keyboardFor(ctx: { from?: { id: number } }) {
   return hasFullBotAccess(accessWhitelist, ctx.from?.id) ? mainKeyboard : dayOnlyKeyboard;
 }
 
 bot.start(async (ctx) => {
   const full = hasFullBotAccess(accessWhitelist, ctx.from?.id);
-  const text = full ? START_TEXT_FULL : START_TEXT_LIMITED;
+  const text = full ? startTextFull() : startTextLimited();
   await ctx.reply(text, { ...keyboardFor(ctx), ...TELEGRAM_HTML_PARSE });
 });
 
 bot.command('menu', async (ctx) => {
   const full = hasFullBotAccess(accessWhitelist, ctx.from?.id);
-  const text = full
-    ? 'Снова выбор расклада — те же две кнопки ниже.'
-    : 'Снова кнопка «На день» ниже. Карту на день — не чаще одного раза за сутки UTC.';
+  const text = full ? menuTextFull() : menuTextLimited();
   await ctx.reply(text, { ...keyboardFor(ctx), ...TELEGRAM_HTML_PARSE });
+});
+
+bot.command('help', async (ctx) => {
+  const full = hasFullBotAccess(accessWhitelist, ctx.from?.id);
+  await ctx.reply(helpTextHtml({ fullAccess: full }), {
+    ...keyboardFor(ctx),
+    ...TELEGRAM_HTML_PARSE,
+  });
 });
 
 bot.action('day', async (ctx) => {
@@ -171,7 +179,7 @@ bot.action('day', async (ctx) => {
   const voice = drawVoiceArchetype();
   await ctx.reply('Секунду, собираю текст толкования…');
   try {
-    const text = await completeChat(cardOfDayPrompt(drawn, voice));
+    const text = await withTypingWhile(ctx, () => completeChat(cardOfDayPrompt(drawn, voice)));
     for (const chunk of splitForTelegram(text)) {
       await ctx.reply(formatReadingForTelegram(chunk), TELEGRAM_HTML_PARSE);
     }
@@ -204,7 +212,9 @@ bot.action('spread', async (ctx) => {
   const voice = drawVoiceArchetype();
   await ctx.reply('Секунду, собираю текст толкования…');
   try {
-    const text = await completeChat(pastPresentFuturePrompt(cards, voice));
+    const text = await withTypingWhile(ctx, () =>
+      completeChat(pastPresentFuturePrompt(cards, voice)),
+    );
     for (const chunk of splitForTelegram(text)) {
       await ctx.reply(formatReadingForTelegram(chunk), TELEGRAM_HTML_PARSE);
     }
