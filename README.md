@@ -17,6 +17,7 @@ Telegram-бот Таро на **Node.js 20+**, **TypeScript**, **Telegraf**. Т�
 - [Схема веток](docs/BRANCHING.md)
 - [Процесс разработки и GitHub](docs/DEV-PROCESS.md)
 - [Деплой (Docker, Fly.io, Railway)](docs/DEPLOY.md)
+- [Roadmap минорных релизов и issues](docs/ROADMAP.md)
 
 ## Версии и релизы
 
