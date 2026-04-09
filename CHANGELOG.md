@@ -12,6 +12,7 @@
 ### Changed
 
 - Документация деплоя: Railway, выбор между встроенным деплоем и GitHub Actions, первый релизный тег.
+- Зависимости (Dependabot): `actions/checkout@v6`, `actions/setup-node@v6` (включая `deploy-railway.yml`); `dotenv` 17; `eslint` 10 + `@eslint/js` 10; `typescript` 6; `@types/node` 25.
 
 ## [1.0.0] — 2026-04-09
 
