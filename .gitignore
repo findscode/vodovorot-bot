@@ -1,0 +1,13 @@
+# Локальные настройки Cursor / IDE
+.cursor/
+
+node_modules/
+dist/
+coverage/
+.env
+.env.*
+!.env.example
+# ~70 МБ, один раз: npm run download-cards
+assets/cards/*.jpg
+*.log
+.DS_Store
