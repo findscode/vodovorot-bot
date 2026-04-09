@@ -1,6 +1,6 @@
 # Деплой
 
-Бот — долгоживущий процесс (`npm start`), удобно крутить в контейнере или на VPS. Ниже: **Docker** и два варианта хостинга с бесплатным/условно-бесплатным входом.
+Бот — долгоживущий процесс (`npm start`), удобно крутить в контейнере или на VPS. Ниже: **Docker**, **Railway**, опционально **деплой из GitHub Actions**.
 
 ## Переменные окружения
 
@@ -14,11 +14,11 @@
 
 ## Картинки карт
 
-В образ по умолчанию кладётся пустая `assets/cards`. Чтобы показывать JPEG:
+Файлы **`assets/cards/00.jpg` … `77.jpg`** хранятся в репозитории (десятки МБ), чтобы Docker-образ на Railway сразу содержал изображения без отдельного тома.
 
-- соберите образ на машине, где уже выполнен `npm run download-cards` и файлы лежат в `assets/cards/`, **или**
-- смонтируйте том с картами в `/app/assets/cards`, **или**
-- добавьте шаг в Dockerfile: `RUN npm run download-cards` (если скрипт не требует интерактива и подходит для вашей среды сборки).
+Обновить набор: локально `npm run download-cards`, затем коммит.
+
+**Почему раньше предлагали не коммитить:** меньше размер клона и истории Git. Для одного бота и фиксированной колоды коммит проще, чем тома или шаг загрузки при сборке. Если репозиторий станет тяжёлым — можно перейти на [Git LFS](https://git-lfs.com/).
 
 ## Сборка образа локально
 
@@ -29,24 +29,52 @@ docker build -t vodovorot-bot .
 docker run --rm -e BOT_TOKEN=... -e CLOUDFLARE_ACCOUNT_ID=... -e CLOUDFLARE_API_TOKEN=... vodovorot-bot
 ```
 
-## Fly.io
+## Railway (основной сценарий)
 
-1. Установите [flyctl](https://fly.io/docs/hands-on/install-flyctl/), зарегистрируйтесь.
-2. `fly launch` в каталоге с репозиторием (можно сгенерировать `fly.toml`; для одного процесса без HTTP удобен **processes** / `[[services]]` с внутренним health или минимальная заглушка — для **long polling** достаточно постоянно работающего процесса).
-3. Задайте секреты: `fly secrets set BOT_TOKEN=... CLOUDFLARE_ACCOUNT_ID=... CLOUDFLARE_API_TOKEN=...`
-4. Деплой: `fly deploy`.
+### Чеклист
 
-Подключение к GitHub: в дашборде Fly — **GitHub integration** для автодеплоя при push в `main`, либо вызывайте `fly deploy` из GitHub Actions (нужен секрет `FLY_API_TOKEN`).
+1. [Railway](https://railway.app/) → **New Project** → **Deploy from GitHub repo** → выбрать `vodovorot-bot`.
+2. Сервис должен собираться по **Dockerfile** в корне (при необходимости отключите Nixpacks / укажите Docker).
+3. **Variables**: все ключи из `.env.example` (значения только в Railway).
+4. **Deployments / Logs**: успешный старт, нет ошибки про отсутствие `BOT_TOKEN`.
 
-## Railway
+### Два способа деплоя при push в `main`
 
-1. Проект на [Railway](https://railway.app/), **New Project → Deploy from GitHub repo**.
-2. Укажите корень репозитория; **Dockerfile** подхватится автоматически, если не переопределён build-команда.
-3. В **Variables** добавьте все переменные из `.env.example`.
-4. Деплой при каждом push в выбранную ветку включается в настройках сервиса.
+| Способ            | Что сделать                                                                                                                                                |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Встроенный**    | В Railway включён деплой из GitHub: каждый push в `main` собирает репо на стороне Railway.                                                                 |
+| **Через Actions** | Workflow [`.github/workflows/deploy-railway.yml`](../.github/workflows/deploy-railway.yml): после **успешного** CI на `main` вызывается `railway up --ci`. |
 
-Учтите лимиты бесплатного/пробного тарифа Railway — они меняются; для продакшена часто берут платный план или VPS.
+Используйте **что-то одно**. Если оставить оба, получите **два деплоя** на один push — отключите авто-деплой из GitHub в настройках сервиса Railway **или** не задавайте секрет `RAILWAY_TOKEN` (тогда workflow Deploy Railway будет пропускаться).
 
-## GitHub Actions → деплой (идея)
+### GitHub Actions → Railway
 
-Отдельный workflow по `push` в `main` может вызывать `fly deploy` или Railway CLI при наличии секретов. В репозитории сейчас только **CI**; деплой подключайте, когда будете готовы хранить токены в GitHub Secrets.
+1. В Railway: **Project → Settings → Tokens** (или аналог) → создайте **Project token** для нужного окружения.
+2. В GitHub репозитория: **Settings → Secrets and variables → Actions**:
+   - **`RAILWAY_TOKEN`** — project token (обязательно для workflow).
+   - **`RAILWAY_SERVICE`** — имя сервиса в проекте, если сервисов несколько (опционально).
+
+3. Убедитесь, что в Railway **отключён** дублирующий деплой из GitHub (см. выше), если включили Actions.
+
+Ручной запуск: вкладка **Actions** → **Deploy Railway** → **Run workflow**.
+
+## Fly.io (кратко)
+
+1. [flyctl](https://fly.io/docs/hands-on/install-flyctl/), регистрация.
+2. `fly launch`, секреты `fly secrets set ...`, `fly deploy`.
+3. Интеграция с GitHub или деплой из Actions — см. [документацию Fly](https://fly.io/docs/).
+
+## Релиз `v1.0.0` (первый тег)
+
+Когда `main` стабилен и CI зелёный:
+
+1. Обновите при необходимости `CHANGELOG.md` и `package.json` (`version`).
+2. Коммит, затем:
+
+```bash
+git tag v1.0.0
+git push origin main
+git push origin v1.0.0
+```
+
+3. Workflow **Release** создаст GitHub Release (см. [CONTRIBUTING.md](../CONTRIBUTING.md)).

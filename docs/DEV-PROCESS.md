@@ -26,7 +26,7 @@
 **Settings → Secrets and variables → Actions**
 
 - Для текущего `ci.yml` секреты **не обязательны** (сборка без токена бота).
-- Для будущих шагов (деплой из Actions, публикация) добавьте, например: `FLY_API_TOKEN`, `RAILWAY_TOKEN`, `BOT_TOKEN` — только если workflow их использует; не коммитьте значения в репозиторий.
+- Для деплоя из Actions в Railway: **`RAILWAY_TOKEN`** (и при необходимости **`RAILWAY_SERVICE`**), см. [DEPLOY.md](DEPLOY.md). Другие примеры: `FLY_API_TOKEN`, `BOT_TOKEN` — только если соответствующий workflow включён; не коммитьте значения в репозиторий.
 
 ## Issues и PR
 

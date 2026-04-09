@@ -6,7 +6,12 @@
 
 ### Added
 
-- Инфраструктура: ESLint, Prettier, Vitest, GitHub Actions CI, шаблоны PR/issue, Dependabot, Docker, документация процесса и деплоя.
+- JPEG карт Таро в `assets/cards/` (репозиторий), образ Docker копирует `assets` в рантайм.
+- Workflow **Deploy Railway**: деплой через Railway CLI после успешного CI на `main` (секрет `RAILWAY_TOKEN`).
+
+### Changed
+
+- Документация деплоя: Railway, выбор между встроенным деплоем и GitHub Actions, первый релизный тег.
 
 ## [1.0.0] — 2026-04-09
 

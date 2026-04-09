@@ -1,0 +1,42 @@
+# Деплой через Railway CLI после успешного CI на main.
+# Важно: отключите авто-деплой из GitHub в настройках сервиса Railway,
+# иначе на каждый push будет два параллельных деплоя (Railway + этот workflow).
+
+name: Deploy Railway
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+  workflow_dispatch:
+
+concurrency:
+  group: railway-deploy-${{ github.repository }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    if: ${{ secrets.RAILWAY_TOKEN != '' && (github.event_name == 'workflow_dispatch' || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main')) }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && 'main' || github.event.workflow_run.head_sha }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+
+      - name: Deploy
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_SERVICE: ${{ secrets.RAILWAY_SERVICE }}
+        run: |
+          if [ -n "$RAILWAY_SERVICE" ]; then
+            railway up --ci --service "$RAILWAY_SERVICE"
+          else
+            railway up --ci
+          fi
