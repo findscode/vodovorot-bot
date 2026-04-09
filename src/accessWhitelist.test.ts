@@ -1,5 +1,21 @@
 import { describe, expect, it } from 'vitest';
-import { parseAllowlistFromEnvString } from './accessWhitelist.js';
+import { hasFullBotAccess, parseAllowlistFromEnvString } from './accessWhitelist.js';
+
+describe('hasFullBotAccess', () => {
+  it('allows everyone when whitelist is off', () => {
+    expect(hasFullBotAccess(null, 1)).toBe(true);
+  });
+
+  it('denies undefined user id when whitelist is on', () => {
+    expect(hasFullBotAccess(new Set([1]), undefined)).toBe(false);
+  });
+
+  it('allows only listed ids when whitelist is on', () => {
+    const w = new Set([10, 20]);
+    expect(hasFullBotAccess(w, 10)).toBe(true);
+    expect(hasFullBotAccess(w, 99)).toBe(false);
+  });
+});
 
 describe('accessWhitelist', () => {
   it('parses comma-separated ids', () => {

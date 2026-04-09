@@ -4,6 +4,24 @@
 
 ## [Unreleased]
 
+## [1.3.0] — 2026-04-09
+
+Публичная **карта дня** при активном whitelist и суточный лимит для всех.
+
+### Added
+
+- Не в whitelist: доступны `/start`, `/menu` и только расклад **«На день»**; расклад «прошлое — настоящее — будущее» — только у приглашённых id.
+- **Лимит 1× за календарные сутки UTC** на пользователя для «карты дня» у всех; состояние в JSON (по умолчанию `data/day-draw-state.json`), опция **`DAY_DRAW_STATE_PATH`**.
+- Модуль `dayDrawState.ts`, тесты; `hasFullBotAccess` в `accessWhitelist.ts`; каталог `data/` с `.gitkeep`.
+
+### Changed
+
+- Тексты `/start` и `/menu` и клавиатура зависят от полного доступа; сообщение при отказе в spread обновлено.
+
+### Оператору (вручную)
+
+- Для стабильного лимита на Railway при деплоях: том + `DAY_DRAW_STATE_PATH` — см. `docs/DEPLOY.md`.
+
 ## [1.2.0] — 2026-04-09
 
 Опциональный whitelist по Telegram **user id** для закрытого тестирования (минорная функция).
@@ -39,7 +57,8 @@
 
 Первая зафиксированная версия после PoC (текущее состояние бота).
 
-[Unreleased]: https://github.com/findscode/vodovorot-bot/compare/v1.2.0...HEAD
+[Unreleased]: https://github.com/findscode/vodovorot-bot/compare/v1.3.0...HEAD
+[1.3.0]: https://github.com/findscode/vodovorot-bot/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/findscode/vodovorot-bot/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/findscode/vodovorot-bot/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/findscode/vodovorot-bot/releases/tag/v1.0.0

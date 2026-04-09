@@ -27,6 +27,16 @@ export function parseAllowlistFromEnvString(raw: string): Set<number> {
   return ids;
 }
 
+/** Полный доступ (все расклады): whitelist выключен или пользователь в списке. */
+export function hasFullBotAccess(
+  whitelist: Set<number> | null,
+  userId: number | undefined,
+): boolean {
+  if (userId === undefined) return false;
+  if (whitelist === null) return true;
+  return whitelist.has(userId);
+}
+
 /** `null` — whitelist выключен, все пользователи допускаются. */
 export function loadOptionalAccessWhitelist(): Set<number> | null {
   const raw = process.env.ALLOWED_TELEGRAM_USER_IDS;

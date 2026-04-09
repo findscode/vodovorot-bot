@@ -20,4 +20,6 @@ RUN npm ci --omit=dev
 COPY --from=build /app/dist ./dist
 COPY assets ./assets
 
+RUN mkdir -p /app/data
+
 CMD ["npm", "start"]

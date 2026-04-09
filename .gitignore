@@ -10,3 +10,7 @@ coverage/
 # JPEG карт лежат в репозитории (~70 МБ); обновление: npm run download-cards
 *.log
 .DS_Store
+
+# Лимит «карта дня» (локально); в репозитории только data/.gitkeep
+data/*
+!data/.gitkeep
