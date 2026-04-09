@@ -4,6 +4,16 @@
 
 ## [Unreleased]
 
+## [1.4.2] — 2026-04-09
+
+Патч: переработка текстов BotFather и PRIVACY в сухом фактическом стиле.
+
+### Changed
+
+- [docs/BOTFATHER.md](docs/BOTFATHER.md): About, Description и команды — короче, без оценочных формулировок; указаны UTC и Cloudflare Workers AI.
+- [docs/PRIVACY.md](docs/PRIVACY.md): структура по пунктам, убраны разговорные обороты.
+- [docs/BRAND-GUIDE.md](docs/BRAND-GUIDE.md): уточнение про деловой тон полей BotFather.
+
 ## [1.4.1] — 2026-04-09
 
 Патч: документация для настроек бота в BotFather и политика конфиденциальности.
@@ -89,7 +99,8 @@
 
 Первая зафиксированная версия после PoC (текущее состояние бота).
 
-[Unreleased]: https://github.com/findscode/vodovorot-bot/compare/v1.4.1...HEAD
+[Unreleased]: https://github.com/findscode/vodovorot-bot/compare/v1.4.2...HEAD
+[1.4.2]: https://github.com/findscode/vodovorot-bot/compare/v1.4.1...v1.4.2
 [1.4.1]: https://github.com/findscode/vodovorot-bot/compare/v1.4.0...v1.4.1
 [1.4.0]: https://github.com/findscode/vodovorot-bot/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/findscode/vodovorot-bot/compare/v1.2.0...v1.3.0

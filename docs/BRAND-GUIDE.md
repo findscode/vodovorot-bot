@@ -4,7 +4,7 @@
 
 Реализация формата ответов модели: `src/brandFormat.ts` → `prompts.ts`; общий тон и язык: `src/ai.ts` (`SYSTEM_PROMPT`). Сообщения самого бота (приветствие, ожидание, ошибки): `src/botCopy.ts` и `src/bot.ts`.
 
-**Профиль бота в Telegram:** готовые поля About, Description, Privacy Policy URL и команды — в [docs/BOTFATHER.md](BOTFATHER.md); политика конфиденциальности для ссылки — [docs/PRIVACY.md](PRIVACY.md).
+**Профиль бота в Telegram:** поля About, Description, Privacy Policy URL и команды — в [docs/BOTFATHER.md](BOTFATHER.md) (формулировки **деловые, без рекламного тона**); политика для URL — [docs/PRIVACY.md](PRIVACY.md).
 
 ---
 
