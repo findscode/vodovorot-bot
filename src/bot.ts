@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import { Telegraf, Markup } from 'telegraf';
+import { loadOptionalAccessWhitelist } from './accessWhitelist.js';
 import { drawOne, drawThreeUnique, drawVoiceArchetype, formatDrawnLine } from './deck.js';
 import { completeChat } from './ai.js';
 import { cardOfDayPrompt, pastPresentFuturePrompt } from './prompts.js';
@@ -35,7 +36,50 @@ if (!token) {
   process.exit(1);
 }
 
+let accessWhitelist: Set<number> | null;
+try {
+  accessWhitelist = loadOptionalAccessWhitelist();
+} catch (e) {
+  console.error(e instanceof Error ? e.message : e);
+  process.exit(1);
+}
+
+const ACCESS_DENIED_MESSAGE =
+  'Сейчас бот доступен только приглашённым пользователям. Если вы тестируете — попросите владельца добавить ваш числовой user id в переменную ALLOWED_TELEGRAM_USER_IDS на сервере.';
+
 const bot = new Telegraf(token);
+
+if (accessWhitelist !== null) {
+  console.log(
+    `Whitelist: доступ только для ${accessWhitelist.size} user id (см. ALLOWED_TELEGRAM_USER_IDS).`,
+  );
+}
+
+bot.use(async (ctx, next) => {
+  if (accessWhitelist === null) {
+    return next();
+  }
+  const uid = ctx.from?.id;
+  if (uid !== undefined && accessWhitelist.has(uid)) {
+    return next();
+  }
+  if (uid !== undefined) {
+    console.log(`[whitelist] отклонён user id ${uid}`);
+  } else {
+    console.log('[whitelist] отклонено обновление без ctx.from');
+  }
+  if (ctx.callbackQuery) {
+    try {
+      await ctx.answerCbQuery('Нет доступа.', { show_alert: false });
+    } catch {
+      /* уже отвечали или запрос устарел */
+    }
+    return;
+  }
+  if (ctx.message) {
+    await ctx.reply(ACCESS_DENIED_MESSAGE);
+  }
+});
 
 function logHandlerError(label: string, e: unknown): void {
   if (e instanceof Error) {
