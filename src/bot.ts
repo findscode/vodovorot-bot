@@ -37,6 +37,17 @@ if (!token) {
 
 const bot = new Telegraf(token);
 
+function logHandlerError(label: string, e: unknown): void {
+  if (e instanceof Error) {
+    console.error(`[${label}]`, e.name, e.message);
+    if (e.cause instanceof Error) {
+      console.error(`[${label}] cause:`, e.cause.message);
+    }
+  } else {
+    console.error(`[${label}]`, e);
+  }
+}
+
 const mainKeyboard = Markup.inlineKeyboard([
   [Markup.button.callback('На день', 'day')],
   [Markup.button.callback('Прошлое — настоящее — будущее', 'spread')],
@@ -80,7 +91,7 @@ bot.action('day', async (ctx) => {
       await ctx.reply(formatReadingForTelegram(chunk), TELEGRAM_HTML_PARSE);
     }
   } catch (e) {
-    console.error(e);
+    logHandlerError('day', e);
     await ctx.reply('Сейчас текст не удалось получить. Попробуй ещё раз чуть позже.');
   }
 });
@@ -113,7 +124,7 @@ bot.action('spread', async (ctx) => {
       await ctx.reply(formatReadingForTelegram(chunk), TELEGRAM_HTML_PARSE);
     }
   } catch (e) {
-    console.error(e);
+    logHandlerError('spread', e);
     await ctx.reply('Сейчас текст не удалось получить. Попробуй ещё раз чуть позже.');
   }
 });

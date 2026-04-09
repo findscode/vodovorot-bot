@@ -4,18 +4,24 @@
 
 ## [Unreleased]
 
-### Added
+## [1.1.0] — 2026-04-09
 
-- JPEG карт Таро в `assets/cards/` (репозиторий), образ Docker копирует `assets` в рантайм.
-- Workflow **Deploy Railway**: деплой через Railway CLI после успешного CI на `main` (секрет `RAILWAY_TOKEN`).
+Минорный релиз: усиление валидации входных данных и сетевых вызовов, аккуратнее логи.
+
+### Security
+
+- Пути к JPEG карт: `cardId` только в диапазоне колоды (`isValidCardId` / `RangeError` в `cardJPEGPath`), исключение произвольных имён файлов.
+- Cloudflare Workers AI: проверка формата `CLOUDFLARE_ACCOUNT_ID` (32 hex) и `CLOUDFLARE_AI_MODEL` (безопасное имя модели в пути URL); таймаут HTTP-запроса к API (120 с).
+- Скрипт `download-cards`: загрузка изображений только с хостов `*.wikimedia.org` по HTTPS.
 
 ### Changed
 
-- Документация деплоя: Railway, выбор между встроенным деплоем и GitHub Actions, первый релизный тег.
-- Зависимости (Dependabot): `actions/checkout@v6`, `actions/setup-node@v6` (включая `deploy-railway.yml`); `dotenv` 17; `eslint` 10 + `@eslint/js` 10; `typescript` 6; `@types/node` 25.
+- Обработчики бота логируют ошибки ИИ без полного `console.error` объекта (имя, сообщение, причина).
 
 ## [1.0.0] — 2026-04-09
 
 Первая зафиксированная версия после PoC (текущее состояние бота).
 
-После создания репозитория на GitHub добавьте внизу файла ссылки вида `[Unreleased]: …/compare/v1.0.0…HEAD` и `[1.0.0]: …/releases/tag/v1.0.0` для удобства.
+[Unreleased]: https://github.com/findscode/vodovorot-bot/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/findscode/vodovorot-bot/compare/v1.0.0...v1.1.0
+[1.0.0]: https://github.com/findscode/vodovorot-bot/releases/tag/v1.0.0

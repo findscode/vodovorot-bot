@@ -14,7 +14,23 @@ import { fileURLToPath } from 'node:url';
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const outDir = join(root, 'assets', 'cards');
 
-const USER_AGENT = 'Vodovorot/1.0 (local asset sync; Node.js)';
+const USER_AGENT = 'Vodovorot/1.1 (local asset sync; Node.js)';
+
+function assertAllowedWikimediaImageUrl(src, label) {
+  let u;
+  try {
+    u = new URL(src);
+  } catch {
+    throw new Error(`Некорректный URL изображения для ${label}`);
+  }
+  if (u.protocol !== 'https:') {
+    throw new Error(`Ожидался https для ${label}, получено ${u.protocol}`);
+  }
+  const host = u.hostname.toLowerCase();
+  if (!host.endsWith('wikimedia.org')) {
+    throw new Error(`Недопустимый хост изображения для ${label}: ${host}`);
+  }
+}
 
 /** Имена файлов на Commons, в порядке id 0–21 */
 const MAJOR_COMMONS = [
@@ -115,6 +131,7 @@ async function resolveUrls(filenames) {
 }
 
 async function fetchImageWithRetry(src, label, maxAttempts = 6) {
+  assertAllowedWikimediaImageUrl(src, label);
   let delayMs = 2000;
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     const imgRes = await fetch(src, { headers: { 'User-Agent': USER_AGENT } });

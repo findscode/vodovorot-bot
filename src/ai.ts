@@ -1,5 +1,11 @@
 const DEFAULT_MODEL = '@cf/meta/llama-3-8b-instruct';
 
+/** Cloudflare Account ID в дашборде — 32 hex-символа. */
+const ACCOUNT_ID_RE = /^[a-f0-9]{32}$/i;
+/** Имя модели Workers AI в пути URL: `@vendor/...`, без пробелов и обхода пути. */
+const MODEL_RE = /^@[a-zA-Z0-9._/-]{1,200}$/;
+const FETCH_TIMEOUT_MS = 120_000;
+
 const SYSTEM_PROMPT =
   'Ты пишешь толкование по картам Таро для бота Водоворот. Строго соблюдай формат из запроса: строки-метки разделов — ровно как указано (без тире в конце названия метки), пустые строки между блоками; не сокращай и не переименовывай метки. Язык — только русский, целиком, без английских слов и кальки; названия карт уже по-русски. Пиши так, чтобы текст было легко читать в мессенджере: в основном короткие и средние предложения, без перегруженных фраз. Тон спокойный, взрослый, по-человечески ясный; без лести, без крика, без обращений вроде «дорогой друг» и без морализаторства. Только текст толкования. Не упоминай программы, нейросети, боты, API, серверы, модели и любую технику; не раскрывай, что ты «искусственный интеллект».';
 
@@ -11,21 +17,25 @@ interface CloudflareAiResponse {
 
 /** Путь как в curl из дашборда Cloudflare: /ai/run/@cf/meta/... — без encodeURIComponent всей строки. */
 function runUrl(accountId: string, model: string): string {
-  const id = accountId.trim();
-  const m = model.trim();
-  return `https://api.cloudflare.com/client/v4/accounts/${id}/ai/run/${m}`;
+  return `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/${model}`;
 }
 
 export async function completeChat(userPrompt: string): Promise<string> {
-  const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
-  const token = process.env.CLOUDFLARE_API_TOKEN;
-  const model = process.env.CLOUDFLARE_AI_MODEL ?? DEFAULT_MODEL;
+  const accountId = process.env.CLOUDFLARE_ACCOUNT_ID?.trim();
+  const token = process.env.CLOUDFLARE_API_TOKEN?.trim();
+  const model = (process.env.CLOUDFLARE_AI_MODEL ?? DEFAULT_MODEL).trim();
 
   if (!accountId) {
     throw new Error('CLOUDFLARE_ACCOUNT_ID не задан');
   }
+  if (!ACCOUNT_ID_RE.test(accountId)) {
+    throw new Error('CLOUDFLARE_ACCOUNT_ID должен быть 32-символьным hex-идентификатором');
+  }
   if (!token) {
     throw new Error('CLOUDFLARE_API_TOKEN не задан');
+  }
+  if (!MODEL_RE.test(model)) {
+    throw new Error('CLOUDFLARE_AI_MODEL имеет недопустимый формат');
   }
 
   const res = await fetch(runUrl(accountId, model), {
@@ -42,6 +52,7 @@ export async function completeChat(userPrompt: string): Promise<string> {
       max_tokens: 1200,
       temperature: 0.85,
     }),
+    signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
   });
 
   const rawBody = await res.text();
