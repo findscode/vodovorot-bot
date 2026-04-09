@@ -7,7 +7,6 @@ coverage/
 .env
 .env.*
 !.env.example
-# ~70 МБ, один раз: npm run download-cards
-assets/cards/*.jpg
+# JPEG карт лежат в репозитории (~70 МБ); обновление: npm run download-cards
 *.log
 .DS_Store
