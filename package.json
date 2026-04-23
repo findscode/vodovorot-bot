@@ -1,6 +1,6 @@
 {
   "name": "vodovorot",
-  "version": "2.6.0",
+  "version": "2.6.1",
   "private": true,
   "description": "Водоворот (Vodovorot) — Telegram-бот Таро",
   "type": "module",

@@ -29,7 +29,7 @@
 - `BOT_TOKEN` (обязательно)
 - **`DATABASE_PATH`** (опционально) — файл **SQLite**; по умолчанию **`./data/vodovorot.db`**. Для стабильности на Railway/Fly смонтируйте **том** на каталог `data` или задайте абсолютный путь на постоянный диск.
 - `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_API_TOKEN` (обязательно для ИИ)
-- `CLOUDFLARE_AI_MODEL` (опционально) — если не задана, в коде используется **`@cf/meta/llama-3.1-8b-instruct`**. Для ещё более устойчивого русского при большей стоимости и задержке можно задать, например, **`@cf/meta/llama-4-scout-17b-16e-instruct`** или **`@cf/mistralai/mistral-small-3.1-24b-instruct`**; см. [Workers AI Models](https://developers.cloudflare.com/workers-ai/models/).
+- `CLOUDFLARE_AI_MODEL` (опционально) — если не задана, в коде используется **`@cf/meta/llama-3.1-8b-instruct`**. Для ещё более устойчивого русского при большей стоимости и задержке можно задать, например, **`@cf/meta/llama-4-scout-17b-16e-instruct`** или **`@cf/mistralai/mistral-small-3.1-24b-instruct`**; см. [Workers AI Models](https://developers.cloudflare.com/workers-ai/models/). Учитывайте: при «подозрении» на англоязычную выдачу бот делает **второй** запрос к Workers AI (ещё одна порция токенов и задержка, тот же провайдер).
 - `ALLOWED_TELEGRAM_USER_IDS` (опционально) — см. ниже
 - **`ADMIN_TELEGRAM_USER_IDS`** (опционально) — числовые user id через запятую/пробел/`;`: при старте им в БД выставляется **админ** (полный доступ к раскладам независимо от whitelist).
 - `DAY_DRAW_STATE_PATH` (опционально) — только для **однократной миграции** слотов из JSON 1.x в SQLite; см. ниже
