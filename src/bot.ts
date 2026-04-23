@@ -1,6 +1,9 @@
 import 'dotenv/config';
 import type { Context } from 'telegraf';
-import { Telegraf, Markup } from 'telegraf';
+import { Telegraf } from 'telegraf';
+import { initDatabase } from './db/database.js';
+import { migrateLegacyDayDrawJsonIfNeeded } from './db/migrateLegacyDayDraw.js';
+import { seedAdminsFromEnv } from './db/seedAdmins.js';
 import {
   ACCESS_DENIED_MESSAGE,
   DAY_LIMIT_MESSAGE,
@@ -9,51 +12,62 @@ import {
   LAST_EMPTY_MESSAGE,
   menuTextFull,
   menuTextLimited,
+  PROMO_MESSAGES,
   startTextFull,
   startTextLimited,
+  SUBSCRIBE_MESSAGES,
 } from './botCopy.js';
-import { hasFullBotAccess, loadOptionalAccessWhitelist } from './accessWhitelist.js';
+import { loadOptionalAccessWhitelist } from './accessWhitelist.js';
+import { setAccessWhitelist } from './runtimeConfig.js';
+import { hasFullSpreadAccess } from './accessResolve.js';
 import {
-  getDayDrawStatePath,
   getDayDrawTimezone,
+  getDayDrawStatePath,
   hasDayDrawSlotUsed,
   moscowCalendarDate,
-  tryConsumeDayDrawSlot,
 } from './dayDrawState.js';
-import { drawOne, drawThreeUnique, drawVoiceArchetype, formatDrawnLine } from './deck.js';
+import { drawThreeUnique, drawVoiceArchetype, formatDrawnLine } from './deck.js';
 import { completeChat } from './ai.js';
-import { cardOfDayPrompt, pastPresentFuturePrompt } from './prompts.js';
+import { pastPresentFuturePrompt } from './prompts.js';
 import { cardImageExists } from './cardAssets.js';
-import { cardPhotoInput } from './cardPhotoInput.js';
 import { spreadCompositePhotoInput } from './spreadComposite.js';
 import { formatReadingForTelegram, TELEGRAM_HTML_PARSE } from './readingTelegramHtml.js';
 import { withTypingWhile } from './typingIndicator.js';
 import { getLastReading, saveLastReading } from './lastReadingStore.js';
+import { getDatabasePath } from './db/database.js';
+import { deliverCardOfDayReading } from './cardOfDayDelivery.js';
+import { keyboardMainOrDayOnly } from './botKeyboards.js';
+import { setDayPushEnabled, tryRedeemPromoCodeSync } from './db/usersRepo.js';
+import { startDayPushScheduler } from './dayPushScheduler.js';
+import { getDefaultDayPushHhmm } from './dayPushConfig.js';
+import { splitForTelegram } from './telegramChunks.js';
 
-const TG_MAX = 4096;
 const TG_CAPTION_MAX = 1024;
 const DAY_ACTION_DEBOUNCE_MS = 2500;
 
 const dayLastTap = new Map<number, number>();
 const dayInFlight = new Set<number>();
 
-function splitForTelegram(text: string): string[] {
-  if (text.length <= TG_MAX) return [text];
-  const parts: string[] = [];
-  let rest = text;
-  while (rest.length > 0) {
-    if (rest.length <= TG_MAX) {
-      parts.push(rest);
-      break;
-    }
-    let cut = rest.lastIndexOf('\n\n', TG_MAX);
-    if (cut < TG_MAX / 2) cut = rest.lastIndexOf(' ', TG_MAX);
-    if (cut < TG_MAX / 2) cut = TG_MAX;
-    parts.push(rest.slice(0, cut).trimEnd());
-    rest = rest.slice(cut).trimStart();
-  }
-  return parts;
+initDatabase();
+migrateLegacyDayDrawJsonIfNeeded();
+seedAdminsFromEnv();
+
+const token = process.env.BOT_TOKEN;
+if (!token) {
+  console.error('В .env нет BOT_TOKEN');
+  process.exit(1);
 }
+
+let accessWhitelist: ReturnType<typeof loadOptionalAccessWhitelist>;
+try {
+  accessWhitelist = loadOptionalAccessWhitelist();
+} catch (e) {
+  console.error(e instanceof Error ? e.message : e);
+  process.exit(1);
+}
+setAccessWhitelist(accessWhitelist);
+
+const bot = new Telegraf(token);
 
 /** Ответ на callback без шума в логах, если запрос устарел или уже закрыт. */
 async function answerCbQuerySafe(ctx: Context, text?: string, showAlert = false): Promise<void> {
@@ -73,7 +87,7 @@ async function sendReadingChunks(ctx: Context, rawText: string, userId: number):
   const formatted = parts.map((c) => formatReadingForTelegram(c));
   for (let i = 0; i < formatted.length; i++) {
     const last = i === formatted.length - 1;
-    const kb = last ? keyboardFor(ctx) : {};
+    const kb = last ? keyboardMainOrDayOnly(userId) : {};
     await ctx.reply(formatted[i], { ...kb, ...TELEGRAM_HTML_PARSE });
   }
   if (formatted.length > 0) {
@@ -81,21 +95,15 @@ async function sendReadingChunks(ctx: Context, rawText: string, userId: number):
   }
 }
 
-const token = process.env.BOT_TOKEN;
-if (!token) {
-  console.error('В .env нет BOT_TOKEN');
-  process.exit(1);
+const tzLabel = getDayDrawTimezone();
+const dbPath = getDatabasePath();
+if (accessWhitelist !== null) {
+  console.log(
+    `Whitelist: полный доступ у ${accessWhitelist.size} user id; остальные — только «карта день» (лимит 1×/сутки по ${tzLabel}). БД: ${dbPath}; legacy JSON (если был): ${getDayDrawStatePath()}`,
+  );
+} else {
+  console.log(`Лимит «карта дня» (дата в ${tzLabel}), БД: ${dbPath}`);
 }
-
-let accessWhitelist: Set<number> | null;
-try {
-  accessWhitelist = loadOptionalAccessWhitelist();
-} catch (e) {
-  console.error(e instanceof Error ? e.message : e);
-  process.exit(1);
-}
-
-const bot = new Telegraf(token);
 
 /** Только личные чаты: в группах и каналах не отвечаем и не обрабатываем расклады. */
 bot.use(async (ctx, next) => {
@@ -106,26 +114,20 @@ bot.use(async (ctx, next) => {
   return next();
 });
 
-const tzLabel = getDayDrawTimezone();
-if (accessWhitelist !== null) {
-  console.log(
-    `Whitelist: полный доступ у ${accessWhitelist.size} user id; остальные — только «карта дня» (лимит 1×/сутки, дата по ${tzLabel}). Состояние: ${getDayDrawStatePath()}`,
-  );
-} else {
-  console.log(`Лимит «карта дня» (календарная дата в ${tzLabel}), файл: ${getDayDrawStatePath()}`);
-}
-
 bot.use(async (ctx, next) => {
   if (accessWhitelist === null) {
     return next();
   }
   const uid = ctx.from?.id;
-  if (hasFullBotAccess(accessWhitelist, uid)) {
+  if (hasFullSpreadAccess(uid)) {
     return next();
   }
   const cq = ctx.callbackQuery;
-  if (cq && 'data' in cq && cq.data === 'day') {
-    return next();
+  if (cq && 'data' in cq) {
+    const d = cq.data;
+    if (d === 'day' || d === 'day_sub_on' || d === 'day_sub_off') {
+      return next();
+    }
   }
   if (ctx.message && 'text' in ctx.message && isPublicEntryCommand(ctx.message.text)) {
     return next();
@@ -155,33 +157,22 @@ function logHandlerError(label: string, e: unknown): void {
   }
 }
 
-const mainKeyboard = Markup.inlineKeyboard([
-  [Markup.button.callback('На день', 'day')],
-  [Markup.button.callback('Прошлое — настоящее — будущее', 'spread')],
-]);
-
-const dayOnlyKeyboard = Markup.inlineKeyboard([[Markup.button.callback('На день', 'day')]]);
-
-function keyboardFor(ctx: { from?: { id: number } }) {
-  return hasFullBotAccess(accessWhitelist, ctx.from?.id) ? mainKeyboard : dayOnlyKeyboard;
-}
-
 bot.start(async (ctx) => {
-  const full = hasFullBotAccess(accessWhitelist, ctx.from?.id);
+  const full = hasFullSpreadAccess(ctx.from?.id);
   const text = full ? startTextFull() : startTextLimited();
-  await ctx.reply(text, { ...keyboardFor(ctx), ...TELEGRAM_HTML_PARSE });
+  await ctx.reply(text, { ...keyboardMainOrDayOnly(ctx.from?.id), ...TELEGRAM_HTML_PARSE });
 });
 
 bot.command('menu', async (ctx) => {
-  const full = hasFullBotAccess(accessWhitelist, ctx.from?.id);
+  const full = hasFullSpreadAccess(ctx.from?.id);
   const text = full ? menuTextFull() : menuTextLimited();
-  await ctx.reply(text, { ...keyboardFor(ctx), ...TELEGRAM_HTML_PARSE });
+  await ctx.reply(text, { ...keyboardMainOrDayOnly(ctx.from?.id), ...TELEGRAM_HTML_PARSE });
 });
 
 bot.command('help', async (ctx) => {
-  const full = hasFullBotAccess(accessWhitelist, ctx.from?.id);
+  const full = hasFullSpreadAccess(ctx.from?.id);
   await ctx.reply(helpTextHtml({ fullAccess: full }), {
-    ...keyboardFor(ctx),
+    ...keyboardMainOrDayOnly(ctx.from?.id),
     ...TELEGRAM_HTML_PARSE,
   });
 });
@@ -191,15 +182,64 @@ bot.command('last', async (ctx) => {
   if (uid === undefined) return;
   const text = getLastReading(uid);
   if (!text) {
-    await ctx.reply(LAST_EMPTY_MESSAGE, { ...keyboardFor(ctx), ...TELEGRAM_HTML_PARSE });
+    await ctx.reply(LAST_EMPTY_MESSAGE, {
+      ...keyboardMainOrDayOnly(uid),
+      ...TELEGRAM_HTML_PARSE,
+    });
     return;
   }
   const parts = splitForTelegram(text);
   for (let i = 0; i < parts.length; i++) {
     const last = i === parts.length - 1;
-    const kb = last ? keyboardFor(ctx) : {};
+    const kb = last ? keyboardMainOrDayOnly(uid) : {};
     await ctx.reply(parts[i], { ...kb, ...TELEGRAM_HTML_PARSE });
   }
+});
+
+bot.command('promo', async (ctx) => {
+  const uid = ctx.from?.id;
+  if (uid === undefined) return;
+  const text =
+    ctx.message && 'text' in ctx.message && typeof ctx.message.text === 'string'
+      ? ctx.message.text.trim()
+      : '';
+  const code = text.split(/\s+/).slice(1).join(' ').trim();
+  if (!code) {
+    await ctx.reply(PROMO_MESSAGES.needCode, { ...keyboardMainOrDayOnly(uid), ...TELEGRAM_HTML_PARSE });
+    return;
+  }
+  const r = tryRedeemPromoCodeSync(uid, code);
+  const msg =
+    r === 'ok'
+      ? PROMO_MESSAGES.ok
+      : r === 'used'
+        ? PROMO_MESSAGES.used
+        : r === 'expired'
+          ? PROMO_MESSAGES.expired
+          : PROMO_MESSAGES.invalid;
+  await ctx.reply(msg, { ...keyboardMainOrDayOnly(uid), ...TELEGRAM_HTML_PARSE });
+});
+
+bot.action('day_sub_on', async (ctx) => {
+  await answerCbQuerySafe(ctx);
+  const uid = ctx.from?.id;
+  if (uid === undefined) return;
+  setDayPushEnabled(uid, true, getDayDrawTimezone(), getDefaultDayPushHhmm());
+  await ctx.reply(SUBSCRIBE_MESSAGES.on, {
+    ...keyboardMainOrDayOnly(uid),
+    ...TELEGRAM_HTML_PARSE,
+  });
+});
+
+bot.action('day_sub_off', async (ctx) => {
+  await answerCbQuerySafe(ctx);
+  const uid = ctx.from?.id;
+  if (uid === undefined) return;
+  setDayPushEnabled(uid, false, getDayDrawTimezone());
+  await ctx.reply(SUBSCRIBE_MESSAGES.off, {
+    ...keyboardMainOrDayOnly(uid),
+    ...TELEGRAM_HTML_PARSE,
+  });
 });
 
 bot.action('day', async (ctx) => {
@@ -225,33 +265,20 @@ bot.action('day', async (ctx) => {
   dayInFlight.add(uid);
 
   try {
-    const drawn = drawOne();
-    const line = `День: ${formatDrawnLine(drawn)}`;
-
-    if (cardImageExists(drawn.card.id)) {
-      const photo = await cardPhotoInput(drawn.card.id, drawn.reversed);
-      await ctx.replyWithPhoto(photo, {
-        caption: line.slice(0, TG_CAPTION_MAX),
-      });
-    } else {
-      await ctx.reply(
-        `${line}\n\nКартинку карты сейчас не показать — толкование всё равно пришлю ниже.`,
-      );
-    }
-
-    const voice = drawVoiceArchetype();
-    await ctx.reply('Секунду, собираю текст толкования…');
-    try {
-      const text = await withTypingWhile(ctx, () => completeChat(cardOfDayPrompt(drawn, voice)));
-      await sendReadingChunks(ctx, text, uid);
-      const reserved = await tryConsumeDayDrawSlot(uid, today);
-      if (!reserved) {
-        console.warn('[day] слот не зарезервирован после успеха (гонка или рассинхрон файла)');
-      }
-    } catch (e) {
-      logHandlerError('day', e);
+    const result = await deliverCardOfDayReading(
+      ctx.telegram,
+      uid,
+      'manual',
+      (task) => withTypingWhile(ctx, task),
+    );
+    if (result === 'ai_error') {
       await ctx.reply('Сейчас текст не удалось получить. Попробуй ещё раз чуть позже.');
+    } else if (result === 'slot_race') {
+      console.warn('[day] слот не зарезервирован после успеха (гонка)');
     }
+  } catch (e) {
+    logHandlerError('day', e);
+    await ctx.reply('Сейчас текст не удалось получить. Попробуй ещё раз чуть позже.');
   } finally {
     dayInFlight.delete(uid);
   }
@@ -293,7 +320,10 @@ bot.action('spread', async (ctx) => {
   }
 });
 
-bot.launch().then(() => console.log('Слушаю Telegram.'));
+bot.launch().then(() => {
+  console.log('Слушаю Telegram.');
+  startDayPushScheduler(bot);
+});
 
 process.once('SIGINT', () => bot.stop('SIGINT'));
 process.once('SIGTERM', () => bot.stop('SIGTERM'));

@@ -1,6 +1,6 @@
 {
   "name": "vodovorot",
-  "version": "1.10.0",
+  "version": "2.0.0",
   "private": true,
   "description": "Водоворот (Vodovorot) — Telegram-бот Таро",
   "type": "module",
@@ -21,14 +21,18 @@
     "node": ">=20"
   },
   "dependencies": {
+    "better-sqlite3": "^12.9.0",
     "dotenv": "^17.4.1",
+    "node-cron": "^4.2.1",
     "random": "^5.4.1",
     "sharp": "^0.34.5",
     "telegraf": "^4.16.3"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^25.5.2",
+    "@types/node-cron": "^3.0.11",
     "eslint": "^10.2.0",
     "eslint-config-prettier": "^10.1.8",
     "prettier": "^3.8.1",

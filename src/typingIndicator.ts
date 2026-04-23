@@ -26,3 +26,21 @@ export async function withTypingWhile<T>(ctx: MinimalCtx, fn: () => Promise<T>):
     clearInterval(interval);
   }
 }
+
+/** Для рассылки без `ctx` (например «карта дня» по подписке). */
+export async function withTelegramTypingWhile<T>(
+  telegram: Telegraf['telegram'],
+  chatId: number,
+  fn: () => Promise<T>,
+): Promise<T> {
+  const tick = (): void => {
+    void telegram.sendChatAction(chatId, 'typing').catch(() => {});
+  };
+  tick();
+  const interval = setInterval(tick, TYPING_INTERVAL_MS);
+  try {
+    return await fn();
+  } finally {
+    clearInterval(interval);
+  }
+}

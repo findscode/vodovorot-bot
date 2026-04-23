@@ -10,6 +10,9 @@ describe('botCopy', () => {
     expect(isPublicEntryCommand('/help payload')).toBe(true);
     expect(isPublicEntryCommand('/last')).toBe(true);
     expect(isPublicEntryCommand('/last@MyBot')).toBe(true);
+    expect(isPublicEntryCommand('/promo')).toBe(true);
+    expect(isPublicEntryCommand('/promo ABC')).toBe(true);
+    expect(isPublicEntryCommand('/promo@MyBot')).toBe(true);
     expect(isPublicEntryCommand('hello')).toBe(false);
     expect(isPublicEntryCommand(undefined)).toBe(false);
   });
