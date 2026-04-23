@@ -121,7 +121,7 @@
 | `BOT_TOKEN`             | Подключение бота к Telegram.                                                                   |
 | `CLOUDFLARE_ACCOUNT_ID` | Аккаунт Cloudflare для Workers AI.                                                             |
 | `CLOUDFLARE_API_TOKEN`  | Доступ к API Cloudflare.                                                                       |
-| `CLOUDFLARE_AI_MODEL`   | Имя модели в API; если переменная пустая, в коде подставляется `@cf/meta/llama-3-8b-instruct`. |
+| `CLOUDFLARE_AI_MODEL`   | Имя модели в API; если переменная пустая, в коде подставляется `@cf/meta/llama-3.1-8b-instruct`. |
 
 ---
 

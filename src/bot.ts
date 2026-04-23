@@ -1,17 +1,25 @@
 import 'dotenv/config';
+import type { Context } from 'telegraf';
 import { Telegraf, Markup } from 'telegraf';
 import {
   ACCESS_DENIED_MESSAGE,
   DAY_LIMIT_MESSAGE,
   helpTextHtml,
   isPublicEntryCommand,
+  LAST_EMPTY_MESSAGE,
   menuTextFull,
   menuTextLimited,
   startTextFull,
   startTextLimited,
 } from './botCopy.js';
 import { hasFullBotAccess, loadOptionalAccessWhitelist } from './accessWhitelist.js';
-import { getDayDrawStatePath, tryConsumeDayDrawSlot, utcCalendarDate } from './dayDrawState.js';
+import {
+  getDayDrawStatePath,
+  getDayDrawTimezone,
+  hasDayDrawSlotUsed,
+  moscowCalendarDate,
+  tryConsumeDayDrawSlot,
+} from './dayDrawState.js';
 import { drawOne, drawThreeUnique, drawVoiceArchetype, formatDrawnLine } from './deck.js';
 import { completeChat } from './ai.js';
 import { cardOfDayPrompt, pastPresentFuturePrompt } from './prompts.js';
@@ -20,9 +28,14 @@ import { cardPhotoInput } from './cardPhotoInput.js';
 import { spreadCompositePhotoInput } from './spreadComposite.js';
 import { formatReadingForTelegram, TELEGRAM_HTML_PARSE } from './readingTelegramHtml.js';
 import { withTypingWhile } from './typingIndicator.js';
+import { getLastReading, saveLastReading } from './lastReadingStore.js';
 
 const TG_MAX = 4096;
 const TG_CAPTION_MAX = 1024;
+const DAY_ACTION_DEBOUNCE_MS = 2500;
+
+const dayLastTap = new Map<number, number>();
+const dayInFlight = new Set<number>();
 
 function splitForTelegram(text: string): string[] {
   if (text.length <= TG_MAX) return [text];
@@ -40,6 +53,32 @@ function splitForTelegram(text: string): string[] {
     rest = rest.slice(cut).trimStart();
   }
   return parts;
+}
+
+/** Ответ на callback без шума в логах, если запрос устарел или уже закрыт. */
+async function answerCbQuerySafe(ctx: Context, text?: string, showAlert = false): Promise<void> {
+  try {
+    if (text !== undefined) {
+      await ctx.answerCbQuery(text, { show_alert: showAlert });
+    } else {
+      await ctx.answerCbQuery();
+    }
+  } catch {
+    /* ignore */
+  }
+}
+
+async function sendReadingChunks(ctx: Context, rawText: string, userId: number): Promise<void> {
+  const parts = splitForTelegram(rawText);
+  const formatted = parts.map((c) => formatReadingForTelegram(c));
+  for (let i = 0; i < formatted.length; i++) {
+    const last = i === formatted.length - 1;
+    const kb = last ? keyboardFor(ctx) : {};
+    await ctx.reply(formatted[i], { ...kb, ...TELEGRAM_HTML_PARSE });
+  }
+  if (formatted.length > 0) {
+    saveLastReading(userId, formatted.join('\n\n'));
+  }
 }
 
 const token = process.env.BOT_TOKEN;
@@ -67,12 +106,13 @@ bot.use(async (ctx, next) => {
   return next();
 });
 
+const tzLabel = getDayDrawTimezone();
 if (accessWhitelist !== null) {
   console.log(
-    `Whitelist: полный доступ у ${accessWhitelist.size} user id; остальные — только «карта дня» (лимит 1×/сутки UTC). Состояние: ${getDayDrawStatePath()}`,
+    `Whitelist: полный доступ у ${accessWhitelist.size} user id; остальные — только «карта дня» (лимит 1×/сутки, дата по ${tzLabel}). Состояние: ${getDayDrawStatePath()}`,
   );
 } else {
-  console.log(`Лимит «карта дня» (UTC), файл состояния: ${getDayDrawStatePath()}`);
+  console.log(`Лимит «карта дня» (календарная дата в ${tzLabel}), файл: ${getDayDrawStatePath()}`);
 }
 
 bot.use(async (ctx, next) => {
@@ -96,11 +136,7 @@ bot.use(async (ctx, next) => {
     console.log('[whitelist] отклонено обновление без ctx.from');
   }
   if (ctx.callbackQuery) {
-    try {
-      await ctx.answerCbQuery('Нет доступа.', { show_alert: false });
-    } catch {
-      /* уже отвечали или запрос устарел */
-    }
+    await answerCbQuerySafe(ctx, 'Нет доступа.', false);
     return;
   }
   if (ctx.message) {
@@ -150,47 +186,82 @@ bot.command('help', async (ctx) => {
   });
 });
 
+bot.command('last', async (ctx) => {
+  const uid = ctx.from?.id;
+  if (uid === undefined) return;
+  const text = getLastReading(uid);
+  if (!text) {
+    await ctx.reply(LAST_EMPTY_MESSAGE, { ...keyboardFor(ctx), ...TELEGRAM_HTML_PARSE });
+    return;
+  }
+  const parts = splitForTelegram(text);
+  for (let i = 0; i < parts.length; i++) {
+    const last = i === parts.length - 1;
+    const kb = last ? keyboardFor(ctx) : {};
+    await ctx.reply(parts[i], { ...kb, ...TELEGRAM_HTML_PARSE });
+  }
+});
+
 bot.action('day', async (ctx) => {
-  await ctx.answerCbQuery();
+  await answerCbQuerySafe(ctx);
   const uid = ctx.from?.id;
   if (uid === undefined) return;
 
-  const today = utcCalendarDate();
-  const slotOk = await tryConsumeDayDrawSlot(uid, today);
-  if (!slotOk) {
+  const now = Date.now();
+  const prevTap = dayLastTap.get(uid) ?? 0;
+  if (now - prevTap < DAY_ACTION_DEBOUNCE_MS) {
+    return;
+  }
+  dayLastTap.set(uid, now);
+
+  const today = moscowCalendarDate();
+  if (await hasDayDrawSlotUsed(uid, today)) {
     await ctx.reply(DAY_LIMIT_MESSAGE);
     return;
   }
-
-  const drawn = drawOne();
-  const line = `День: ${formatDrawnLine(drawn)}`;
-
-  if (cardImageExists(drawn.card.id)) {
-    const photo = await cardPhotoInput(drawn.card.id, drawn.reversed);
-    await ctx.replyWithPhoto(photo, {
-      caption: line.slice(0, TG_CAPTION_MAX),
-    });
-  } else {
-    await ctx.reply(
-      `${line}\n\nКартинку карты сейчас не показать — толкование всё равно пришлю ниже.`,
-    );
+  if (dayInFlight.has(uid)) {
+    return;
   }
+  dayInFlight.add(uid);
 
-  const voice = drawVoiceArchetype();
-  await ctx.reply('Секунду, собираю текст толкования…');
   try {
-    const text = await withTypingWhile(ctx, () => completeChat(cardOfDayPrompt(drawn, voice)));
-    for (const chunk of splitForTelegram(text)) {
-      await ctx.reply(formatReadingForTelegram(chunk), TELEGRAM_HTML_PARSE);
+    const drawn = drawOne();
+    const line = `День: ${formatDrawnLine(drawn)}`;
+
+    if (cardImageExists(drawn.card.id)) {
+      const photo = await cardPhotoInput(drawn.card.id, drawn.reversed);
+      await ctx.replyWithPhoto(photo, {
+        caption: line.slice(0, TG_CAPTION_MAX),
+      });
+    } else {
+      await ctx.reply(
+        `${line}\n\nКартинку карты сейчас не показать — толкование всё равно пришлю ниже.`,
+      );
     }
-  } catch (e) {
-    logHandlerError('day', e);
-    await ctx.reply('Сейчас текст не удалось получить. Попробуй ещё раз чуть позже.');
+
+    const voice = drawVoiceArchetype();
+    await ctx.reply('Секунду, собираю текст толкования…');
+    try {
+      const text = await withTypingWhile(ctx, () => completeChat(cardOfDayPrompt(drawn, voice)));
+      await sendReadingChunks(ctx, text, uid);
+      const reserved = await tryConsumeDayDrawSlot(uid, today);
+      if (!reserved) {
+        console.warn('[day] слот не зарезервирован после успеха (гонка или рассинхрон файла)');
+      }
+    } catch (e) {
+      logHandlerError('day', e);
+      await ctx.reply('Сейчас текст не удалось получить. Попробуй ещё раз чуть позже.');
+    }
+  } finally {
+    dayInFlight.delete(uid);
   }
 });
 
 bot.action('spread', async (ctx) => {
-  await ctx.answerCbQuery();
+  await answerCbQuerySafe(ctx);
+  const uid = ctx.from?.id;
+  if (uid === undefined) return;
+
   const cards = drawThreeUnique();
   const positions = ['Прошлое', 'Настоящее', 'Будущее'] as const;
   const lines = cards.map((d, i) => `${positions[i]}: ${formatDrawnLine(d)}`);
@@ -215,9 +286,7 @@ bot.action('spread', async (ctx) => {
     const text = await withTypingWhile(ctx, () =>
       completeChat(pastPresentFuturePrompt(cards, voice)),
     );
-    for (const chunk of splitForTelegram(text)) {
-      await ctx.reply(formatReadingForTelegram(chunk), TELEGRAM_HTML_PARSE);
-    }
+    await sendReadingChunks(ctx, text, uid);
   } catch (e) {
     logHandlerError('spread', e);
     await ctx.reply('Сейчас текст не удалось получить. Попробуй ещё раз чуть позже.');

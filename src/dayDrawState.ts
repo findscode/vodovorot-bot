@@ -1,9 +1,29 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 
-/** Календарная дата UTC в формате YYYY-MM-DD (граница «суток» для лимита). */
-export function utcCalendarDate(d = new Date()): string {
-  return d.toISOString().slice(0, 10);
+const DEFAULT_DAY_DRAW_TIMEZONE = 'Europe/Moscow';
+
+/** Часовой пояс границы «суток» для лимита «карта дня» (IANA, например Europe/Moscow). */
+export function getDayDrawTimezone(): string {
+  const fromEnv = process.env.DAY_DRAW_TIMEZONE?.trim();
+  return fromEnv || DEFAULT_DAY_DRAW_TIMEZONE;
+}
+
+/**
+ * Календарная дата в часовом поясе лимита (по умолчанию Москва) — `YYYY-MM-DD`.
+ * Граница суток задаётся через `DAY_DRAW_TIMEZONE` или `Europe/Moscow`.
+ */
+export function moscowCalendarDate(now = new Date()): string {
+  return calendarDateInTimezone(now, getDayDrawTimezone());
+}
+
+export function calendarDateInTimezone(d: Date, timeZone: string): string {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(d);
 }
 
 export function getDayDrawStatePath(): string {
@@ -47,19 +67,28 @@ function runExclusive<T>(fn: () => Promise<T>): Promise<T> {
   return next;
 }
 
+/** Уже использован слот на эту календарную дату (ключ как у `moscowCalendarDate`). */
+export function hasDayDrawSlotUsed(userId: number, calendarDayKey: string): Promise<boolean> {
+  return runExclusive(async () => {
+    const path = getDayDrawStatePath();
+    const state = await readState(path);
+    return state[String(userId)] === calendarDayKey;
+  });
+}
+
 /**
- * Резервирует «слот» карты дня на сегодня (UTC) для userId.
- * @returns `true`, если слот выдан (первое гадание за эти сутки); `false`, если сегодня уже брали.
+ * Резервирует «слот» карты дня на указанную календарную дату для userId.
+ * @returns `true`, если слот выдан впервые за эту дату; `false`, если дата уже была записана.
  */
-export function tryConsumeDayDrawSlot(userId: number, todayUtc: string): Promise<boolean> {
+export function tryConsumeDayDrawSlot(userId: number, calendarDayKey: string): Promise<boolean> {
   return runExclusive(async () => {
     const path = getDayDrawStatePath();
     const state = await readState(path);
     const key = String(userId);
-    if (state[key] === todayUtc) {
+    if (state[key] === calendarDayKey) {
       return false;
     }
-    state[key] = todayUtc;
+    state[key] = calendarDayKey;
     await writeState(path, state);
     return true;
   });

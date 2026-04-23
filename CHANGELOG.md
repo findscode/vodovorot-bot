@@ -4,6 +4,49 @@
 
 ## [Unreleased]
 
+## [1.10.0] — 2026-04-23
+
+Минорный релиз: устойчивее русский в толкованиях за счёт модели по умолчанию, промпта и температуры; документация по выбору модели.
+
+### Changed
+
+- **ИИ:** модель по умолчанию **`@cf/meta/llama-3.1-8b-instruct`** (Llama 3.1, мультиязычный instruct вместо Llama 3 8B); **`temperature` 0.85 → 0.72** для меньшего разброса формулировок и вкраплений не-русского.
+- **Промпты** (`SYSTEM_PROMPT` в `ai.ts`, `LANGUAGE_HINT` в `prompts.ts`): явная норма русского, запрет латиницы в обычном тексте и «переводного» порядка слов.
+
+### Docs
+
+- [docs/DEPLOY.md](docs/DEPLOY.md): дефолтная модель и примеры апгрейда качества (`llama-4-scout`, Mistral Small 3.1); [.env.example](.env.example), [docs/GLOSSARY.md](docs/GLOSSARY.md) — согласованы с новым дефолтом.
+
+### Оператору (по желанию)
+
+- Для **максимального** качества русского при готовности к большей цене/латентности задайте `CLOUDFLARE_AI_MODEL=@cf/mistralai/mistral-small-3.1-24b-instruct` или `@cf/meta/llama-4-scout-17b-16e-instruct` — см. [каталог Workers AI](https://developers.cloudflare.com/workers-ai/models/).
+
+## [1.9.0] — 2026-04-09
+
+Минорные изменения по [roadmap](docs/ROADMAP.md) v1.5.0–v1.9.0: лимит дня по Москве, слот после ИИ, промпты, логи ИИ, клавиатура после ответа, `/last`, документация.
+
+### Added
+
+- Календарная дата лимита «карта дня» в **`Europe/Moscow`** (или **`DAY_DRAW_TIMEZONE`**), функции `moscowCalendarDate`, `hasDayDrawSlotUsed`, тесты границы суток.
+- Команда **`/last`**: повтор последнего толкования из памяти процесса (`lastReadingStore.ts`, TTL ~24 ч, лимит длины текста).
+- Тихие ответы на **просроченные callback** (`answerCbQuerySafe`).
+
+### Changed
+
+- Слот «карта дня» **резервируется после успешной** генерации и отправки толкования; **debounce** 2.5 с и блокировка параллельного `day` на одного пользователя.
+- После последнего фрагмента толкования снова отправляется **inline-клавиатура** (`day` / `spread`).
+- **Промпты** (`ai.ts`, `prompts.ts`, `brandFormat.ts`): единый тон для новичка и опытного читателя; финальный абзац «размышление ≠ приговор»; усилен нейтральный намёк на перевёрнутую карту.
+- **ИИ:** префиксы логов **`[ai_success]`** / **`[ai_error]`**; в пользовательские сообщения не попадают URL и тело ответа API; таймаут обрабатывается отдельно от прочих сетевых ошибок.
+
+### Docs
+
+- [docs/DEPLOY.md](docs/DEPLOY.md): Москва, слот после успеха ИИ, `DAY_DRAW_TIMEZONE`, volatile-память `/last`, таблица команд BotFather.
+- [docs/BOTFATHER.md](docs/BOTFATHER.md), [.env.example](.env.example), [docs/PRIVACY.md](docs/PRIVACY.md): Москва, команда `last`.
+
+### Оператору (вручную)
+
+- В [@BotFather](https://t.me/BotFather) → **Edit Commands**: добавьте **`last`** (см. DEPLOY / BOTFATHER).
+
 ## [1.4.2] — 2026-04-09
 
 Патч: переработка текстов BotFather и PRIVACY в сухом фактическом стиле.
@@ -99,7 +142,9 @@
 
 Первая зафиксированная версия после PoC (текущее состояние бота).
 
-[Unreleased]: https://github.com/findscode/vodovorot-bot/compare/v1.4.2...HEAD
+[Unreleased]: https://github.com/findscode/vodovorot-bot/compare/v1.10.0...HEAD
+[1.10.0]: https://github.com/findscode/vodovorot-bot/compare/v1.9.0...v1.10.0
+[1.9.0]: https://github.com/findscode/vodovorot-bot/compare/v1.4.2...v1.9.0
 [1.4.2]: https://github.com/findscode/vodovorot-bot/compare/v1.4.1...v1.4.2
 [1.4.1]: https://github.com/findscode/vodovorot-bot/compare/v1.4.0...v1.4.1
 [1.4.0]: https://github.com/findscode/vodovorot-bot/compare/v1.3.0...v1.4.0

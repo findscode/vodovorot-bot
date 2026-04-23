@@ -1,8 +1,8 @@
 # Roadmap: минорные релизы
 
-План улучшений **без** ветвления UX по уровню опыта пользователя. Сутки для лимита «карты дня» — **календарные в Europe/Moscow**. Бот — **только личные сообщения** (private).
+План улучшений **без** ветвления UX по уровню опыта пользователя. Сутки для лимита «карты дня» — **календарные** в часовом поясе **`Europe/Moscow`** (или `DAY_DRAW_TIMEZONE`). Бот — **только личные сообщения** (private).
 
-Текущая базовая версия в репозитории на момент составления плана: **1.3.0** (см. [CHANGELOG.md](../CHANGELOG.md)).
+**Текущая версия в репозитории:** **1.9.0** — [CHANGELOG.md](../CHANGELOG.md), `package.json`. Milestone **v1.4.0–v1.9.0** из этого файла **реализованы**; сводка — в разделе [«Статус реализации»](#статус-реализации) ниже.
 
 ## GitHub: milestones и issues
 
@@ -25,6 +25,28 @@
 | v1.9-1     | [#20](https://github.com/findscode/vodovorot-bot/issues/20) |
 
 Зависимости в комментариях: [#13](https://github.com/findscode/vodovorot-bot/issues/13) блокируется [#12](https://github.com/findscode/vodovorot-bot/issues/12); [#10](https://github.com/findscode/vodovorot-bot/issues/10) согласовать с [#9](https://github.com/findscode/vodovorot-bot/issues/9).
+
+## Статус реализации
+
+| ID | Сделано | Где смотреть |
+| -- | ------- | ------------ |
+| **v1.4-1** | ✅ | `src/bot.ts`: middleware, для не-`private` — ранний выход без `next()`; [DEPLOY.md](./DEPLOY.md) — бот только для ЛС |
+| **v1.4-2** | ✅ | `bot.command('help')`, `helpTextHtml` в `src/botCopy.ts` |
+| **v1.4-3** | ✅ | Общие тексты в `src/botCopy.ts`; лимит согласован с Москвой (v1.5) |
+| **v1.4-4** | ✅ | `src/typingIndicator.ts` → `withTypingWhile` в хендлерах `day` / `spread` |
+| **v1.5-1** | ✅ | `moscowCalendarDate`, `getDayDrawTimezone`, `DAY_DRAW_TIMEZONE`, `Intl`; `src/dayDrawState.ts`, тесты |
+| **v1.5-2** | ✅ | `botCopy.ts`, [DEPLOY.md](./DEPLOY.md), [.env.example](../.env.example), [CHANGELOG 1.9.0](../CHANGELOG.md#190--2026-04-09); UTC убран из пользовательских формулировок |
+| **v1.6-1** | ✅ | `src/ai.ts` (`SYSTEM_PROMPT`), `src/prompts.ts`, `src/brandFormat.ts`; финальная «рамка» в промпте |
+| **v1.7-1** | ✅ | Слот после успеха ИИ + `hasDayDrawSlotUsed`; debounce 2.5 с, `dayInFlight`; [DEPLOY.md](./DEPLOY.md) |
+| **v1.7-2** | ✅ | Дружелюбные ответы в `bot.ts`; `[ai_success]` / `[ai_error]` в `ai.ts`; таймаут `AbortError` |
+| **v1.8-1** | ✅ | Последний чанк толкования с `keyboardFor(ctx)` в `sendReadingChunks` |
+| **v1.8-2** | ✅ | `answerCbQuerySafe`; комментарий в [DEPLOY.md](./DEPLOY.md) (просроченные callback) |
+| **v1.8-3** | ✅ | Таблица команд в [DEPLOY.md](./DEPLOY.md); расширено командой `last` (v1.9); детали — [BOTFATHER.md](./BOTFATHER.md) |
+| **v1.9-1** | ✅ | `src/lastReadingStore.ts`, `/last`, TTL ~24 ч; help и DEPLOY обновлены |
+
+**Уточнение по v1.4-1:** в критериях «не передавать дальше в бизнес-логику» достигается **без** вызова `next()` для групп/каналов (тихий `return`).
+
+**Релизы:** v1.4.x — [CHANGELOG 1.4.0–1.4.2](../CHANGELOG.md); единый минор **1.9.0** — закрытие v1.5–v1.9 (и донастройка связанного копирайта).
 
 ## Как использовать с агентом или в GitHub Issues
 
@@ -177,7 +199,7 @@
 | ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
 | **Title**               | `docs: BotFather — описание бота и список команд`                                                                                      |
 | **Labels**              | `docs`                                                                                                                                 |
-| **Acceptance criteria** | - [ ] В `docs/DEPLOY.md` таблица или список: что вписать в BotFather после появления `/help`<br>- [ ] Команды: `start`, `menu`, `help` |
+| **Acceptance criteria** | - [x] В `docs/DEPLOY.md` таблица команд для BotFather<br>- [x] Команды: `start`, `menu`, `help`; с v1.9 также `last` (см. DEPLOY и BOTFATHER) |
 
 ---
 
@@ -197,14 +219,14 @@
 
 ## Сводная таблица версий
 
-| Версия    | Фокус                           | Ключевые issues |
-| --------- | ------------------------------- | --------------- |
-| **1.4.0** | Private, help, копирайт, typing | v1.4-1 … v1.4-4 |
-| **1.5.0** | Москва для лимита дня           | v1.5-1, v1.5-2  |
-| **1.6.0** | Промпты, единый тон             | v1.6-1          |
-| **1.7.0** | Слот после ИИ, ошибки           | v1.7-1, v1.7-2  |
-| **1.8.0** | Клавиатура, callback, BotFather | v1.8-1 … v1.8-3 |
-| **1.9.0** | `/last`                         | v1.9-1          |
+| Версия    | Фокус                           | Ключевые issues | Статус в репо      |
+| --------- | ------------------------------- | --------------- | ------------------ |
+| **1.4.x** | Private, help, копирайт, typing | v1.4-1 … v1.4-4 | Выпущено (1.4.0+)  |
+| **1.5.0** | Москва для лимита дня           | v1.5-1, v1.5-2  | Выпущено в **1.9.0** |
+| **1.6.0** | Промпты, единый тон             | v1.6-1          | Выпущено в **1.9.0** |
+| **1.7.0** | Слот после ИИ, ошибки           | v1.7-1, v1.7-2  | Выпущено в **1.9.0** |
+| **1.8.0** | Клавиатура, callback, BotFather | v1.8-1 … v1.8-3 | Выпущено в **1.9.0** |
+| **1.9.0** | `/last`                         | v1.9-1          | Текущая `version`  |
 
 ---
 
@@ -214,4 +236,6 @@
 - [DEPLOY.md](./DEPLOY.md) — переменные окружения и деплой
 - [CHANGELOG.md](../CHANGELOG.md) — история версий
 
-При завершении каждого milestone обновляйте этот файл: отмечайте выполненные issues или удаляйте их в пользу ссылок на PR/GitHub issues.
+Для **новых** эпиков после 1.9.0: добавляйте milestone/issue по тому же шаблону и обновляйте этот файл (таблицу статуса, сводку версий, [CHANGELOG](../CHANGELOG.md)).
+
+**Верификация документации (1.9.0):** лимит дня и `DAY_DRAW_TIMEZONE` — [DEPLOY.md](./DEPLOY.md), [.env.example](../.env.example); команды и тексты BotFather — [BOTFATHER.md](./BOTFATHER.md); данные и `/last` — [PRIVACY.md](./PRIVACY.md); тон и формат ответа модели — [BRAND-GUIDE.md](./BRAND-GUIDE.md) ↔ `brandFormat.ts` / `prompts.ts`.
