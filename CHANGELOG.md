@@ -4,6 +4,13 @@
 
 ## [Unreleased]
 
+## [2.0.3] — 2026-04-23
+
+### Changed
+
+- **Копирайт:** единый стиль **на «ты»** во всех пользовательских сообщениях из `botCopy.ts`, согласованы формулировки лимита, доступа, промокодов, ожидания и ошибок ИИ; повторяющиеся фразы вынесены в константы (`READING_BUILDING_MESSAGE`, `AI_TEXT_UNAVAILABLE_MESSAGE` и др.).
+- **Документация:** [docs/BRAND-GUIDE.md](docs/BRAND-GUIDE.md), [docs/BOTFATHER.md](docs/BOTFATHER.md), [docs/DEPLOY.md](docs/DEPLOY.md), [docs/PRIVACY.md](docs/PRIVACY.md) — в духе тех же формулировок (без противоречий с чатом).
+
 ## [2.0.2] — 2026-04-23
 
 ### Changed
@@ -183,7 +190,8 @@
 
 Первая зафиксированная версия после PoC (текущее состояние бота).
 
-[Unreleased]: https://github.com/findscode/vodovorot-bot/compare/v2.0.2...HEAD
+[Unreleased]: https://github.com/findscode/vodovorot-bot/compare/v2.0.3...HEAD
+[2.0.3]: https://github.com/findscode/vodovorot-bot/compare/v2.0.2...v2.0.3
 [2.0.2]: https://github.com/findscode/vodovorot-bot/compare/v2.0.1...v2.0.2
 [2.0.1]: https://github.com/findscode/vodovorot-bot/compare/v2.0.0...v2.0.1
 [2.0.0]: https://github.com/findscode/vodovorot-bot/compare/v1.10.0...v2.0.0

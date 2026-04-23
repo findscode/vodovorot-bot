@@ -7,6 +7,7 @@ import {
   markDayPushHandledSync,
   setDayPushEnabled,
 } from './db/usersRepo.js';
+import { DAY_PUSH_AI_UNAVAILABLE_MESSAGE } from './botCopy.js';
 import { moscowCalendarDate, getDayDrawTimezone } from './dayDrawState.js';
 import { isAtOrPastLocalHm } from './pushSchedule.js';
 import { withTelegramTypingWhile } from './typingIndicator.js';
@@ -44,10 +45,7 @@ async function runDueDayPushes(bot: Telegraf): Promise<void> {
         markDayPushHandledSync(uid, todayKey);
       } else if (result === 'ai_error') {
         try {
-          await bot.telegram.sendMessage(
-            uid,
-            'Сегодня не удалось получить толкование для карты дня. Завтра пришлю снова, если подписка включена.',
-          );
+          await bot.telegram.sendMessage(uid, DAY_PUSH_AI_UNAVAILABLE_MESSAGE);
         } catch (sendErr) {
           console.error('[day_push] не удалось отправить сообщение об ошибке ИИ user', uid, sendErr);
         }

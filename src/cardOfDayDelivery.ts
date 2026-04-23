@@ -9,7 +9,11 @@ import { formatReadingForTelegram, TELEGRAM_HTML_PARSE } from './readingTelegram
 import { splitForTelegram } from './telegramChunks.js';
 import { countDayDrawSlotsForUserSync, tryConsumeDayDrawSlotSync } from './db/dayDrawSlotsRepo.js';
 import { saveLastReading } from './lastReadingStore.js';
-import { FIRST_DAY_PUSH_FOOTER_HTML } from './botCopy.js';
+import {
+  CARD_DAY_IMAGE_UNAVAILABLE_MESSAGE,
+  FIRST_DAY_PUSH_FOOTER_HTML,
+  READING_BUILDING_MESSAGE,
+} from './botCopy.js';
 import { keyboardAfterDayReading, keyboardSubscribeDayPushOnly } from './botKeyboards.js';
 import { moscowCalendarDate } from './dayDrawState.js';
 
@@ -29,10 +33,7 @@ async function sendCardFaceMessage(
       caption: line.slice(0, TG_CAPTION_MAX),
     });
   } else {
-    await telegram.sendMessage(
-      chatId,
-      `${line}\n\nКартинку карты сейчас не показать — толкование всё равно пришлю ниже.`,
-    );
+    await telegram.sendMessage(chatId, `${line}\n\n${CARD_DAY_IMAGE_UNAVAILABLE_MESSAGE}`);
   }
 }
 
@@ -99,7 +100,7 @@ export async function deliverCardOfDayReading(
     await sendDayReadingChunks(telegram, chatId, rawText, { firstLifetimeManualDayDraw: false });
   } else {
     await sendCardFaceMessage(telegram, chatId, drawn, line);
-    await telegram.sendMessage(chatId, 'Секунду, собираю текст толкования…');
+    await telegram.sendMessage(chatId, READING_BUILDING_MESSAGE);
     let rawText: string;
     try {
       rawText = await withTypingLoop(() => completeChat(cardOfDayPrompt(drawn, voice)));

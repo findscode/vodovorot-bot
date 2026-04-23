@@ -6,6 +6,7 @@ import { migrateLegacyDayDrawJsonIfNeeded } from './db/migrateLegacyDayDraw.js';
 import { seedAdminsFromEnv } from './db/seedAdmins.js';
 import {
   ACCESS_DENIED_MESSAGE,
+  AI_TEXT_UNAVAILABLE_MESSAGE,
   DAY_LIMIT_MESSAGE,
   helpTextHtml,
   isPublicEntryCommand,
@@ -13,9 +14,12 @@ import {
   menuTextFull,
   menuTextLimited,
   PROMO_MESSAGES,
+  READING_BUILDING_MESSAGE,
+  SPREAD_IMAGES_UNAVAILABLE_SUFFIX,
   startTextFull,
   startTextLimited,
   SUBSCRIBE_MESSAGES,
+  WHITELIST_NO_SPREAD_ACCESS_CALLBACK,
 } from './botCopy.js';
 import { loadOptionalAccessWhitelist } from './accessWhitelist.js';
 import { setAccessWhitelist } from './runtimeConfig.js';
@@ -138,7 +142,7 @@ bot.use(async (ctx, next) => {
     console.log('[whitelist] отклонено обновление без ctx.from');
   }
   if (ctx.callbackQuery) {
-    await answerCbQuerySafe(ctx, 'Нет доступа.', false);
+    await answerCbQuerySafe(ctx, WHITELIST_NO_SPREAD_ACCESS_CALLBACK, false);
     return;
   }
   if (ctx.message) {
@@ -272,13 +276,13 @@ bot.action('day', async (ctx) => {
       (task) => withTypingWhile(ctx, task),
     );
     if (result === 'ai_error') {
-      await ctx.reply('Сейчас текст не удалось получить. Попробуй ещё раз чуть позже.');
+      await ctx.reply(AI_TEXT_UNAVAILABLE_MESSAGE);
     } else if (result === 'slot_race') {
       console.warn('[day] слот не зарезервирован после успеха (гонка)');
     }
   } catch (e) {
     logHandlerError('day', e);
-    await ctx.reply('Сейчас текст не удалось получить. Попробуй ещё раз чуть позже.');
+    await ctx.reply(AI_TEXT_UNAVAILABLE_MESSAGE);
   } finally {
     dayInFlight.delete(uid);
   }
@@ -302,13 +306,11 @@ bot.action('spread', async (ctx) => {
     const photo = await spreadCompositePhotoInput(cards);
     await ctx.replyWithPhoto(photo, { caption: cap });
   } else {
-    await ctx.reply(
-      `${header}\n\nКартинки карт сейчас недоступны — ниже пришлю толкование по тексту расклада.`,
-    );
+    await ctx.reply(`${header}\n\n${SPREAD_IMAGES_UNAVAILABLE_SUFFIX}`);
   }
 
   const voice = drawVoiceArchetype();
-  await ctx.reply('Секунду, собираю текст толкования…');
+  await ctx.reply(READING_BUILDING_MESSAGE);
   try {
     const text = await withTypingWhile(ctx, () =>
       completeChat(pastPresentFuturePrompt(cards, voice)),
@@ -316,7 +318,7 @@ bot.action('spread', async (ctx) => {
     await sendReadingChunks(ctx, text, uid);
   } catch (e) {
     logHandlerError('spread', e);
-    await ctx.reply('Сейчас текст не удалось получить. Попробуй ещё раз чуть позже.');
+    await ctx.reply(AI_TEXT_UNAVAILABLE_MESSAGE);
   }
 });
 
