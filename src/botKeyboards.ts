@@ -1,4 +1,6 @@
 import { Markup } from 'telegraf';
+import { formatHhmmForUser } from './calendarDayUserPhrases.js';
+import { DAY_PUSH_HHMM_PRESETS } from './dayPushPresets.js';
 import { hasFullSpreadAccess } from './accessResolve.js';
 import { isDayPushEnabledSync } from './db/usersRepo.js';
 
@@ -36,4 +38,16 @@ export function keyboardSubscribeDayPushOnly() {
   return Markup.inlineKeyboard([
     [Markup.button.callback('Присылать каждый день', 'day_sub_on')],
   ]);
+}
+
+/** Пресеты времени ежедневной рассылки (callback <code>pt:HH:MM</code>). */
+export function keyboardDayPushTimePresets() {
+  const buttons = DAY_PUSH_HHMM_PRESETS.map((hm) =>
+    Markup.button.callback(formatHhmmForUser(hm), `pt:${hm}`),
+  );
+  const rows: ReturnType<typeof Markup.button.callback>[][] = [];
+  for (let i = 0; i < buttons.length; i += 4) {
+    rows.push(buttons.slice(i, i + 4));
+  }
+  return Markup.inlineKeyboard(rows);
 }

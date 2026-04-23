@@ -28,4 +28,10 @@ CREATE TABLE IF NOT EXISTS promo_codes (
 );
 
 CREATE INDEX IF NOT EXISTS idx_users_day_push ON users (day_push_enabled);
+
+CREATE TABLE IF NOT EXISTS last_readings (
+  telegram_user_id INTEGER PRIMARY KEY NOT NULL,
+  plain_text TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
 `;

@@ -1,33 +1,31 @@
-/** In-memory последнее толкование на пользователя (сырой текст модели); после рестарта процесса пусто. */
+/**
+ * Последний сырой текст толкования для /last — в SQLite (переживает перезапуск процесса).
+ */
 
-const TTL_MS = 24 * 60 * 60 * 1000;
+import { getDb } from './db/database.js';
+
 const MAX_TEXT_LENGTH = 12_000;
 
-const store = new Map<number, { text: string; expiresAt: number }>();
-
-function pruneExpired(): void {
-  const t = Date.now();
-  for (const [id, v] of store) {
-    if (v.expiresAt <= t) store.delete(id);
-  }
+function isoNow(): string {
+  return new Date().toISOString();
 }
 
 export function saveLastReading(userId: number, rawReadingPlain: string): void {
-  pruneExpired();
   const text =
     rawReadingPlain.length > MAX_TEXT_LENGTH
       ? `${rawReadingPlain.slice(0, MAX_TEXT_LENGTH)}…`
       : rawReadingPlain;
-  store.set(userId, { text, expiresAt: Date.now() + TTL_MS });
+  const db = getDb();
+  db.prepare(
+    `INSERT INTO last_readings (telegram_user_id, plain_text, updated_at)
+     VALUES (?, ?, ?)
+     ON CONFLICT(telegram_user_id) DO UPDATE SET plain_text = excluded.plain_text, updated_at = excluded.updated_at`,
+  ).run(userId, text, isoNow());
 }
 
 export function getLastReading(userId: number): string | null {
-  pruneExpired();
-  const v = store.get(userId);
-  if (!v) return null;
-  if (v.expiresAt <= Date.now()) {
-    store.delete(userId);
-    return null;
-  }
-  return v.text;
+  const row = getDb()
+    .prepare('SELECT plain_text FROM last_readings WHERE telegram_user_id = ?')
+    .get(userId) as { plain_text: string } | undefined;
+  return row?.plain_text ?? null;
 }

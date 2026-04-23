@@ -15,6 +15,8 @@ describe('botCopy', () => {
     expect(isPublicEntryCommand('/promo@MyBot')).toBe(true);
     expect(isPublicEntryCommand('/status')).toBe(true);
     expect(isPublicEntryCommand('/status@MyBot')).toBe(true);
+    expect(isPublicEntryCommand('/pushtime')).toBe(true);
+    expect(isPublicEntryCommand('/pushtime@MyBot')).toBe(true);
     expect(isPublicEntryCommand('hello')).toBe(false);
     expect(isPublicEntryCommand(undefined)).toBe(false);
   });

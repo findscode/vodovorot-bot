@@ -2,7 +2,7 @@
 
 **Водоворот** (_Vodovorot_) — Telegram-бот для раскладов Таро. Этот документ задаёт, **как мы говорим с человеком** и **как выглядит готовое толкование** в чате.
 
-Реализация формата ответов модели: `src/brandFormat.ts` → `prompts.ts`; общий тон и язык: `src/ai.ts` (`SYSTEM_PROMPT`). Сообщения самого бота (приветствие, ожидание, ошибки): `src/botCopy.ts` и `src/bot.ts`. Фразы про **границу календарных суток** и время рассылки (без сырого IANA в чате): `src/calendarDayUserPhrases.ts`; сводка для пользователя: **`/status`** (`src/statusCopy.ts`).
+Реализация формата ответов модели: `src/brandFormat.ts` → `prompts.ts`; общий тон и язык: `src/ai.ts` (`SYSTEM_PROMPT`). Сообщения самого бота (приветствие, ожидание, ошибки): `src/botCopy.ts` и `src/bot.ts`. Фразы про **границу календарных суток** и время рассылки (без сырого IANA в чате): `src/calendarDayUserPhrases.ts`; сводка для пользователя: **`/status`** (`src/statusCopy.ts`). Пресеты времени рассылки: `src/dayPushPresets.ts`, клавиатура — `src/botKeyboards.ts`.
 
 **Профиль бота в Telegram:** поля About, Description, Privacy Policy URL и команды — в [docs/BOTFATHER.md](BOTFATHER.md) (формулировки **деловые, без рекламного тона**); политика для URL — [docs/PRIVACY.md](PRIVACY.md).
 

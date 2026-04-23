@@ -17,6 +17,9 @@ import {
   menuTextFull,
   menuTextLimited,
   PROMO_MESSAGES,
+  PUSHTIME_NEED_SUBSCRIPTION_HTML,
+  PUSHTIME_PICK_PROMPT_HTML,
+  pushtimeSavedMessageHtml,
   READING_BUILDING_MESSAGE,
   SPREAD_DONE_HINT,
   SPREAD_IMAGES_UNAVAILABLE_SUFFIX,
@@ -45,8 +48,15 @@ import { withTypingWhile } from './typingIndicator.js';
 import { getLastReading, saveLastReading } from './lastReadingStore.js';
 import { getDatabasePath } from './db/database.js';
 import { deliverCardOfDayReading } from './cardOfDayDelivery.js';
-import { keyboardMainOrDayOnly } from './botKeyboards.js';
-import { setDayPushEnabled, tryRedeemPromoCodeSync } from './db/usersRepo.js';
+import { isAllowedDayPushHhmm } from './dayPushPresets.js';
+import { keyboardDayPushTimePresets, keyboardMainOrDayOnly } from './botKeyboards.js';
+import {
+  getDayPushScheduleForUserSync,
+  isDayPushEnabledSync,
+  setDayPushEnabled,
+  setDayPushLocalHhmmSync,
+  tryRedeemPromoCodeSync,
+} from './db/usersRepo.js';
 import { startDayPushScheduler } from './dayPushScheduler.js';
 import { getDefaultDayPushHhmm } from './dayPushConfig.js';
 import { splitForTelegram } from './telegramChunks.js';
@@ -135,7 +145,7 @@ bot.use(async (ctx, next) => {
   const cq = ctx.callbackQuery;
   if (cq && 'data' in cq) {
     const d = cq.data;
-    if (d === 'day' || d === 'day_sub_on' || d === 'day_sub_off') {
+    if (d === 'day' || d === 'day_sub_on' || d === 'day_sub_off' || /^pt:\d{2}:\d{2}$/.test(d)) {
       return next();
     }
   }
@@ -196,6 +206,25 @@ bot.command('status', async (ctx) => {
   });
 });
 
+bot.command('pushtime', async (ctx) => {
+  const uid = ctx.from?.id;
+  if (uid === undefined) return;
+  if (!isDayPushEnabledSync(uid)) {
+    await ctx.reply(PUSHTIME_NEED_SUBSCRIPTION_HTML, {
+      ...keyboardMainOrDayOnly(uid),
+      ...TELEGRAM_HTML_PARSE,
+    });
+    return;
+  }
+  await ctx.reply(
+    `${PUSHTIME_PICK_PROMPT_HTML}\n\nРасклады снова — <code>/menu</code>.`,
+    {
+      ...keyboardDayPushTimePresets(),
+      ...TELEGRAM_HTML_PARSE,
+    },
+  );
+});
+
 bot.command('last', async (ctx) => {
   const uid = ctx.from?.id;
   if (uid === undefined) return;
@@ -247,6 +276,35 @@ bot.action('day_sub_on', async (ctx) => {
   const hhmm = getDefaultDayPushHhmm();
   setDayPushEnabled(uid, true, tz, hhmm);
   await ctx.reply(subscribeEnabledMessageHtml(hhmm, tz), {
+    ...keyboardMainOrDayOnly(uid),
+    ...TELEGRAM_HTML_PARSE,
+  });
+  await ctx.reply(
+    `${PUSHTIME_PICK_PROMPT_HTML}\n\nРасклады — <code>/menu</code>.`,
+    {
+      ...keyboardDayPushTimePresets(),
+      ...TELEGRAM_HTML_PARSE,
+    },
+  );
+});
+
+bot.action(/^pt:(\d{2}:\d{2})$/, async (ctx) => {
+  const uid = ctx.from?.id;
+  if (uid === undefined) return;
+  const hhmm = ctx.match?.[1];
+  if (!hhmm || !isAllowedDayPushHhmm(hhmm)) {
+    await answerCbQuerySafe(ctx, 'Это время недоступно.', true);
+    return;
+  }
+  const ok = setDayPushLocalHhmmSync(uid, hhmm);
+  if (!ok) {
+    await answerCbQuerySafe(ctx, 'Сначала включи рассылку.', true);
+    return;
+  }
+  await answerCbQuerySafe(ctx, 'Готово.');
+  const row = getDayPushScheduleForUserSync(uid);
+  const tz = row?.timezoneIana ?? getDayDrawTimezone();
+  await ctx.reply(pushtimeSavedMessageHtml(hhmm, tz), {
     ...keyboardMainOrDayOnly(uid),
     ...TELEGRAM_HTML_PARSE,
   });

@@ -4,6 +4,30 @@
 
 ## [Unreleased]
 
+## [2.2.0] — 2026-04-23
+
+Минорный релиз: **выбор времени рассылки** пресетами и **`/pushtime`**, **`/last`** в **SQLite** (переживает перезапуск).
+
+### Added
+
+- Таблица **`last_readings`** в SQLite: последний сырой текст толкования для **`/last`** (как и раньше, без имени и промпта в этой строке).
+- Пресеты времени рассылки **07:00–12:00, 18:00, 21:00**; callback **`pt:HH:MM`**; команда **`/pushtime`** и второе сообщение после включения подписки с кнопками выбора.
+- **`setDayPushLocalHhmmSync`** в `usersRepo`: смена `day_push_local_hhmm` только при активной подписке и значении из пресетов.
+- Модуль **`dayPushPresets.ts`**: допустимые часы; **`snapDayPushHhmmToPreset`** для `DAY_PUSH_DEFAULT_HHMM`, если в env указано не из пресетов.
+
+### Changed
+
+- **`getDefaultDayPushHhmm`**: значение из env приводится к ближайшему пресету.
+- Копирайт **`/help`**, **`LAST_EMPTY_MESSAGE`**, ответ после подписки — в соответствии с хранением `/last` и выбором времени.
+
+### Docs
+
+- [docs/PRIVACY.md](docs/PRIVACY.md), [docs/DEPLOY.md](docs/DEPLOY.md), [docs/BOTFATHER.md](docs/BOTFATHER.md), [docs/ROADMAP.md](docs/ROADMAP.md), [.env.example](.env.example).
+
+### Оператору (вручную)
+
+- В [@BotFather](https://t.me/BotFather) → **Edit Commands**: добавьте **`pushtime`** (см. [docs/BOTFATHER.md](docs/BOTFATHER.md)).
+
 ## [2.1.0] — 2026-04-23
 
 Минорный релиз: **ясность суток и времени**, команда **`/status`**, ответы при «лишних» нажатиях, дружелюбнее ошибки и подсказки после расклада.
@@ -215,7 +239,8 @@
 
 Первая зафиксированная версия после PoC (текущее состояние бота).
 
-[Unreleased]: https://github.com/findscode/vodovorot-bot/compare/v2.1.0...HEAD
+[Unreleased]: https://github.com/findscode/vodovorot-bot/compare/v2.2.0...HEAD
+[2.2.0]: https://github.com/findscode/vodovorot-bot/compare/v2.1.0...v2.2.0
 [2.1.0]: https://github.com/findscode/vodovorot-bot/compare/v2.0.3...v2.1.0
 [2.0.3]: https://github.com/findscode/vodovorot-bot/compare/v2.0.2...v2.0.3
 [2.0.2]: https://github.com/findscode/vodovorot-bot/compare/v2.0.1...v2.0.2

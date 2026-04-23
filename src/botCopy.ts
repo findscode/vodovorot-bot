@@ -57,7 +57,7 @@ export function dayLimitMessage(): string {
 }
 
 export const LAST_EMPTY_MESSAGE =
-  'Пока нечего повторить: сначала сделай расклад. Текст держу недолго — если хочешь сохранить, перешли себе последнее сообщение с разбором. Если прошло много часов — сделай новый расклад.';
+  'Пока нечего повторить: сначала сделай расклад. Последний разбор хранится в базе и переживает перезапуск; если нужна своя копия — перешли себе сообщение из чата.';
 
 /** После первого в жизни «на день»: одна кнопка подписки и пояснение. */
 export const FIRST_DAY_PUSH_FOOTER_HTML =
@@ -71,7 +71,20 @@ export const SUBSCRIBE_MESSAGES = {
 export function subscribeEnabledMessageHtml(hhmm: string, tzIana: string): string {
   const t = formatHhmmForUser(hhmm);
   const p = phrasesForIanaTimezone(tzIana);
-  return `<b>Ок</b>, подписка включена. Ориентир по времени — около ${t} (${p.pushClockInstrumental}). Отписаться — кнопкой под следующим разбором.`;
+  return `<b>Ок</b>, подписка включена. Ориентир по времени — около ${t} (${p.pushClockInstrumental}). Отписаться — кнопкой под следующим разбором.\n\nСменить время — <code>/pushtime</code> или кнопками в следующем сообщении.`;
+}
+
+/** Второе сообщение после подписки: выбор времени. */
+export const PUSHTIME_PICK_PROMPT_HTML =
+  'Выбери время первой рассылки (потом всегда можно через <code>/pushtime</code>):';
+
+export const PUSHTIME_NEED_SUBSCRIPTION_HTML =
+  'Сначала включи рассылку кнопкой <b>«Присылать каждый день»</b> под разбором «на день».';
+
+export function pushtimeSavedMessageHtml(hhmm: string, tzIana: string): string {
+  const t = formatHhmmForUser(hhmm);
+  const p = phrasesForIanaTimezone(tzIana);
+  return `<b>Запомнил</b>: рассылка около ${t} (${p.pushClockInstrumental}).`;
 }
 
 export const PROMO_MESSAGES = {
@@ -117,14 +130,15 @@ export function helpTextHtml(opts: { fullAccess: boolean }): string {
 /menu — снова показать кнопки раскладов
 /help — эта справка
 /status — что сейчас доступно, подписка и Premium
-/last — повторить последний разбор (коротко хранится в этой переписке; надолго — перешли сообщение себе)
+/last — повторить последний разбор (хранится в базе)
+/pushtime — время ежедневной рассылки (когда подписка включена)
 /promo КОД — активировать одноразовый промокод Premium
 
 <b>Расклады</b>
 ${dayLine}${spreadLine}
 
 <b>Подписка на «карту дня»</b>
-После разбора «на день» можно включить ежедневную отправку кнопкой «Присылать каждый день». Один раз в сутки — и на ручной запрос, и на рассылку. Время в ответе после включения — ориентир для следующих писем.
+После разбора «на день» можно включить ежедневную отправку кнопкой «Присылать каждый день». Один раз в сутки — и на ручной запрос, и на рассылку. Время рассылки — пресеты в чате или команда <code>/pushtime</code>.
 
 <b>Важно</b>
 ${DISCLAIMER_HELP}`;
@@ -139,6 +153,7 @@ export function isPublicEntryCommand(text: string | undefined): boolean {
     /^\/help(?:@\S+)?(?:\s|$)/i.test(t) ||
     /^\/status(?:@\S+)?(?:\s|$)/i.test(t) ||
     /^\/last(?:@\S+)?(?:\s|$)/i.test(t) ||
-    /^\/promo(?:@\S+)?(?:\s|$)/i.test(t)
+    /^\/promo(?:@\S+)?(?:\s|$)/i.test(t) ||
+    /^\/pushtime(?:@\S+)?(?:\s|$)/i.test(t)
   );
 }

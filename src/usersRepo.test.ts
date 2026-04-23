@@ -8,6 +8,7 @@ import {
   getActivePremiumUntilSync,
   getDayPushScheduleForUserSync,
   setDayPushEnabled,
+  setDayPushLocalHhmmSync,
   tryRedeemPromoCodeSync,
   userHasPremiumOrAdminSync,
 } from './db/usersRepo.js';
@@ -39,13 +40,21 @@ describe('usersRepo / promo', () => {
   });
 
   it('getDayPushScheduleForUserSync после включения подписки', () => {
-    setDayPushEnabled(3001, true, 'Europe/Moscow', '10:30');
+    setDayPushEnabled(3001, true, 'Europe/Moscow', '10:00');
     expect(getDayPushScheduleForUserSync(3001)).toEqual({
-      hhmm: '10:30',
+      hhmm: '10:00',
       timezoneIana: 'Europe/Moscow',
     });
     setDayPushEnabled(3001, false, 'Europe/Moscow');
     expect(getDayPushScheduleForUserSync(3001)).toBeNull();
+  });
+
+  it('setDayPushLocalHhmmSync только при включённой подписке и пресете', () => {
+    expect(setDayPushLocalHhmmSync(3002, '09:00')).toBe(false);
+    setDayPushEnabled(3002, true, 'Europe/Moscow', '09:00');
+    expect(setDayPushLocalHhmmSync(3002, '21:00')).toBe(true);
+    expect(getDayPushScheduleForUserSync(3002)?.hhmm).toBe('21:00');
+    expect(setDayPushLocalHhmmSync(3002, '09:30')).toBe(false);
   });
 
   it('getActivePremiumUntilSync возвращает дату в будущем', () => {
