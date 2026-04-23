@@ -5,9 +5,12 @@ import { initDatabase } from './db/database.js';
 import { migrateLegacyDayDrawJsonIfNeeded } from './db/migrateLegacyDayDraw.js';
 import { seedAdminsFromEnv } from './db/seedAdmins.js';
 import {
-  ACCESS_DENIED_MESSAGE,
+  accessDeniedMessage,
+  AI_TEXT_UNAVAILABLE_AFTER_CARD_MESSAGE,
   AI_TEXT_UNAVAILABLE_MESSAGE,
-  DAY_LIMIT_MESSAGE,
+  DAY_DEBOUNCE_MESSAGE,
+  DAY_IN_FLIGHT_MESSAGE,
+  dayLimitMessage,
   helpTextHtml,
   isPublicEntryCommand,
   LAST_EMPTY_MESSAGE,
@@ -15,10 +18,12 @@ import {
   menuTextLimited,
   PROMO_MESSAGES,
   READING_BUILDING_MESSAGE,
+  SPREAD_DONE_HINT,
   SPREAD_IMAGES_UNAVAILABLE_SUFFIX,
   startTextFull,
   startTextLimited,
   SUBSCRIBE_MESSAGES,
+  subscribeEnabledMessageHtml,
   WHITELIST_NO_SPREAD_ACCESS_CALLBACK,
 } from './botCopy.js';
 import { loadOptionalAccessWhitelist } from './accessWhitelist.js';
@@ -45,6 +50,7 @@ import { setDayPushEnabled, tryRedeemPromoCodeSync } from './db/usersRepo.js';
 import { startDayPushScheduler } from './dayPushScheduler.js';
 import { getDefaultDayPushHhmm } from './dayPushConfig.js';
 import { splitForTelegram } from './telegramChunks.js';
+import { statusTextHtml } from './statusCopy.js';
 
 const TG_CAPTION_MAX = 1024;
 const DAY_ACTION_DEBOUNCE_MS = 2500;
@@ -146,7 +152,7 @@ bot.use(async (ctx, next) => {
     return;
   }
   if (ctx.message) {
-    await ctx.reply(ACCESS_DENIED_MESSAGE);
+    await ctx.reply(accessDeniedMessage());
   }
 });
 
@@ -177,6 +183,15 @@ bot.command('help', async (ctx) => {
   const full = hasFullSpreadAccess(ctx.from?.id);
   await ctx.reply(helpTextHtml({ fullAccess: full }), {
     ...keyboardMainOrDayOnly(ctx.from?.id),
+    ...TELEGRAM_HTML_PARSE,
+  });
+});
+
+bot.command('status', async (ctx) => {
+  const uid = ctx.from?.id;
+  if (uid === undefined) return;
+  await ctx.reply(statusTextHtml(uid), {
+    ...keyboardMainOrDayOnly(uid),
     ...TELEGRAM_HTML_PARSE,
   });
 });
@@ -228,8 +243,10 @@ bot.action('day_sub_on', async (ctx) => {
   await answerCbQuerySafe(ctx);
   const uid = ctx.from?.id;
   if (uid === undefined) return;
-  setDayPushEnabled(uid, true, getDayDrawTimezone(), getDefaultDayPushHhmm());
-  await ctx.reply(SUBSCRIBE_MESSAGES.on, {
+  const tz = getDayDrawTimezone();
+  const hhmm = getDefaultDayPushHhmm();
+  setDayPushEnabled(uid, true, tz, hhmm);
+  await ctx.reply(subscribeEnabledMessageHtml(hhmm, tz), {
     ...keyboardMainOrDayOnly(uid),
     ...TELEGRAM_HTML_PARSE,
   });
@@ -251,19 +268,22 @@ bot.action('day', async (ctx) => {
   const uid = ctx.from?.id;
   if (uid === undefined) return;
 
+  if (dayInFlight.has(uid)) {
+    await ctx.reply(DAY_IN_FLIGHT_MESSAGE);
+    return;
+  }
+
   const now = Date.now();
   const prevTap = dayLastTap.get(uid) ?? 0;
   if (now - prevTap < DAY_ACTION_DEBOUNCE_MS) {
+    await ctx.reply(DAY_DEBOUNCE_MESSAGE);
     return;
   }
   dayLastTap.set(uid, now);
 
   const today = moscowCalendarDate();
   if (await hasDayDrawSlotUsed(uid, today)) {
-    await ctx.reply(DAY_LIMIT_MESSAGE);
-    return;
-  }
-  if (dayInFlight.has(uid)) {
+    await ctx.reply(dayLimitMessage());
     return;
   }
   dayInFlight.add(uid);
@@ -276,13 +296,13 @@ bot.action('day', async (ctx) => {
       (task) => withTypingWhile(ctx, task),
     );
     if (result === 'ai_error') {
-      await ctx.reply(AI_TEXT_UNAVAILABLE_MESSAGE);
+      await ctx.reply(AI_TEXT_UNAVAILABLE_AFTER_CARD_MESSAGE);
     } else if (result === 'slot_race') {
       console.warn('[day] слот не зарезервирован после успеха (гонка)');
     }
   } catch (e) {
     logHandlerError('day', e);
-    await ctx.reply(AI_TEXT_UNAVAILABLE_MESSAGE);
+    await ctx.reply(AI_TEXT_UNAVAILABLE_AFTER_CARD_MESSAGE);
   } finally {
     dayInFlight.delete(uid);
   }
@@ -316,6 +336,7 @@ bot.action('spread', async (ctx) => {
       completeChat(pastPresentFuturePrompt(cards, voice)),
     );
     await sendReadingChunks(ctx, text, uid);
+    await ctx.reply(SPREAD_DONE_HINT);
   } catch (e) {
     logHandlerError('spread', e);
     await ctx.reply(AI_TEXT_UNAVAILABLE_MESSAGE);

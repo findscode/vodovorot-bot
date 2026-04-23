@@ -60,6 +60,32 @@ export function isDayPushEnabledSync(userId: number): boolean {
   return row?.day_push_enabled === 1;
 }
 
+/** Если подписка на рассылку включена — локальное время и пояс строки. */
+export function getDayPushScheduleForUserSync(
+  userId: number,
+): { hhmm: string; timezoneIana: string } | null {
+  const row = getDb()
+    .prepare(
+      `SELECT day_push_enabled, day_push_local_hhmm, day_push_timezone
+       FROM users WHERE telegram_user_id = ?`,
+    )
+    .get(userId) as
+    | { day_push_enabled: number; day_push_local_hhmm: string; day_push_timezone: string }
+    | undefined;
+  if (!row || row.day_push_enabled !== 1) return null;
+  return { hhmm: row.day_push_local_hhmm, timezoneIana: row.day_push_timezone };
+}
+
+/** Дата окончания Premium в будущем или `null`. */
+export function getActivePremiumUntilSync(userId: number): Date | null {
+  const row = getDb()
+    .prepare('SELECT premium_until FROM users WHERE telegram_user_id = ?')
+    .get(userId) as { premium_until: string | null } | undefined;
+  if (!row?.premium_until) return null;
+  const d = new Date(row.premium_until);
+  return d > new Date() ? d : null;
+}
+
 export type DayPushSubscriberRow = {
   telegram_user_id: number;
   day_push_timezone: string;

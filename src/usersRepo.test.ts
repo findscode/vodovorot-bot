@@ -5,6 +5,9 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { closeDatabase, getDb, initDatabase } from './db/database.js';
 import {
   extendPremiumByDaysSync,
+  getActivePremiumUntilSync,
+  getDayPushScheduleForUserSync,
+  setDayPushEnabled,
   tryRedeemPromoCodeSync,
   userHasPremiumOrAdminSync,
 } from './db/usersRepo.js';
@@ -33,6 +36,23 @@ describe('usersRepo / promo', () => {
     expect(tryRedeemPromoCodeSync(1001, 'TEST-ONCE')).toBe('ok');
     expect(userHasPremiumOrAdminSync(1001)).toBe(true);
     expect(tryRedeemPromoCodeSync(1002, 'TEST-ONCE')).toBe('used');
+  });
+
+  it('getDayPushScheduleForUserSync после включения подписки', () => {
+    setDayPushEnabled(3001, true, 'Europe/Moscow', '10:30');
+    expect(getDayPushScheduleForUserSync(3001)).toEqual({
+      hhmm: '10:30',
+      timezoneIana: 'Europe/Moscow',
+    });
+    setDayPushEnabled(3001, false, 'Europe/Moscow');
+    expect(getDayPushScheduleForUserSync(3001)).toBeNull();
+  });
+
+  it('getActivePremiumUntilSync возвращает дату в будущем', () => {
+    extendPremiumByDaysSync(4001, 5);
+    const d = getActivePremiumUntilSync(4001);
+    expect(d).not.toBeNull();
+    expect(d!.getTime()).toBeGreaterThan(Date.now());
   });
 
   it('stacking premium adds days from current end', () => {
