@@ -25,6 +25,10 @@
 
 - [docs/BOTFATHER.md](docs/BOTFATHER.md), [docs/DEPLOY.md](docs/DEPLOY.md): команда **`status`**; [docs/BRAND-GUIDE.md](docs/BRAND-GUIDE.md): отсылка к фразам про сутки; [docs/ROADMAP.md](docs/ROADMAP.md): актуальная версия и блок планов после 2.0.
 
+### Оператору (вручную)
+
+- В [@BotFather](https://t.me/BotFather) → **Edit Commands**: добавьте **`status`** (см. [docs/BOTFATHER.md](docs/BOTFATHER.md)).
+
 ## [2.0.3] — 2026-04-23
 
 ### Changed
