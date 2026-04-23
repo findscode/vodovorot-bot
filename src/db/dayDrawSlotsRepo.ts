@@ -1,5 +1,13 @@
 import { getDb } from './database.js';
 
+/** Сколько раз пользователь уже получал «карту дня» (строки в day_draw_slots). */
+export function countDayDrawSlotsForUserSync(userId: number): number {
+  const row = getDb()
+    .prepare('SELECT COUNT(*) AS c FROM day_draw_slots WHERE user_id = ?')
+    .get(userId) as { c: number } | undefined;
+  return row?.c ?? 0;
+}
+
 export function hasDayDrawSlotUsedSync(userId: number, calendarDayKey: string): boolean {
   const row = getDb()
     .prepare('SELECT 1 AS x FROM day_draw_slots WHERE user_id = ? AND calendar_date = ?')

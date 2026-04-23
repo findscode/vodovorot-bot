@@ -91,7 +91,7 @@ async function sendReadingChunks(ctx: Context, rawText: string, userId: number):
     await ctx.reply(formatted[i], { ...kb, ...TELEGRAM_HTML_PARSE });
   }
   if (formatted.length > 0) {
-    saveLastReading(userId, formatted.join('\n\n'));
+    saveLastReading(userId, rawText);
   }
 }
 
@@ -192,7 +192,7 @@ bot.command('last', async (ctx) => {
   for (let i = 0; i < parts.length; i++) {
     const last = i === parts.length - 1;
     const kb = last ? keyboardMainOrDayOnly(uid) : {};
-    await ctx.reply(parts[i], { ...kb, ...TELEGRAM_HTML_PARSE });
+    await ctx.reply(formatReadingForTelegram(parts[i]), { ...kb, ...TELEGRAM_HTML_PARSE });
   }
 });
 

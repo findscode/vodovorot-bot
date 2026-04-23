@@ -30,3 +30,10 @@ export function keyboardAfterDayReading(userId: number) {
 
   return Markup.inlineKeyboard([...rows, subRow]);
 }
+
+/** Только предложение подписки — для первого в жизни расклада «на день». */
+export function keyboardSubscribeDayPushOnly() {
+  return Markup.inlineKeyboard([
+    [Markup.button.callback('Присылать каждый день', 'day_sub_on')],
+  ]);
+}

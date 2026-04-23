@@ -1,4 +1,4 @@
-/** In-memory последнее толкование на пользователя; после рестарта процесса пусто. */
+/** In-memory последнее толкование на пользователя (сырой текст модели); после рестарта процесса пусто. */
 
 const TTL_MS = 24 * 60 * 60 * 1000;
 const MAX_TEXT_LENGTH = 12_000;
@@ -12,12 +12,12 @@ function pruneExpired(): void {
   }
 }
 
-export function saveLastReading(userId: number, formattedTelegramHtml: string): void {
+export function saveLastReading(userId: number, rawReadingPlain: string): void {
   pruneExpired();
   const text =
-    formattedTelegramHtml.length > MAX_TEXT_LENGTH
-      ? `${formattedTelegramHtml.slice(0, MAX_TEXT_LENGTH)}…`
-      : formattedTelegramHtml;
+    rawReadingPlain.length > MAX_TEXT_LENGTH
+      ? `${rawReadingPlain.slice(0, MAX_TEXT_LENGTH)}…`
+      : rawReadingPlain;
   store.set(userId, { text, expiresAt: Date.now() + TTL_MS });
 }
 

@@ -42,6 +42,16 @@ async function runDueDayPushes(bot: Telegraf): Promise<void> {
         markDayPushHandledSync(uid, todayKey);
       } else if (result === 'slot_race') {
         markDayPushHandledSync(uid, todayKey);
+      } else if (result === 'ai_error') {
+        try {
+          await bot.telegram.sendMessage(
+            uid,
+            'Сегодня не удалось получить толкование для карты дня. Завтра пришлю снова, если подписка включена.',
+          );
+        } catch (sendErr) {
+          console.error('[day_push] не удалось отправить сообщение об ошибке ИИ user', uid, sendErr);
+        }
+        markDayPushHandledSync(uid, todayKey);
       }
     } catch (e) {
       if (isForbiddenError(e)) {

@@ -14,10 +14,10 @@ describe('lastReadingStore', () => {
     vi.useFakeTimers();
     const now = Date.now();
     vi.setSystemTime(now);
-    saveLastReading(1, '<b>hello</b>');
-    expect(getLastReading(1)).toBe('<b>hello</b>');
+    saveLastReading(1, 'О чём здесь речь\n\nТекст.');
+    expect(getLastReading(1)).toBe('О чём здесь речь\n\nТекст.');
     vi.setSystemTime(now + 24 * 60 * 60 * 1000 - 1);
-    expect(getLastReading(1)).toBe('<b>hello</b>');
+    expect(getLastReading(1)).toBe('О чём здесь речь\n\nТекст.');
     vi.setSystemTime(now + 24 * 60 * 60 * 1000 + 1);
     expect(getLastReading(1)).toBeNull();
   });
