@@ -1,4 +1,6 @@
-/** Допустимые локальные часы:минуты для ежедневной рассылки «карта дня». */
+import { parseConfiguredHm } from './pushSchedule.js';
+
+/** Быстрый выбор времени рассылки в чате (произвольное время — через <code>/pushtime ЧЧ:ММ</code>). */
 export const DAY_PUSH_HHMM_PRESETS = [
   '07:00',
   '08:00',
@@ -10,30 +12,15 @@ export const DAY_PUSH_HHMM_PRESETS = [
   '21:00',
 ] as const;
 
-const PRESET_SET = new Set<string>(DAY_PUSH_HHMM_PRESETS);
-
-export function isAllowedDayPushHhmm(hhmm: string): boolean {
-  return PRESET_SET.has(hhmm.trim());
+/** Локальные часы:минуты на стене часов в поясе рассылки (00:00–23:59). */
+export function normalizeDayPushHhmm(hhmm: string): string | null {
+  const parsed = parseConfiguredHm(hhmm);
+  if (!parsed) return null;
+  const h = String(parsed.h).padStart(2, '0');
+  const m = String(parsed.m).padStart(2, '0');
+  return `${h}:${m}`;
 }
 
-/** Если в env задано не из пресетов — ближайшее допустимое (иначе 09:00). */
-export function snapDayPushHhmmToPreset(hhmm: string): string {
-  const t = hhmm.trim();
-  if (PRESET_SET.has(t)) return t;
-  const m = /^(\d{1,2}):(\d{2})$/.exec(t);
-  if (!m) return '09:00';
-  const minutes = Number(m[1]) * 60 + Number(m[2]);
-  if (!Number.isFinite(minutes)) return '09:00';
-  let best: string = DAY_PUSH_HHMM_PRESETS[0];
-  let bestDist = Infinity;
-  for (const p of DAY_PUSH_HHMM_PRESETS) {
-    const [h, min] = p.split(':').map(Number) as [number, number];
-    const pm = h * 60 + min;
-    const d = Math.abs(pm - minutes);
-    if (d < bestDist) {
-      bestDist = d;
-      best = p;
-    }
-  }
-  return best;
+export function isAllowedDayPushHhmm(hhmm: string): boolean {
+  return normalizeDayPushHhmm(hhmm) !== null;
 }

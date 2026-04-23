@@ -33,14 +33,23 @@ export function keyboardAfterDayReading(userId: number) {
   return Markup.inlineKeyboard([...rows, subRow]);
 }
 
-/** Только предложение подписки — для первого в жизни расклада «на день». */
-export function keyboardSubscribeDayPushOnly() {
-  return Markup.inlineKeyboard([
-    [Markup.button.callback('Присылать каждый день', 'day_sub_on')],
-  ]);
+/** Callback: открыть выбор времени рассылки (как <code>/pushtime</code> без аргумента). */
+export const DAY_PUSH_TIME_MENU_CALLBACK = 'dp:time';
+
+/** После включения подписки: те же кнопки раскладов + быстрый вход к смене времени рассылки. */
+export function keyboardMainOrDayPlusDayPushShortcut(userId: number | undefined) {
+  const full = hasFullSpreadAccess(userId);
+  const rows = full
+    ? [
+        [Markup.button.callback('На день', 'day')],
+        [Markup.button.callback('Прошлое — настоящее — будущее', 'spread')],
+      ]
+    : [[Markup.button.callback('На день', 'day')]];
+  rows.push([Markup.button.callback('Время рассылки', DAY_PUSH_TIME_MENU_CALLBACK)]);
+  return Markup.inlineKeyboard(rows);
 }
 
-/** Пресеты времени ежедневной рассылки (callback <code>pt:HH:MM</code>). */
+/** Частые варианты времени рассылки (callback <code>pt:HH:MM</code>); любое другое — <code>/pushtime ЧЧ:ММ</code>. */
 export function keyboardDayPushTimePresets() {
   const buttons = DAY_PUSH_HHMM_PRESETS.map((hm) =>
     Markup.button.callback(formatHhmmForUser(hm), `pt:${hm}`),

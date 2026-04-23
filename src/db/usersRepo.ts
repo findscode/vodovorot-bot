@@ -1,4 +1,4 @@
-import { isAllowedDayPushHhmm } from '../dayPushPresets.js';
+import { normalizeDayPushHhmm } from '../dayPushPresets.js';
 import { getDb } from './database.js';
 
 function isoNow(): string {
@@ -87,16 +87,17 @@ export function getActivePremiumUntilSync(userId: number): Date | null {
   return d > new Date() ? d : null;
 }
 
-/** Смена времени рассылки только при включённой подписке и значении из пресетов. */
+/** Смена времени рассылки только при включённой подписке и валидном локальном ЧЧ:ММ. */
 export function setDayPushLocalHhmmSync(userId: number, hhmm: string): boolean {
-  if (!isAllowedDayPushHhmm(hhmm)) return false;
+  const canonical = normalizeDayPushHhmm(hhmm);
+  if (!canonical) return false;
   const row = getDb()
     .prepare('SELECT day_push_enabled FROM users WHERE telegram_user_id = ?')
     .get(userId) as { day_push_enabled: number } | undefined;
   if (!row || row.day_push_enabled !== 1) return false;
   getDb()
     .prepare('UPDATE users SET day_push_local_hhmm = ?, updated_at = ? WHERE telegram_user_id = ?')
-    .run(hhmm.trim(), isoNow(), userId);
+    .run(canonical, isoNow(), userId);
   return true;
 }
 

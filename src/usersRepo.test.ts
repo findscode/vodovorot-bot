@@ -49,12 +49,14 @@ describe('usersRepo / promo', () => {
     expect(getDayPushScheduleForUserSync(3001)).toBeNull();
   });
 
-  it('setDayPushLocalHhmmSync только при включённой подписке и пресете', () => {
+  it('setDayPushLocalHhmmSync только при включённой подписке и валидном ЧЧ:ММ', () => {
     expect(setDayPushLocalHhmmSync(3002, '09:00')).toBe(false);
     setDayPushEnabled(3002, true, 'Europe/Moscow', '09:00');
     expect(setDayPushLocalHhmmSync(3002, '21:00')).toBe(true);
     expect(getDayPushScheduleForUserSync(3002)?.hhmm).toBe('21:00');
-    expect(setDayPushLocalHhmmSync(3002, '09:30')).toBe(false);
+    expect(setDayPushLocalHhmmSync(3002, '9:30')).toBe(true);
+    expect(getDayPushScheduleForUserSync(3002)?.hhmm).toBe('09:30');
+    expect(setDayPushLocalHhmmSync(3002, '25:00')).toBe(false);
   });
 
   it('getActivePremiumUntilSync возвращает дату в будущем', () => {

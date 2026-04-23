@@ -7,14 +7,10 @@ import { cardImageExists } from './cardAssets.js';
 import { cardPhotoInput } from './cardPhotoInput.js';
 import { formatReadingForTelegram, TELEGRAM_HTML_PARSE } from './readingTelegramHtml.js';
 import { splitForTelegram } from './telegramChunks.js';
-import { countDayDrawSlotsForUserSync, tryConsumeDayDrawSlotSync } from './db/dayDrawSlotsRepo.js';
+import { tryConsumeDayDrawSlotSync } from './db/dayDrawSlotsRepo.js';
 import { saveLastReading } from './lastReadingStore.js';
-import {
-  CARD_DAY_IMAGE_UNAVAILABLE_MESSAGE,
-  FIRST_DAY_PUSH_FOOTER_HTML,
-  READING_BUILDING_MESSAGE,
-} from './botCopy.js';
-import { keyboardAfterDayReading, keyboardSubscribeDayPushOnly } from './botKeyboards.js';
+import { CARD_DAY_IMAGE_UNAVAILABLE_MESSAGE, READING_BUILDING_MESSAGE } from './botCopy.js';
+import { keyboardAfterDayReading } from './botKeyboards.js';
 import { moscowCalendarDate } from './dayDrawState.js';
 
 const TG_CAPTION_MAX = 1024;
@@ -41,16 +37,14 @@ async function sendDayReadingChunks(
   telegram: Telegraf['telegram'],
   chatId: number,
   rawText: string,
-  opts: { firstLifetimeManualDayDraw: boolean },
 ): Promise<void> {
   const parts = splitForTelegram(rawText);
   const formatted = parts.map((c) => formatReadingForTelegram(c));
   const kbLast = keyboardAfterDayReading(chatId);
-  const hideMainKeysOnLast = opts.firstLifetimeManualDayDraw;
 
   for (let i = 0; i < formatted.length; i++) {
     const last = i === formatted.length - 1;
-    const withKb = last && !hideMainKeysOnLast ? kbLast : {};
+    const withKb = last ? kbLast : {};
     await telegram.sendMessage(chatId, formatted[i], {
       ...withKb,
       ...TELEGRAM_HTML_PARSE,
@@ -59,13 +53,6 @@ async function sendDayReadingChunks(
 
   if (formatted.length > 0) {
     saveLastReading(chatId, rawText);
-  }
-
-  if (hideMainKeysOnLast && formatted.length > 0) {
-    await telegram.sendMessage(chatId, FIRST_DAY_PUSH_FOOTER_HTML, {
-      ...keyboardSubscribeDayPushOnly(),
-      ...TELEGRAM_HTML_PARSE,
-    });
   }
 }
 
@@ -86,9 +73,6 @@ export async function deliverCardOfDayReading(
   const drawn = drawOne();
   const line = `День: ${formatDrawnLine(drawn)}`;
   const voice = drawVoiceArchetype();
-  const firstLifetimeManualDayDraw =
-    kind === 'manual' && countDayDrawSlotsForUserSync(chatId) === 0;
-
   if (kind === 'push') {
     let rawText: string;
     try {
@@ -97,7 +81,7 @@ export async function deliverCardOfDayReading(
       return 'ai_error';
     }
     await sendCardFaceMessage(telegram, chatId, drawn, line);
-    await sendDayReadingChunks(telegram, chatId, rawText, { firstLifetimeManualDayDraw: false });
+    await sendDayReadingChunks(telegram, chatId, rawText);
   } else {
     await sendCardFaceMessage(telegram, chatId, drawn, line);
     await telegram.sendMessage(chatId, READING_BUILDING_MESSAGE);
@@ -107,7 +91,7 @@ export async function deliverCardOfDayReading(
     } catch {
       return 'ai_error';
     }
-    await sendDayReadingChunks(telegram, chatId, rawText, { firstLifetimeManualDayDraw });
+    await sendDayReadingChunks(telegram, chatId, rawText);
   }
 
   const reserved = tryConsumeDayDrawSlotSync(chatId, todayKey);

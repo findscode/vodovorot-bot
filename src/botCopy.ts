@@ -59,10 +59,6 @@ export function dayLimitMessage(): string {
 export const LAST_EMPTY_MESSAGE =
   'Пока нечего повторить: сначала сделай расклад. Последний разбор хранится в базе и переживает перезапуск; если нужна своя копия — перешли себе сообщение из чата.';
 
-/** После первого в жизни «на день»: одна кнопка подписки и пояснение. */
-export const FIRST_DAY_PUSH_FOOTER_HTML =
-  'Можно включить ежедневную <b>карту дня</b>: раз в сутки пришлю такой разбор без отдельного запроса. Ниже — одна кнопка. Чтобы снова увидеть все кнопки раскладов, напиши <code>/menu</code>.';
-
 export const SUBSCRIBE_MESSAGES = {
   off: 'Ежедневная карта дня выключена. Новую — кнопкой «На день», когда захочешь.',
 } as const;
@@ -71,15 +67,19 @@ export const SUBSCRIBE_MESSAGES = {
 export function subscribeEnabledMessageHtml(hhmm: string, tzIana: string): string {
   const t = formatHhmmForUser(hhmm);
   const p = phrasesForIanaTimezone(tzIana);
-  return `<b>Ок</b>, подписка включена. Ориентир по времени — около ${t} (${p.pushClockInstrumental}). Отписаться — кнопкой под следующим разбором.\n\nСменить время — <code>/pushtime</code> или кнопками в следующем сообщении.`;
+  return `<b>Ок</b>, подписка включена. Ориентир по времени — около ${t} (${p.pushClockInstrumental}). Отписаться — кнопкой под следующим разбором «на день».\n\nДругое время — кнопка <b>«Время рассылки»</b> ниже или <code>/pushtime</code> (например <code>/pushtime 14:30</code>).`;
 }
 
-/** Второе сообщение после подписки: выбор времени. */
+/** Выбор времени рассылки (после <code>/pushtime</code> без аргумента или кнопки «Время рассылки»). */
 export const PUSHTIME_PICK_PROMPT_HTML =
-  'Выбери время первой рассылки (потом всегда можно через <code>/pushtime</code>):';
+  'Выбери время кнопкой или напиши <code>/pushtime ЧЧ:ММ</code> (например <code>09:15</code>):';
 
 export const PUSHTIME_NEED_SUBSCRIPTION_HTML =
   'Сначала включи рассылку кнопкой <b>«Присылать каждый день»</b> под разбором «на день».';
+
+/** Неверный формат аргумента к <code>/pushtime</code>. */
+export const PUSHTIME_INVALID_FORMAT_HTML =
+  'Укажи время как <code>ЧЧ:ММ</code> (часы 00–23, минуты 00–59), например <code>09:15</code> или <code>14:30</code>. Либо выбери одну из кнопок ниже.';
 
 export function pushtimeSavedMessageHtml(hhmm: string, tzIana: string): string {
   const t = formatHhmmForUser(hhmm);
@@ -131,14 +131,14 @@ export function helpTextHtml(opts: { fullAccess: boolean }): string {
 /help — эта справка
 /status — что сейчас доступно, подписка и Premium
 /last — повторить последний разбор (хранится в базе)
-/pushtime — время ежедневной рассылки (когда подписка включена)
+/pushtime — время ежедневной рассылки (когда подписка включена); можно <code>/pushtime 09:15</code>
 /promo КОД — активировать одноразовый промокод Premium
 
 <b>Расклады</b>
 ${dayLine}${spreadLine}
 
 <b>Подписка на «карту дня»</b>
-После разбора «на день» можно включить ежедневную отправку кнопкой «Присылать каждый день». Один раз в сутки — и на ручной запрос, и на рассылку. Время рассылки — пресеты в чате или команда <code>/pushtime</code>.
+После разбора «на день» можно включить ежедневную отправку кнопкой «Присылать каждый день». Один раз в сутки — и на ручной запрос, и на рассылку. Время при включении — по умолчанию из настроек бота; смена — кнопка <b>«Время рассылки»</b>, команда <code>/pushtime</code> (в т.ч. <code>/pushtime 14:30</code>) или пресеты в чате.
 
 <b>Важно</b>
 ${DISCLAIMER_HELP}`;
