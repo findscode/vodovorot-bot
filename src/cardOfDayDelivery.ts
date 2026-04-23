@@ -5,7 +5,12 @@ import { completeChat } from './ai.js';
 import { cardOfDayPrompt } from './prompts.js';
 import { cardImageExists } from './cardAssets.js';
 import { cardPhotoInput } from './cardPhotoInput.js';
-import { formatReadingForTelegram, TELEGRAM_HTML_PARSE } from './readingTelegramHtml.js';
+import {
+  dayCardFaceCaptionHtml,
+  formatReadingForTelegram,
+  stripModelFormatArtifacts,
+  TELEGRAM_HTML_PARSE,
+} from './readingTelegramHtml.js';
 import { splitForTelegram } from './telegramChunks.js';
 import { tryConsumeDayDrawSlotSync } from './db/dayDrawSlotsRepo.js';
 import { saveLastReading } from './lastReadingStore.js';
@@ -21,15 +26,19 @@ async function sendCardFaceMessage(
   telegram: Telegraf['telegram'],
   chatId: number,
   drawn: DrawnCard,
-  line: string,
+  captionHtml: string,
 ): Promise<void> {
+  const cap = captionHtml.slice(0, TG_CAPTION_MAX);
   if (cardImageExists(drawn.card.id)) {
     const photo = await cardPhotoInput(drawn.card.id, drawn.reversed);
     await telegram.sendPhoto(chatId, photo, {
-      caption: line.slice(0, TG_CAPTION_MAX),
+      caption: cap,
+      parse_mode: 'HTML',
     });
   } else {
-    await telegram.sendMessage(chatId, `${line}\n\n${CARD_DAY_IMAGE_UNAVAILABLE_MESSAGE}`);
+    await telegram.sendMessage(chatId, `${cap}\n\n${CARD_DAY_IMAGE_UNAVAILABLE_MESSAGE}`, {
+      parse_mode: 'HTML',
+    });
   }
 }
 
@@ -38,7 +47,8 @@ async function sendDayReadingChunks(
   chatId: number,
   rawText: string,
 ): Promise<void> {
-  const parts = splitForTelegram(rawText);
+  const normalized = stripModelFormatArtifacts(rawText);
+  const parts = splitForTelegram(normalized);
   const formatted = parts.map((c) => formatReadingForTelegram(c));
   const kbLast = keyboardAfterDayReading(chatId);
 
@@ -52,7 +62,7 @@ async function sendDayReadingChunks(
   }
 
   if (formatted.length > 0) {
-    saveLastReading(chatId, rawText);
+    saveLastReading(chatId, normalized);
   }
 }
 
@@ -71,7 +81,7 @@ export async function deliverCardOfDayReading(
 ): Promise<'ok' | 'ai_error' | 'slot_race'> {
   const todayKey = moscowCalendarDate();
   const drawn = drawOne();
-  const line = `День: ${formatDrawnLine(drawn)}`;
+  const captionHtml = dayCardFaceCaptionHtml(formatDrawnLine(drawn));
   const voice = drawVoiceArchetype();
   if (kind === 'push') {
     let rawText: string;
@@ -80,10 +90,10 @@ export async function deliverCardOfDayReading(
     } catch {
       return 'ai_error';
     }
-    await sendCardFaceMessage(telegram, chatId, drawn, line);
+    await sendCardFaceMessage(telegram, chatId, drawn, captionHtml);
     await sendDayReadingChunks(telegram, chatId, rawText);
   } else {
-    await sendCardFaceMessage(telegram, chatId, drawn, line);
+    await sendCardFaceMessage(telegram, chatId, drawn, captionHtml);
     let rawText: string;
     try {
       rawText = await withTypingLoop(() => completeChat(cardOfDayPrompt(drawn, voice)));

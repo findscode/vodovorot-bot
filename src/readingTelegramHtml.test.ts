@@ -1,10 +1,31 @@
 import { describe, expect, it } from 'vitest';
-import { escapeTelegramHtml, formatReadingForTelegram } from './readingTelegramHtml.js';
+import {
+  dayCardFaceCaptionHtml,
+  escapeTelegramHtml,
+  formatReadingForTelegram,
+  stripModelFormatArtifacts,
+  threeCardSpreadCaptionHtml,
+} from './readingTelegramHtml.js';
 import { splitForTelegram, TG_MAX } from './telegramChunks.js';
 
 describe('readingTelegramHtml', () => {
   it('escapes HTML special characters', () => {
     expect(escapeTelegramHtml('a < b & c > d')).toBe('a &lt; b &amp; c &gt; d');
+  });
+
+  it('stripModelFormatArtifacts removes empty-line instruction lines', () => {
+    const plain = 'Прошлое\n\nПустая строка.\n\nТекст.';
+    expect(stripModelFormatArtifacts(plain)).toBe('Прошлое\n\nТекст.');
+    expect(stripModelFormatArtifacts('пустая строка\nX')).toBe('X');
+  });
+
+  it('day and three-card captions: bold title, colon, blank line, body', () => {
+    expect(dayCardFaceCaptionHtml('Маг (перевёрнутая)')).toBe(
+      '<b>Карта на день:</b>\n\nМаг (перевёрнутая)',
+    );
+    expect(threeCardSpreadCaptionHtml(['Прошлое: X', 'Настоящее: Y'])).toBe(
+      '<b>Прошлое, настоящее, будущее:</b>\n\nПрошлое: X\nНастоящее: Y',
+    );
   });
 
   it('wraps known section label lines in bold', () => {

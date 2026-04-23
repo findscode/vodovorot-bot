@@ -4,6 +4,24 @@
 
 ## [Unreleased]
 
+## [2.6.2] — 2026-04-23
+
+Патч: единый вид **подписей к фото** с картами, фильтрация служебных фраз модели и сохранение «последнего разбора» без артефактов.
+
+### Fixed
+
+- **Толкование:** из текста перед отправкой и перед сохранением в **`/last`** убираются строки-артефакты вроде «Пустая строка.» (`stripModelFormatArtifacts` в `readingTelegramHtml.ts`; вызов перед нарезкой в `cardOfDayDelivery.ts`, `bot.ts`).
+- **ИИ:** в **`SYSTEM_PROMPT`** и в промпте второго прогона (русская правка) явно запрещены служебные фразы про оформление ответа.
+
+### Changed
+
+- **Подпись «На день»:** жирное **`Карта на день:`**, пустая строка, строка карты (`dayCardFaceCaptionHtml`); отправка фото/запасного сообщения с **`parse_mode: HTML`** (`cardOfDayDelivery.ts`).
+- **Подпись расклада в три карты:** то же правило заголовка — **`Прошлое, настоящее, будущее:`** + список позиций; HTML и лимит подписи через **`threeCardSpreadCaptionHtmlBounded`** (`bot.ts`).
+
+### Docs
+
+- [docs/BRAND-GUIDE.md](docs/BRAND-GUIDE.md), [docs/GLOSSARY.md](docs/GLOSSARY.md), [docs/ROADMAP.md](docs/ROADMAP.md).
+
 ## [2.6.1] — 2026-04-23
 
 ### Fixed
@@ -316,7 +334,13 @@
 
 Первая зафиксированная версия после PoC (текущее состояние бота).
 
-[Unreleased]: https://github.com/findscode/vodovorot-bot/compare/v2.2.0...HEAD
+[Unreleased]: https://github.com/findscode/vodovorot-bot/compare/v2.6.2...HEAD
+[2.6.2]: https://github.com/findscode/vodovorot-bot/compare/v2.6.1...v2.6.2
+[2.6.1]: https://github.com/findscode/vodovorot-bot/compare/v2.6.0...v2.6.1
+[2.6.0]: https://github.com/findscode/vodovorot-bot/compare/v2.5.0...v2.6.0
+[2.5.0]: https://github.com/findscode/vodovorot-bot/compare/v2.4.0...v2.5.0
+[2.4.0]: https://github.com/findscode/vodovorot-bot/compare/v2.3.0...v2.4.0
+[2.3.0]: https://github.com/findscode/vodovorot-bot/compare/v2.2.0...v2.3.0
 [2.2.0]: https://github.com/findscode/vodovorot-bot/compare/v2.1.0...v2.2.0
 [2.1.0]: https://github.com/findscode/vodovorot-bot/compare/v2.0.3...v2.1.0
 [2.0.3]: https://github.com/findscode/vodovorot-bot/compare/v2.0.2...v2.0.3

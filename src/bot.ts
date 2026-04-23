@@ -43,7 +43,12 @@ import { completeChat } from './ai.js';
 import { pastPresentFuturePrompt } from './prompts.js';
 import { cardImageExists } from './cardAssets.js';
 import { spreadCompositePhotoInput } from './spreadComposite.js';
-import { formatReadingForTelegram, TELEGRAM_HTML_PARSE } from './readingTelegramHtml.js';
+import {
+  formatReadingForTelegram,
+  stripModelFormatArtifacts,
+  TELEGRAM_HTML_PARSE,
+  threeCardSpreadCaptionHtmlBounded,
+} from './readingTelegramHtml.js';
 import { withTypingWhile } from './typingIndicator.js';
 import { getLastReading, saveLastReading } from './lastReadingStore.js';
 import { getDatabasePath } from './db/database.js';
@@ -115,7 +120,8 @@ function dayPushHhmmArgFromMessageText(text: string): string | undefined {
 }
 
 async function sendReadingChunks(ctx: Context, rawText: string, userId: number): Promise<void> {
-  const parts = splitForTelegram(rawText);
+  const normalized = stripModelFormatArtifacts(rawText);
+  const parts = splitForTelegram(normalized);
   const formatted = parts.map((c) => formatReadingForTelegram(c));
   for (let i = 0; i < formatted.length; i++) {
     const last = i === formatted.length - 1;
@@ -124,7 +130,7 @@ async function sendReadingChunks(ctx: Context, rawText: string, userId: number):
     await ctx.reply(body, { ...kb, ...TELEGRAM_HTML_PARSE });
   }
   if (formatted.length > 0) {
-    saveLastReading(userId, rawText);
+    saveLastReading(userId, normalized);
   }
 }
 
@@ -448,17 +454,18 @@ bot.action('spread', async (ctx) => {
   const cards = drawThreeUnique();
   const positions = ['Прошлое', 'Настоящее', 'Будущее'] as const;
   const lines = cards.map((d, i) => `${positions[i]}: ${formatDrawnLine(d)}`);
-  const header = ['Прошлое, настоящее, будущее.', ...lines].join('\n');
+  const captionHtml = threeCardSpreadCaptionHtmlBounded(lines, TG_CAPTION_MAX);
 
   const allExist = cards.every((d) => cardImageExists(d.card.id));
 
   if (allExist) {
-    const cap =
-      header.length <= TG_CAPTION_MAX ? header : `${lines.join(' · ')}`.slice(0, TG_CAPTION_MAX);
     const photo = await spreadCompositePhotoInput(cards);
-    await ctx.replyWithPhoto(photo, { caption: cap });
+    await ctx.replyWithPhoto(photo, { caption: captionHtml, ...TELEGRAM_HTML_PARSE });
   } else {
-    await ctx.reply(`${header}\n\n${SPREAD_IMAGES_UNAVAILABLE_SUFFIX}`);
+    await ctx.reply(
+      `${captionHtml}\n\n${SPREAD_IMAGES_UNAVAILABLE_SUFFIX}`,
+      TELEGRAM_HTML_PARSE,
+    );
   }
 
   const voice = drawVoiceArchetype();
