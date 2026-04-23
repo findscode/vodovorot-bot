@@ -9,7 +9,7 @@ import { formatReadingForTelegram, TELEGRAM_HTML_PARSE } from './readingTelegram
 import { splitForTelegram } from './telegramChunks.js';
 import { tryConsumeDayDrawSlotSync } from './db/dayDrawSlotsRepo.js';
 import { saveLastReading } from './lastReadingStore.js';
-import { CARD_DAY_IMAGE_UNAVAILABLE_MESSAGE, READING_BUILDING_MESSAGE } from './botCopy.js';
+import { CARD_DAY_IMAGE_UNAVAILABLE_MESSAGE } from './botCopy.js';
 import { keyboardAfterDayReading } from './botKeyboards.js';
 import { moscowCalendarDate } from './dayDrawState.js';
 
@@ -84,7 +84,6 @@ export async function deliverCardOfDayReading(
     await sendDayReadingChunks(telegram, chatId, rawText);
   } else {
     await sendCardFaceMessage(telegram, chatId, drawn, line);
-    await telegram.sendMessage(chatId, READING_BUILDING_MESSAGE);
     let rawText: string;
     try {
       rawText = await withTypingLoop(() => completeChat(cardOfDayPrompt(drawn, voice)));
