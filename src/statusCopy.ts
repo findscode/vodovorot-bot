@@ -57,7 +57,9 @@ export function statusTextHtml(userId: number): string {
     lines.push('<b>Рассылка «карта дня»</b>: выключена. Включить — кнопкой под разбором «на день».');
   }
 
-  lines.push('Команды: <code>/menu</code>, <code>/help</code>, <code>/last</code>.');
+  lines.push(
+    'Команды: <code>/menu</code>, <code>/help</code>, <code>/last</code>, <code>/pushtime</code> (если рассылка включена), <code>/promo</code>.',
+  );
 
   return lines.join('\n\n');
 }

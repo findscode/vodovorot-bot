@@ -36,7 +36,9 @@ export function keyboardAfterDayReading(userId: number) {
 /** Callback: открыть выбор времени рассылки (как <code>/pushtime</code> без аргумента). */
 export const DAY_PUSH_TIME_MENU_CALLBACK = 'dp:time';
 
-/** После включения подписки: те же кнопки раскладов + быстрый вход к смене времени рассылки. */
+/**
+ * После включения подписки: расклады + смена времени + отписка (без ожидания следующего «на день»).
+ */
 export function keyboardMainOrDayPlusDayPushShortcut(userId: number | undefined) {
   const full = hasFullSpreadAccess(userId);
   const rows = full
@@ -46,6 +48,7 @@ export function keyboardMainOrDayPlusDayPushShortcut(userId: number | undefined)
       ]
     : [[Markup.button.callback('На день', 'day')]];
   rows.push([Markup.button.callback('Время рассылки', DAY_PUSH_TIME_MENU_CALLBACK)]);
+  rows.push([Markup.button.callback('Отписаться от ежедневной карты', 'day_sub_off')]);
   return Markup.inlineKeyboard(rows);
 }
 

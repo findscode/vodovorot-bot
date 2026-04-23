@@ -67,7 +67,7 @@ export const SUBSCRIBE_MESSAGES = {
 export function subscribeEnabledMessageHtml(hhmm: string, tzIana: string): string {
   const t = formatHhmmForUser(hhmm);
   const p = phrasesForIanaTimezone(tzIana);
-  return `<b>Ок</b>, подписка включена. Ориентир по времени — около ${t} (${p.pushClockInstrumental}). Отписаться — кнопкой под следующим разбором «на день».\n\nДругое время — кнопка <b>«Время рассылки»</b> ниже или <code>/pushtime</code> (например <code>/pushtime 14:30</code>).`;
+  return `<b>Ок</b>, подписка включена: около ${t} (${p.pushClockInstrumental}). Отписаться или сменить время — кнопками ниже; иначе <code>/pushtime 14:30</code>.`;
 }
 
 /** Выбор времени рассылки (после <code>/pushtime</code> без аргумента или кнопки «Время рассылки»). */
@@ -138,7 +138,7 @@ export function helpTextHtml(opts: { fullAccess: boolean }): string {
 ${dayLine}${spreadLine}
 
 <b>Подписка на «карту дня»</b>
-После разбора «на день» можно включить ежедневную отправку кнопкой «Присылать каждый день». Один раз в сутки — и на ручной запрос, и на рассылку. Время при включении — по умолчанию из настроек бота; смена — кнопка <b>«Время рассылки»</b>, команда <code>/pushtime</code> (в т.ч. <code>/pushtime 14:30</code>) или пресеты в чате.
+После разбора «на день» можно включить ежедневную отправку кнопкой «Присылать каждый день». Один раз в сутки — и на ручной запрос, и на рассылку. Время по умолчанию из настроек бота; смена — <b>«Время рассылки»</b> или <code>/pushtime 14:30</code>. Отписка — кнопкой в том же сообщении после включения или под следующим разбором «на день».
 
 <b>Важно</b>
 ${DISCLAIMER_HELP}`;

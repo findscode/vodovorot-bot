@@ -21,7 +21,6 @@ import {
   PUSHTIME_NEED_SUBSCRIPTION_HTML,
   PUSHTIME_PICK_PROMPT_HTML,
   pushtimeSavedMessageHtml,
-  READING_BUILDING_MESSAGE,
   SPREAD_DONE_HINT,
   SPREAD_IMAGES_UNAVAILABLE_SUFFIX,
   startTextFull,
@@ -182,7 +181,10 @@ bot.use(async (ctx, next) => {
     return;
   }
   if (ctx.message) {
-    await ctx.reply(accessDeniedMessage());
+    await ctx.reply(accessDeniedMessage(), {
+      ...keyboardMainOrDayOnly(uid),
+      ...TELEGRAM_HTML_PARSE,
+    });
   }
 });
 
@@ -259,10 +261,10 @@ bot.command('pushtime', async (ctx) => {
     }
     const row = getDayPushScheduleForUserSync(uid);
     const tz = row?.timezoneIana ?? getDayDrawTimezone();
-    await ctx.reply(pushtimeSavedMessageHtml(hhmm, tz), {
-      ...keyboardMainOrDayOnly(uid),
-      ...TELEGRAM_HTML_PARSE,
-    });
+    const kbAfterPushtime = isDayPushEnabledSync(uid)
+      ? keyboardMainOrDayPlusDayPushShortcut(uid)
+      : keyboardMainOrDayOnly(uid);
+    await ctx.reply(pushtimeSavedMessageHtml(hhmm, tz), { ...kbAfterPushtime, ...TELEGRAM_HTML_PARSE });
     return;
   }
   await ctx.reply(PUSHTIME_PICK_PROMPT_HTML, {
@@ -361,10 +363,10 @@ bot.action(/^pt:(\d{2}:\d{2})$/, async (ctx) => {
   await answerCbQuerySafe(ctx);
   const row = getDayPushScheduleForUserSync(uid);
   const tz = row?.timezoneIana ?? getDayDrawTimezone();
-  await ctx.reply(pushtimeSavedMessageHtml(hhmm, tz), {
-    ...keyboardMainOrDayOnly(uid),
-    ...TELEGRAM_HTML_PARSE,
-  });
+  const kb = isDayPushEnabledSync(uid)
+    ? keyboardMainOrDayPlusDayPushShortcut(uid)
+    : keyboardMainOrDayOnly(uid);
+  await ctx.reply(pushtimeSavedMessageHtml(hhmm, tz), { ...kb, ...TELEGRAM_HTML_PARSE });
 });
 
 bot.action('day_sub_off', async (ctx) => {
@@ -384,21 +386,30 @@ bot.action('day', async (ctx) => {
   if (uid === undefined) return;
 
   if (dayInFlight.has(uid)) {
-    await ctx.reply(DAY_IN_FLIGHT_MESSAGE);
+    await ctx.reply(DAY_IN_FLIGHT_MESSAGE, {
+      ...keyboardMainOrDayOnly(uid),
+      ...TELEGRAM_HTML_PARSE,
+    });
     return;
   }
 
   const now = Date.now();
   const prevTap = dayLastTap.get(uid) ?? 0;
   if (now - prevTap < DAY_ACTION_DEBOUNCE_MS) {
-    await ctx.reply(DAY_DEBOUNCE_MESSAGE);
+    await ctx.reply(DAY_DEBOUNCE_MESSAGE, {
+      ...keyboardMainOrDayOnly(uid),
+      ...TELEGRAM_HTML_PARSE,
+    });
     return;
   }
   dayLastTap.set(uid, now);
 
   const today = moscowCalendarDate();
   if (await hasDayDrawSlotUsed(uid, today)) {
-    await ctx.reply(dayLimitMessage());
+    await ctx.reply(dayLimitMessage(), {
+      ...keyboardMainOrDayOnly(uid),
+      ...TELEGRAM_HTML_PARSE,
+    });
     return;
   }
   dayInFlight.add(uid);
@@ -411,13 +422,19 @@ bot.action('day', async (ctx) => {
       (task) => withTypingWhile(ctx, task),
     );
     if (result === 'ai_error') {
-      await ctx.reply(AI_TEXT_UNAVAILABLE_AFTER_CARD_MESSAGE);
+      await ctx.reply(AI_TEXT_UNAVAILABLE_AFTER_CARD_MESSAGE, {
+        ...keyboardMainOrDayOnly(uid),
+        ...TELEGRAM_HTML_PARSE,
+      });
     } else if (result === 'slot_race') {
       console.warn('[day] слот не зарезервирован после успеха (гонка)');
     }
   } catch (e) {
     logHandlerError('day', e);
-    await ctx.reply(AI_TEXT_UNAVAILABLE_AFTER_CARD_MESSAGE);
+    await ctx.reply(AI_TEXT_UNAVAILABLE_AFTER_CARD_MESSAGE, {
+      ...keyboardMainOrDayOnly(uid),
+      ...TELEGRAM_HTML_PARSE,
+    });
   } finally {
     dayInFlight.delete(uid);
   }
@@ -445,7 +462,6 @@ bot.action('spread', async (ctx) => {
   }
 
   const voice = drawVoiceArchetype();
-  await ctx.reply(READING_BUILDING_MESSAGE);
   try {
     const text = await withTypingWhile(ctx, () =>
       completeChat(pastPresentFuturePrompt(cards, voice)),
@@ -453,7 +469,10 @@ bot.action('spread', async (ctx) => {
     await sendReadingChunks(ctx, text, uid);
   } catch (e) {
     logHandlerError('spread', e);
-    await ctx.reply(AI_TEXT_UNAVAILABLE_MESSAGE);
+    await ctx.reply(AI_TEXT_UNAVAILABLE_MESSAGE, {
+      ...keyboardMainOrDayOnly(uid),
+      ...TELEGRAM_HTML_PARSE,
+    });
   }
 });
 
