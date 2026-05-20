@@ -60,5 +60,12 @@ jobs:
             git fetch origin main
             git checkout main
             git pull --ff-only origin main
+            if ! swapon --show | grep -q /swapfile; then
+              fallocate -l 2G /swapfile
+              chmod 600 /swapfile
+              mkswap /swapfile
+              swapon /swapfile
+              grep -q swapfile /etc/fstab || echo '/swapfile none swap sw 0 0' >> /etc/fstab
+            fi
             docker compose up -d --build
             docker compose ps

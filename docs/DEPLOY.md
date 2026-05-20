@@ -10,15 +10,15 @@
 
 **Команды в BotFather (@BotFather → Edit Bot → Edit Commands)** — выставить вручную:
 
-| Команда | Подсказка (пример) |
-| ------- | ------------------ |
-| `start` | Старт и клавиатура раскладов |
-| `menu` | Показать клавиатуру снова |
-| `help` | Справка и ограничения |
-| `last` | Повторить последний разбор (коротко хранится в переписке) |
-| `status` | Что доступно, подписка на карту дня и Premium |
-| `pushtime` | Время ежедневной рассылки (если подписка включена) |
-| `promo` | Активировать промокод Premium (`/promo КОД`) |
+| Команда    | Подсказка (пример)                                        |
+| ---------- | --------------------------------------------------------- |
+| `start`    | Старт и клавиатура раскладов                              |
+| `menu`     | Показать клавиатуру снова                                 |
+| `help`     | Справка и ограничения                                     |
+| `last`     | Повторить последний разбор (коротко хранится в переписке) |
+| `status`   | Что доступно, подписка на карту дня и Premium             |
+| `pushtime` | Время ежедневной рассылки (если подписка включена)        |
+| `promo`    | Активировать промокод Premium (`/promo КОД`)              |
 
 Подробные тексты About/Description — в [BOTFATHER.md](BOTFATHER.md).
 
@@ -113,60 +113,25 @@ docker run --rm -v vodovorot-data:/app/data -e BOT_TOKEN=... -e CLOUDFLARE_ACCOU
 
 Бот ходит в Telegram через **long polling** (`bot.launch()`): **входящие порты на дроплете не нужны** (достаточно исходящего HTTPS).
 
-### Первичная настройка дроплета (один раз)
+### Первичная настройка (один раз)
 
-1. **ОС:** Ubuntu 22.04/24.04 (или другой Linux с Docker).
-2. **Docker:** [официальная инструкция](https://docs.docker.com/engine/install/ubuntu/) + плагин Compose (`docker compose version`).
-3. **Пользователь для деплоя** (рекомендуется не `root`): например `deploy` в группе `docker`.
-4. **SSH-ключ** для GitHub Actions: пара ключей на вашей машине → публичный ключ в `~deploy/.ssh/authorized_keys` на дроплете; приватный — в секрет **`DO_SSH_PRIVATE_KEY`**.
-5. **Клон репозитория** (read-only deploy key или HTTPS с PAT — на ваш выбор):
+1. **ОС:** Ubuntu 22.04/24.04, [Docker Engine](https://docs.docker.com/engine/install/ubuntu/) + `docker compose`.
+2. **`.env`** в `/opt/vodovorot-bot` (не в git): из [`.env.example`](../.env.example) — `BOT_TOKEN`, Cloudflare и при необходимости whitelist.
+3. **Git:** read-only **deploy key** в Settings → Deploy keys; клон по SSH — см. ниже или скрипт [`scripts/bootstrap-droplet.sh`](../scripts/bootstrap-droplet.sh) (сохраняет существующий `.env`, при необходимости создаёт **swap 2 GB** — на тарифе **512 MB** без swap `docker build` часто падает с `signal: killed`).
+4. **Секреты Actions** для автодеплоя — в следующем разделе.
 
-```bash
-sudo mkdir -p /opt/vodovorot-bot
-sudo chown deploy:deploy /opt/vodovorot-bot
-sudo -u deploy git clone https://github.com/<org>/vodovorot-bot.git /opt/vodovorot-bot
-cd /opt/vodovorot-bot
-git checkout main
-```
-
-6. **`.env` на сервере** (не в git): скопируйте с [`.env.example`](../.env.example), заполните `BOT_TOKEN`, Cloudflare, при необходимости whitelist и админов.
-7. **Старт:**
-
-```bash
-cd /opt/vodovorot-bot
-docker compose up -d --build
-docker compose logs -f bot
-```
-
-Успешный старт: в логах нет ошибки про отсутствие `BOT_TOKEN`; бот отвечает в Telegram.
+Успешный старт: `docker compose logs -f bot` без ошибки про `BOT_TOKEN`; бот отвечает в Telegram.
 
 ### Обновление вручную
 
 ```bash
 cd /opt/vodovorot-bot
+export GIT_SSH_COMMAND='ssh -i /root/.ssh/github_deploy -o IdentitiesOnly=yes'
 git pull --ff-only origin main
 docker compose up -d --build
 ```
 
-Том **`vodovorot-data`** сохраняет SQLite и подписки между пересборками.
-
-### Миграция с Railway
-
-1. **Скачайте БД** с Railway (том на `data/` или файл по `DATABASE_PATH`) — `vodovorot.db` и при необходимости legacy `day-draw-state.json`.
-2. На дроплете **остановите** старый прод на Railway только после того, как новый инстанс проверен (два бота с одним `BOT_TOKEN` — гонка обновлений).
-3. Скопируйте `vodovorot.db` в том Docker:
-
-```bash
-# пример: том называется vodovorot-bot_vodovorot-data (префикс = имя каталога проекта)
-docker compose down
-docker run --rm -v vodovorot-bot_vodovorot-data:/data -v "$PWD":/backup alpine \
-  cp /backup/vodovorot.db /data/vodovorot.db
-docker compose up -d
-```
-
-Имя тома уточните: `docker volume ls`.
-
-4. В GitHub удалите секреты **`RAILWAY_TOKEN`** / **`RAILWAY_SERVICE`**; остановите или удалите проект в Railway.
+Том **`vodovorot-data`** (в `docker-compose.yml`) хранит SQLite между пересборками.
 
 ### GitHub Actions → Droplet (автодеплой)
 
@@ -184,12 +149,12 @@ Workflow [`.github/workflows/deploy-digitalocean.yml`](../.github/workflows/depl
 
 **Settings → Secrets and variables → Actions**:
 
-| Секрет | Пример | Назначение |
-| ------ | ------ | ---------- |
-| **`DO_SSH_HOST`** | `134.122.69.116` | публичный IP дроплета |
-| **`DO_SSH_USER`** | `root` | пользователь SSH (тот, у кого в `authorized_keys` ваш ключ) |
+| Секрет                   | Пример                         | Назначение                                                   |
+| ------------------------ | ------------------------------ | ------------------------------------------------------------ |
+| **`DO_SSH_HOST`**        | `134.122.69.116`               | публичный IP дроплета                                        |
+| **`DO_SSH_USER`**        | `root`                         | пользователь SSH (тот, у кого в `authorized_keys` ваш ключ)  |
 | **`DO_SSH_PRIVATE_KEY`** | содержимое `~/.ssh/id_ed25519` | ключ для входа Actions → дроплет (не deploy key репозитория) |
-| **`DO_APP_DIR`** | `/opt/vodovorot-bot` | опционально; каталог git-клона |
+| **`DO_APP_DIR`**         | `/opt/vodovorot-bot`           | опционально; каталог git-клона                               |
 
 Локально (PowerShell), если секретов ещё нет:
 
@@ -216,26 +181,16 @@ cat /root/.ssh/github_deploy.pub
 Или с ПК (после `scp` ключа с дроплета):
 
 ```bash
-gh repo deploy-key add ./github_deploy.pub --title droplet-finds --read-only
+gh repo deploy-key add ./github_deploy.pub --title droplet-finds
 ```
 
-Клон и `.env` (значения не в git):
+Bootstrap целиком (на дроплете, после копирования скрипта и `.env`):
 
 ```bash
-export GIT_SSH_COMMAND='ssh -i /root/.ssh/github_deploy -o IdentitiesOnly=yes'
-git clone git@github.com:findscode/vodovorot-bot.git /opt/vodovorot-bot
-cd /opt/vodovorot-bot
-cp /path/to/.env .env   # или создайте из .env.example
-docker compose up -d --build
+bash /opt/vodovorot-bot/scripts/bootstrap-droplet.sh
 ```
 
-Дальнейшие деплои из Actions обновляют код через `git pull` в `DO_APP_DIR`.
-
-## Fly.io (кратко)
-
-1. [flyctl](https://fly.io/docs/hands-on/install-flyctl/), регистрация.
-2. `fly launch`, секреты `fly secrets set ...`, `fly deploy`.
-3. Интеграция с GitHub или деплой из Actions — см. [документацию Fly](https://fly.io/docs/).
+Дальнейшие деплои из Actions: `git pull` + `docker compose up -d --build` в `DO_APP_DIR`.
 
 ## Релиз `v1.0.0` (первый тег)
 

@@ -13,9 +13,13 @@
 - Прод-сценарий: **Docker Compose** на VPS ([`docker-compose.yml`](docker-compose.yml)), том для `data/` (SQLite).
 - CI/CD: workflow [`.github/workflows/deploy-digitalocean.yml`](.github/workflows/deploy-digitalocean.yml) (SSH → `git pull` → `docker compose up -d --build`); удалён `deploy-railway.yml`.
 
+### Added
+
+- Скрипт первичной настройки дроплета: [`scripts/bootstrap-droplet.sh`](scripts/bootstrap-droplet.sh) (git clone, swap, `docker compose up`).
+
 ### Docs
 
-- [docs/DEPLOY.md](docs/DEPLOY.md) — runbook Droplet, миграция с Railway, секреты `DO_SSH_*`.
+- [docs/DEPLOY.md](docs/DEPLOY.md) — runbook Droplet, автодеплой, deploy key, секреты `DO_SSH_*`.
 - [README.md](README.md), [docs/DEV-PROCESS.md](docs/DEV-PROCESS.md).
 
 ## [2.6.2] — 2026-04-23
@@ -311,7 +315,7 @@
 
 ### Оператору (вручную)
 
-- Для стабильного лимита на Railway при деплоях: том + `DAY_DRAW_STATE_PATH` — см. `docs/DEPLOY.md`.
+- Для стабильного лимита в проде: том на `data/` + при миграции с 1.x — `DAY_DRAW_STATE_PATH` — см. `docs/DEPLOY.md`.
 
 ## [1.2.0] — 2026-04-09
 
@@ -327,7 +331,7 @@
 ### Оператору (вручную после деплоя)
 
 1. Узнать числовой user id тестировщиков (например @userinfobot).
-2. Задать `ALLOWED_TELEGRAM_USER_IDS` в `.env` локально и в **Variables** на Railway (или другой платформе), перезапустить сервис.
+2. Задать `ALLOWED_TELEGRAM_USER_IDS` в `.env` локально и в `.env` на сервере, перезапустить контейнер.
 3. Проверить доступ с разрешённого и чужого аккаунта; для открытого доступа позже — убрать переменную или оставить пустой.
 
 ## [1.1.0] — 2026-04-09
