@@ -3,56 +3,87 @@ import { Input } from 'telegraf';
 import { cardJPEGPath } from './cardAssets.js';
 import type { DrawnCard } from './deck.js';
 
-const GAP_PX = 14;
-/** Высота каждой карты после ресайза (пропорции сохраняются, `fit: inside`). */
-const STRIP_CARD_HEIGHT = 920;
+export const STRIP_GAP_PX = 14;
+/** Высота карты на полосе (пропорции сохраняются, `fit: inside`). */
+export const STRIP_CARD_HEIGHT = 920;
 
 type PhotoInput = ReturnType<typeof Input.fromBuffer>;
 
-/**
- * Одно изображение: три карты слева направо (Прошлое — Настоящее — Будущее).
- * Перевёрнутые — с поворотом 180°, как у одиночной карты.
- */
-export async function spreadCompositePhotoInput(
-  drawn: [DrawnCard, DrawnCard, DrawnCard],
-): Promise<PhotoInput> {
-  const widths: number[] = [];
-  const heights: number[] = [];
-  const buffers: Buffer[] = [];
+type ResizedCard = { buffer: Buffer; width: number; height: number };
 
-  for (const d of drawn) {
-    const { data, info } = await sharp(cardJPEGPath(d.card.id))
-      .rotate(d.reversed ? 180 : 0)
-      .resize({ height: STRIP_CARD_HEIGHT, fit: 'inside' })
-      .jpeg({ quality: 90 })
-      .toBuffer({ resolveWithObject: true });
-    buffers.push(data);
-    widths.push(info.width ?? 0);
-    heights.push(info.height ?? 0);
-  }
+/** Размер полосы как у расклада «три карты», если все слоты одной ширины `slotWidth`. */
+export function tripleStripCanvasDimensions(
+  slotWidth: number,
+  slotHeight: number,
+): {
+  width: number;
+  height: number;
+} {
+  const h = Math.max(slotHeight, 1);
+  return { width: slotWidth * 3 + STRIP_GAP_PX * 2, height: h };
+}
 
-  const canvasH = Math.max(heights[0]!, heights[1]!, heights[2]!, 1);
-  const totalW = widths[0]! + GAP_PX + widths[1]! + GAP_PX + widths[2]!;
+/** Левый край среднего слота (карта по центру полосы). */
+export function middleStripSlotLeft(slotWidth: number): number {
+  return slotWidth + STRIP_GAP_PX;
+}
 
-  const composites: sharp.OverlayOptions[] = [];
-  let x = 0;
-  for (let i = 0; i < 3; i++) {
-    const top = Math.round((canvasH - heights[i]!) / 2);
-    composites.push({ input: buffers[i]!, left: x, top });
-    x += widths[i]! + GAP_PX;
-  }
+async function resizeCardForStrip(drawn: DrawnCard): Promise<ResizedCard> {
+  const { data, info } = await sharp(cardJPEGPath(drawn.card.id))
+    .rotate(drawn.reversed ? 180 : 0)
+    .resize({ height: STRIP_CARD_HEIGHT, fit: 'inside' })
+    .jpeg({ quality: 90 })
+    .toBuffer({ resolveWithObject: true });
+  return { buffer: data, width: info.width ?? 0, height: info.height ?? 0 };
+}
 
-  const out = await sharp({
+async function renderStripOnBlack(
+  canvasW: number,
+  canvasH: number,
+  overlays: sharp.OverlayOptions[],
+): Promise<Buffer> {
+  return sharp({
     create: {
-      width: totalW,
+      width: canvasW,
       height: canvasH,
       channels: 3,
       background: '#000000',
     },
   })
-    .composite(composites)
+    .composite(overlays)
     .jpeg({ quality: 88 })
     .toBuffer();
+}
 
+/**
+ * «Карта дня»: та же геометрия полосы, что у трёх карт — горизонтальный кадр, чёрный фон,
+ * одна вертикальная карта в среднем слоте (ширина и высота файла как у центральной ячейки расклада).
+ */
+export async function dayCardStripPhotoInput(drawn: DrawnCard): Promise<PhotoInput> {
+  const card = await resizeCardForStrip(drawn);
+  const { width: canvasW, height: canvasH } = tripleStripCanvasDimensions(card.width, card.height);
+  const left = middleStripSlotLeft(card.width);
+  const top = Math.round((canvasH - card.height) / 2);
+  const out = await renderStripOnBlack(canvasW, canvasH, [{ input: card.buffer, left, top }]);
+  return Input.fromBuffer(out, 'spread-day-card.jpg');
+}
+
+/**
+ * Расклад «прошлое — настоящее — будущее»: три карты слева направо на чёрной полосе.
+ */
+export async function spreadCompositePhotoInput(
+  drawn: [DrawnCard, DrawnCard, DrawnCard],
+): Promise<PhotoInput> {
+  const resized = await Promise.all(drawn.map((d) => resizeCardForStrip(d)));
+  const canvasH = Math.max(...resized.map((c) => c.height), 1);
+  const composites: sharp.OverlayOptions[] = [];
+  let x = 0;
+  for (const card of resized) {
+    const top = Math.round((canvasH - card.height) / 2);
+    composites.push({ input: card.buffer, left: x, top });
+    x += card.width + STRIP_GAP_PX;
+  }
+  const canvasW = x - STRIP_GAP_PX;
+  const out = await renderStripOnBlack(canvasW, canvasH, composites);
   return Input.fromBuffer(out, 'spread-past-present-future.jpg');
 }

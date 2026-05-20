@@ -119,15 +119,21 @@ function dayPushHhmmArgFromMessageText(text: string): string | undefined {
   return rest.split(/\s+/)[0];
 }
 
-async function sendReadingChunks(ctx: Context, rawText: string, userId: number): Promise<void> {
+async function sendReadingChunks(
+  ctx: Context,
+  rawText: string,
+  userId: number,
+  replyToMessageId: number,
+): Promise<void> {
   const normalized = stripModelFormatArtifacts(rawText);
   const parts = splitForTelegram(normalized);
   const formatted = parts.map((c) => formatReadingForTelegram(c));
+  const reply = { reply_parameters: { message_id: replyToMessageId } };
   for (let i = 0; i < formatted.length; i++) {
     const last = i === formatted.length - 1;
     const body = last ? `${formatted[i]}\n\n${SPREAD_DONE_HINT}` : formatted[i];
     const kb = last ? keyboardMainOrDayOnly(userId) : {};
-    await ctx.reply(body, { ...kb, ...TELEGRAM_HTML_PARSE });
+    await ctx.reply(body, { ...reply, ...kb, ...TELEGRAM_HTML_PARSE });
   }
   if (formatted.length > 0) {
     saveLastReading(userId, normalized);
@@ -461,11 +467,20 @@ bot.action('spread', async (ctx) => {
 
   const allExist = cards.every((d) => cardImageExists(d.card.id));
 
+  let faceMessageId: number;
   if (allExist) {
     const photo = await spreadCompositePhotoInput(cards);
-    await ctx.replyWithPhoto(photo, { caption: captionHtml, ...TELEGRAM_HTML_PARSE });
+    const faceMsg = await ctx.replyWithPhoto(photo, {
+      caption: captionHtml,
+      ...TELEGRAM_HTML_PARSE,
+    });
+    faceMessageId = faceMsg.message_id;
   } else {
-    await ctx.reply(`${captionHtml}\n\n${SPREAD_IMAGES_UNAVAILABLE_SUFFIX}`, TELEGRAM_HTML_PARSE);
+    const faceMsg = await ctx.reply(
+      `${captionHtml}\n\n${SPREAD_IMAGES_UNAVAILABLE_SUFFIX}`,
+      TELEGRAM_HTML_PARSE,
+    );
+    faceMessageId = faceMsg.message_id;
   }
 
   const voice = drawVoiceArchetype();
@@ -473,7 +488,7 @@ bot.action('spread', async (ctx) => {
     const text = await withTypingWhile(ctx, () =>
       completeChat(pastPresentFuturePrompt(cards, voice)),
     );
-    await sendReadingChunks(ctx, text, uid);
+    await sendReadingChunks(ctx, text, uid, faceMessageId);
   } catch (e) {
     logHandlerError('spread', e);
     await ctx.reply(AI_TEXT_UNAVAILABLE_MESSAGE, {

@@ -4,7 +4,7 @@ import { drawOne, drawVoiceArchetype, formatDrawnLine } from './deck.js';
 import { completeChat } from './ai.js';
 import { cardOfDayPrompt } from './prompts.js';
 import { cardImageExists } from './cardAssets.js';
-import { cardPhotoInput } from './cardPhotoInput.js';
+import { dayCardStripPhotoInput } from './spreadComposite.js';
 import {
   dayCardFaceCaptionHtml,
   formatReadingForTelegram,
@@ -27,35 +27,43 @@ async function sendCardFaceMessage(
   chatId: number,
   drawn: DrawnCard,
   captionHtml: string,
-): Promise<void> {
+): Promise<number> {
   const cap = captionHtml.slice(0, TG_CAPTION_MAX);
   if (cardImageExists(drawn.card.id)) {
-    const photo = await cardPhotoInput(drawn.card.id, drawn.reversed);
-    await telegram.sendPhoto(chatId, photo, {
+    const photo = await dayCardStripPhotoInput(drawn);
+    const msg = await telegram.sendPhoto(chatId, photo, {
       caption: cap,
       parse_mode: 'HTML',
     });
-  } else {
-    await telegram.sendMessage(chatId, `${cap}\n\n${CARD_DAY_IMAGE_UNAVAILABLE_MESSAGE}`, {
-      parse_mode: 'HTML',
-    });
+    return msg.message_id;
   }
+  const msg = await telegram.sendMessage(
+    chatId,
+    `${cap}\n\n${CARD_DAY_IMAGE_UNAVAILABLE_MESSAGE}`,
+    {
+      parse_mode: 'HTML',
+    },
+  );
+  return msg.message_id;
 }
 
 async function sendDayReadingChunks(
   telegram: Telegraf['telegram'],
   chatId: number,
   rawText: string,
+  replyToMessageId: number,
 ): Promise<void> {
   const normalized = stripModelFormatArtifacts(rawText);
   const parts = splitForTelegram(normalized);
   const formatted = parts.map((c) => formatReadingForTelegram(c));
   const kbLast = keyboardAfterDayReading(chatId);
+  const reply = { reply_parameters: { message_id: replyToMessageId } };
 
   for (let i = 0; i < formatted.length; i++) {
     const last = i === formatted.length - 1;
     const withKb = last ? kbLast : {};
     await telegram.sendMessage(chatId, formatted[i], {
+      ...reply,
       ...withKb,
       ...TELEGRAM_HTML_PARSE,
     });
@@ -90,17 +98,17 @@ export async function deliverCardOfDayReading(
     } catch {
       return 'ai_error';
     }
-    await sendCardFaceMessage(telegram, chatId, drawn, captionHtml);
-    await sendDayReadingChunks(telegram, chatId, rawText);
+    const faceId = await sendCardFaceMessage(telegram, chatId, drawn, captionHtml);
+    await sendDayReadingChunks(telegram, chatId, rawText, faceId);
   } else {
-    await sendCardFaceMessage(telegram, chatId, drawn, captionHtml);
+    const faceId = await sendCardFaceMessage(telegram, chatId, drawn, captionHtml);
     let rawText: string;
     try {
       rawText = await withTypingLoop(() => completeChat(cardOfDayPrompt(drawn, voice)));
     } catch {
       return 'ai_error';
     }
-    await sendDayReadingChunks(telegram, chatId, rawText);
+    await sendDayReadingChunks(telegram, chatId, rawText, faceId);
   }
 
   const reserved = tryConsumeDayDrawSlotSync(chatId, todayKey);
