@@ -4,6 +4,14 @@
 
 ## [Unreleased]
 
+## [2.17.0] — 2026-05-20
+
+Минорный релиз: runbook логов для оператора.
+
+### Docs
+
+- [docs/DEPLOY.md](docs/DEPLOY.md): таблица `[ai_*]`, `[day_push]`, `docker compose logs`, ротация OpenRouter, порог v2.16.
+
 ## [2.15.0] — 2026-05-20
 
 Минорный релиз: `bot.catch` и общая отправка чанков толкования.
