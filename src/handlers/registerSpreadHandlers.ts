@@ -1,0 +1,86 @@
+import type { Context, Telegraf } from 'telegraf';
+import { AI_TEXT_UNAVAILABLE_MESSAGE, SPREAD_DONE_HINT, SPREAD_IMAGES_UNAVAILABLE_SUFFIX } from '../botCopy.js';
+import { keyboardMainOrDayOnly } from '../botKeyboards.js';
+import { completeChat } from '../ai.js';
+import { cardImageExists } from '../cardAssets.js';
+import { drawThreeUnique, drawVoiceArchetype, formatDrawnLine } from '../deck.js';
+import { pastPresentFuturePrompt } from '../prompts.js';
+import {
+  formatReadingForTelegram,
+  stripModelFormatArtifacts,
+  TELEGRAM_HTML_PARSE,
+  threeCardSpreadCaptionHtmlBounded,
+} from '../readingTelegramHtml.js';
+import { spreadCompositePhotoInput } from '../spreadComposite.js';
+import { saveLastReading } from '../lastReadingStore.js';
+import { splitForTelegram } from '../telegramChunks.js';
+import { withTypingWhile } from '../typingIndicator.js';
+import { answerCbQuerySafe, logHandlerError } from './botHelpers.js';
+
+const TG_CAPTION_MAX = 1024;
+
+async function sendReadingChunks(
+  ctx: Context,
+  rawText: string,
+  userId: number,
+  replyToMessageId: number,
+): Promise<void> {
+  const normalized = stripModelFormatArtifacts(rawText);
+  const parts = splitForTelegram(normalized);
+  const formatted = parts.map((c) => formatReadingForTelegram(c));
+  const reply = { reply_parameters: { message_id: replyToMessageId } };
+  for (let i = 0; i < formatted.length; i++) {
+    const last = i === formatted.length - 1;
+    const body = last ? `${formatted[i]}\n\n${SPREAD_DONE_HINT}` : formatted[i];
+    const kb = last ? keyboardMainOrDayOnly(userId) : {};
+    await ctx.reply(body, { ...reply, ...kb, ...TELEGRAM_HTML_PARSE });
+  }
+  if (formatted.length > 0) {
+    saveLastReading(userId, normalized);
+  }
+}
+
+export function registerSpreadHandlers(bot: Telegraf): void {
+  bot.action('spread', async (ctx) => {
+    await answerCbQuerySafe(ctx);
+    const uid = ctx.from?.id;
+    if (uid === undefined) return;
+
+    const cards = drawThreeUnique();
+    const positions = ['Прошлое', 'Настоящее', 'Будущее'] as const;
+    const lines = cards.map((d, i) => `${positions[i]}: ${formatDrawnLine(d)}`);
+    const captionHtml = threeCardSpreadCaptionHtmlBounded(lines, TG_CAPTION_MAX);
+
+    const allExist = cards.every((d) => cardImageExists(d.card.id));
+
+    let faceMessageId: number;
+    if (allExist) {
+      const photo = await spreadCompositePhotoInput(cards);
+      const faceMsg = await ctx.replyWithPhoto(photo, {
+        caption: captionHtml,
+        ...TELEGRAM_HTML_PARSE,
+      });
+      faceMessageId = faceMsg.message_id;
+    } else {
+      const faceMsg = await ctx.reply(
+        `${captionHtml}\n\n${SPREAD_IMAGES_UNAVAILABLE_SUFFIX}`,
+        TELEGRAM_HTML_PARSE,
+      );
+      faceMessageId = faceMsg.message_id;
+    }
+
+    const voice = drawVoiceArchetype();
+    try {
+      const text = await withTypingWhile(ctx, () =>
+        completeChat(pastPresentFuturePrompt(cards, voice)),
+      );
+      await sendReadingChunks(ctx, text, uid, faceMessageId);
+    } catch (e) {
+      logHandlerError('spread', e);
+      await ctx.reply(AI_TEXT_UNAVAILABLE_MESSAGE, {
+        ...keyboardMainOrDayOnly(uid),
+        ...TELEGRAM_HTML_PARSE,
+      });
+    }
+  });
+}
