@@ -1,44 +1,17 @@
-import type { Context, Telegraf } from 'telegraf';
+import type { Telegraf } from 'telegraf';
 import { AI_TEXT_UNAVAILABLE_MESSAGE, SPREAD_DONE_HINT, SPREAD_IMAGES_UNAVAILABLE_SUFFIX } from '../botCopy.js';
 import { keyboardMainOrDayOnly } from '../botKeyboards.js';
 import { completeChat } from '../ai.js';
 import { cardImageExists } from '../cardAssets.js';
 import { drawThreeUnique, drawVoiceArchetype, formatDrawnLine } from '../deck.js';
 import { pastPresentFuturePrompt } from '../prompts.js';
-import {
-  formatReadingForTelegram,
-  stripModelFormatArtifacts,
-  TELEGRAM_HTML_PARSE,
-  threeCardSpreadCaptionHtmlBounded,
-} from '../readingTelegramHtml.js';
+import { TELEGRAM_HTML_PARSE, threeCardSpreadCaptionHtmlBounded } from '../readingTelegramHtml.js';
+import { sendReadingChunksToChat } from '../readingChunksDelivery.js';
 import { spreadCompositePhotoInput } from '../spreadComposite.js';
-import { saveLastReading } from '../lastReadingStore.js';
-import { splitForTelegram } from '../telegramChunks.js';
 import { withTypingWhile } from '../typingIndicator.js';
 import { answerCbQuerySafe, logHandlerError } from './botHelpers.js';
 
 const TG_CAPTION_MAX = 1024;
-
-async function sendReadingChunks(
-  ctx: Context,
-  rawText: string,
-  userId: number,
-  replyToMessageId: number,
-): Promise<void> {
-  const normalized = stripModelFormatArtifacts(rawText);
-  const parts = splitForTelegram(normalized);
-  const formatted = parts.map((c) => formatReadingForTelegram(c));
-  const reply = { reply_parameters: { message_id: replyToMessageId } };
-  for (let i = 0; i < formatted.length; i++) {
-    const last = i === formatted.length - 1;
-    const body = last ? `${formatted[i]}\n\n${SPREAD_DONE_HINT}` : formatted[i];
-    const kb = last ? keyboardMainOrDayOnly(userId) : {};
-    await ctx.reply(body, { ...reply, ...kb, ...TELEGRAM_HTML_PARSE });
-  }
-  if (formatted.length > 0) {
-    saveLastReading(userId, normalized);
-  }
-}
 
 export function registerSpreadHandlers(bot: Telegraf): void {
   bot.action('spread', async (ctx) => {
@@ -74,7 +47,10 @@ export function registerSpreadHandlers(bot: Telegraf): void {
       const text = await withTypingWhile(ctx, () =>
         completeChat(pastPresentFuturePrompt(cards, voice)),
       );
-      await sendReadingChunks(ctx, text, uid, faceMessageId);
+      await sendReadingChunksToChat(ctx.telegram, uid, text, faceMessageId, {
+        lastChunkSuffix: SPREAD_DONE_HINT,
+        lastChunkExtra: keyboardMainOrDayOnly(uid),
+      });
     } catch (e) {
       logHandlerError('spread', e);
       await ctx.reply(AI_TEXT_UNAVAILABLE_MESSAGE, {

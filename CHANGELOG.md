@@ -4,6 +4,19 @@
 
 ## [Unreleased]
 
+## [2.15.0] — 2026-05-20
+
+Минорный релиз: `bot.catch` и общая отправка чанков толкования.
+
+### Changed
+
+- `sendReadingChunksToChat` в `readingChunksDelivery.ts` — расклад «три карты» и «карта дня».
+- Глобальный `bot.catch`: короткое сообщение и клавиатура `/menu`.
+
+### Added
+
+- `UNHANDLED_BOT_ERROR_HTML` в `botCopy.ts`.
+
 ## [2.14.0] — 2026-05-20
 
 Минорный релиз: тонкий `bot.ts`, хендлеры в `src/handlers/`.
