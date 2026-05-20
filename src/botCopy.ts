@@ -4,9 +4,9 @@
  */
 
 import {
+  DAY_LIMIT_ONCE_PER_CALENDAR_DAY,
   dayDrawPhrasesForServer,
   formatHhmmForUser,
-  phrasesForIanaTimezone,
 } from './calendarDayUserPhrases.js';
 
 export const ETHOS = 'Это не гарантия будущего, а повод присмотреться к себе и к картам.';
@@ -48,13 +48,11 @@ export const DAY_IN_FLIGHT_MESSAGE = 'Уже собираю карту дня �
 export const SPREAD_DONE_HINT = 'Новый расклад — снова кнопкой ниже или через /menu.';
 
 export function accessDeniedMessage(): string {
-  const p = dayDrawPhrasesForServer();
-  return `Эта функция сейчас только для приглашённых, с Premium или по промокоду. Карту на день — кнопкой ниже, не чаще раза в сутки ${p.dayLimitCalendar}. Если тестируешь закрытую версию — попроси владельца добавить тебя в список доступа.`;
+  return `Эта функция сейчас только для приглашённых, с Premium или по промокоду. Карту на день — кнопкой ниже, не чаще раза в сутки ${DAY_LIMIT_ONCE_PER_CALENDAR_DAY}. Если тестируешь закрытую версию — попроси владельца добавить тебя в список доступа.`;
 }
 
 export function dayLimitMessage(): string {
-  const p = dayDrawPhrasesForServer();
-  return `Сегодня карта дня уже была. Новая — после полуночи ${p.midnight}.`;
+  return 'Сегодня карта дня уже была. Новая — после полуночи.';
 }
 
 export const LAST_EMPTY_MESSAGE =
@@ -65,10 +63,9 @@ export const SUBSCRIBE_MESSAGES = {
 } as const;
 
 /** После включения подписки (время и пояс — как сохранили при нажатии). */
-export function subscribeEnabledMessageHtml(hhmm: string, tzIana: string): string {
+export function subscribeEnabledMessageHtml(hhmm: string, _tzIana: string): string {
   const t = formatHhmmForUser(hhmm);
-  const p = phrasesForIanaTimezone(tzIana);
-  return `<b>Ок</b>, подписка включена: около ${t} (${p.pushClockInstrumental}). Отписаться или сменить время — кнопками ниже; иначе <code>/pushtime 14:30</code>.`;
+  return `<b>Ок</b>, подписка включена: около ${t}. Отписаться или сменить время — кнопками ниже; иначе <code>/pushtime 14:30</code>.`;
 }
 
 /** Выбор времени рассылки (после <code>/pushtime</code> без аргумента или кнопки «Время рассылки»). */
@@ -82,10 +79,9 @@ export const PUSHTIME_NEED_SUBSCRIPTION_HTML =
 export const PUSHTIME_INVALID_FORMAT_HTML =
   'Укажи время как <code>ЧЧ:ММ</code> (часы 00–23, минуты 00–59), например <code>09:15</code> или <code>14:30</code>. Либо выбери одну из кнопок ниже.';
 
-export function pushtimeSavedMessageHtml(hhmm: string, tzIana: string): string {
+export function pushtimeSavedMessageHtml(hhmm: string, _tzIana: string): string {
   const t = formatHhmmForUser(hhmm);
-  const p = phrasesForIanaTimezone(tzIana);
-  return `<b>Запомнил</b>: рассылка около ${t} (${p.pushClockInstrumental}).`;
+  return `<b>Запомнил</b>: рассылка около ${t}.`;
 }
 
 export const PROMO_MESSAGES = {

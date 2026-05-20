@@ -46,7 +46,6 @@ jobs:
           key: ${{ secrets.DO_SSH_PRIVATE_KEY }}
           envs: APP_DIR
           command_timeout: 25m
-          script_stop: true
           script: |
             set -euo pipefail
             APP_DIR="${APP_DIR:-/opt/vodovorot-bot}"

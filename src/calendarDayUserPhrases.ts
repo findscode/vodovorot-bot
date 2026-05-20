@@ -1,56 +1,18 @@
 /**
- * Человекочитаемые формулировки про календарные сутки и время рассылки
- * (без сырого IANA в чате — только для известных поясов и нейтральный fallback).
+ * Нейтральные формулировки про календарные сутки и время рассылки (без городов и IANA в чате).
  */
 
-import { getDayDrawTimezone } from './dayDrawState.js';
+/** Вставка вроде «не чаще раза в сутки …» */
+export const DAY_LIMIT_ONCE_PER_CALENDAR_DAY = 'за календарные сутки';
 
-type PhrasePack = {
-  /** Вставка вроде «не чаще раза в сутки …» */
+export type CalendarDayPhrases = {
+  /** Фрагмент для «не чаще раза в сутки …» */
   dayLimitCalendar: string;
-  /** После «полуночи …» */
+  /** Для лимита «новая карта — …» */
   midnight: string;
-  /** После «около 9:00 …» (творительный / пояснение часов) */
+  /** Для подписи времени рассылки в /status (без IANA) */
   pushClockInstrumental: string;
 };
-
-const KNOWN: Record<string, PhrasePack> = {
-  'Europe/Moscow': {
-    dayLimitCalendar: 'по московской календарной дате',
-    midnight: 'по Москве',
-    pushClockInstrumental: 'московскому времени',
-  },
-  'Europe/Kaliningrad': {
-    dayLimitCalendar: 'по калининградской календарной дате',
-    midnight: 'по Калининграду',
-    pushClockInstrumental: 'калининградскому времени',
-  },
-  'Europe/Samara': {
-    dayLimitCalendar: 'по самарской календарной дате',
-    midnight: 'по Самаре',
-    pushClockInstrumental: 'самарскому времени',
-  },
-  'Asia/Yekaterinburg': {
-    dayLimitCalendar: 'по екатеринбургской календарной дате',
-    midnight: 'по Екатеринбургу',
-    pushClockInstrumental: 'екатеринбургскому времени',
-  },
-};
-
-const FALLBACK: PhrasePack = {
-  dayLimitCalendar: 'по календарной дате для суток карты дня',
-  midnight: 'когда для карты дня начнутся новые сутки',
-  pushClockInstrumental: 'времени, сохранённому для рассылки',
-};
-
-export function phrasesForIanaTimezone(tz: string): PhrasePack {
-  return KNOWN[tz] ?? FALLBACK;
-}
-
-/** Пояс для лимита «на день» в текущей конфигурации сервера. */
-export function dayDrawPhrasesForServer(): PhrasePack {
-  return phrasesForIanaTimezone(getDayDrawTimezone());
-}
 
 /** «9:00» вместо «09:00» для читаемости. */
 export function formatHhmmForUser(hhmm: string): string {
@@ -59,4 +21,22 @@ export function formatHhmmForUser(hhmm: string): string {
   const h = String(Number(m[1]));
   const min = m[2];
   return `${h}:${min}`;
+}
+
+function neutralPhrases(): CalendarDayPhrases {
+  return {
+    dayLimitCalendar: DAY_LIMIT_ONCE_PER_CALENDAR_DAY,
+    midnight: 'после полуночи',
+    pushClockInstrumental: 'в выбранное время',
+  };
+}
+
+/** Фразы для лимита «карта дня» (текст в чате не привязан к `DAY_DRAW_TIMEZONE`). */
+export function dayDrawPhrasesForServer(): CalendarDayPhrases {
+  return neutralPhrases();
+}
+
+/** Фразы для рассылки; часовой пояс хранится для расчётов, в чате не показываем. */
+export function phrasesForIanaTimezone(_iana: string): CalendarDayPhrases {
+  return neutralPhrases();
 }

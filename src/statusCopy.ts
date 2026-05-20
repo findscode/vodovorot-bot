@@ -1,9 +1,5 @@
 import { hasFullSpreadAccess } from './accessResolve.js';
-import {
-  dayDrawPhrasesForServer,
-  formatHhmmForUser,
-  phrasesForIanaTimezone,
-} from './calendarDayUserPhrases.js';
+import { dayDrawPhrasesForServer, formatHhmmForUser } from './calendarDayUserPhrases.js';
 import { getActivePremiumUntilSync, getDayPushScheduleForUserSync } from './db/usersRepo.js';
 import { getAccessWhitelist } from './runtimeConfig.js';
 
@@ -48,11 +44,8 @@ export function statusTextHtml(userId: number): string {
 
   const push = getDayPushScheduleForUserSync(userId);
   if (push) {
-    const clock = phrasesForIanaTimezone(push.timezoneIana);
     const t = formatHhmmForUser(push.hhmm);
-    lines.push(
-      `<b>Рассылка «карта дня»</b>: включена. Ориентир по времени — около ${t} (${clock.pushClockInstrumental}).`,
-    );
+    lines.push(`<b>Рассылка «карта дня»</b>: включена. Ориентир по времени — около ${t}.`);
   } else {
     lines.push(
       '<b>Рассылка «карта дня»</b>: выключена. Включить — кнопкой под разбором «на день».',

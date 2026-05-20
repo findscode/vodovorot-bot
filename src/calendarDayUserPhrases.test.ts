@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
   dayDrawPhrasesForServer,
   formatHhmmForUser,
@@ -6,27 +6,19 @@ import {
 } from './calendarDayUserPhrases.js';
 
 describe('calendarDayUserPhrases', () => {
-  afterEach(() => {
-    vi.unstubAllEnvs();
-  });
-
-  it('Europe/Moscow: знакомые формулировки', () => {
-    vi.stubEnv('DAY_DRAW_TIMEZONE', 'Europe/Moscow');
+  it('нейтральные формулировки без городов и IANA', () => {
     const p = dayDrawPhrasesForServer();
-    expect(p.midnight).toContain('Москв');
-    expect(p.dayLimitCalendar).toContain('москов');
+    expect(p.dayLimitCalendar).toBe('за календарные сутки');
+    expect(p.midnight).toBe('после полуночи');
+    expect(p.midnight).not.toMatch(/Москв/i);
+    expect(p.dayLimitCalendar).not.toMatch(/москов/i);
   });
 
-  it('неизвестный IANA: нейтральный fallback без сырого имени в фразах', () => {
-    vi.stubEnv('DAY_DRAW_TIMEZONE', 'America/Toronto');
-    const p = dayDrawPhrasesForServer();
-    expect(p.dayLimitCalendar).toContain('карты дня');
-    expect(p.midnight).not.toContain('Toronto');
-  });
-
-  it('phrasesForIanaTimezone для рассылки совпадает с Москвой', () => {
+  it('phrasesForIanaTimezone не раскрывает имя пояса', () => {
     const p = phrasesForIanaTimezone('Europe/Moscow');
-    expect(p.pushClockInstrumental).toContain('москов');
+    expect(p.pushClockInstrumental).toBe('в выбранное время');
+    expect(p.pushClockInstrumental).not.toContain('Europe');
+    expect(p.pushClockInstrumental).not.toMatch(/москов/i);
   });
 
   it('formatHhmmForUser убирает ведущий ноль у часа', () => {
