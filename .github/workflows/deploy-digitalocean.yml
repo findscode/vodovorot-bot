@@ -20,11 +20,23 @@ concurrency:
 
 jobs:
   deploy:
-    if: ${{ secrets.DO_SSH_HOST != '' && secrets.DO_SSH_PRIVATE_KEY != '' && (github.event_name == 'workflow_dispatch' || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main')) }}
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main') }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
+      - name: Skip when SSH secrets are not configured
+        id: gate
+        env:
+          SSH_HOST: ${{ secrets.DO_SSH_HOST }}
+          SSH_KEY: ${{ secrets.DO_SSH_PRIVATE_KEY }}
+        run: |
+          if [ -z "$SSH_HOST" ] || [ -z "$SSH_KEY" ]; then
+            echo "DO_SSH_HOST or DO_SSH_PRIVATE_KEY is empty — skipping deploy."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Deploy over SSH
+        if: steps.gate.outputs.skip != 'true'
         uses: appleboy/ssh-action@v1.2.2
         env:
           APP_DIR: ${{ secrets.DO_APP_DIR }}
