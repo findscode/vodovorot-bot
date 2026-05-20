@@ -4,6 +4,24 @@
 
 ## [Unreleased]
 
+## [2.8.0] — 2026-05-20
+
+Минорный релиз: толкования через **OpenRouter** вместо Cloudflare Workers AI.
+
+### Changed
+
+- ИИ: [OpenRouter Chat Completions](https://openrouter.ai/docs/api/reference/overview), переменная **`OPENROUTER_API_KEY`**; удалены **`CLOUDFLARE_*`**.
+- Последовательный **fallback** по бесплатным моделям (`:free`) из [`src/openRouterModels.ts`](src/openRouterModels.ts) при 429, недоступной модели, гео-ограничении и пустом ответе; фатальные ошибки (401 и т.п.) не перебирают цепочку.
+- Второй прогон «редактор» (русская правка) — та же цепочка моделей.
+
+### Added
+
+- Модули `openRouterChat.ts`, `openRouterFallback.ts`, `openRouterModels.ts`; тесты эвристик fallback.
+
+### Docs
+
+- [docs/DEPLOY.md](docs/DEPLOY.md), [README.md](README.md), [docs/PRIVACY.md](docs/PRIVACY.md), [docs/GLOSSARY.md](docs/GLOSSARY.md), [docs/BOTFATHER.md](docs/BOTFATHER.md), [`.env.example`](.env.example).
+
 ## [2.7.0] — 2026-05-20
 
 Минорный релиз: **прод-деплой на DigitalOcean Droplet** вместо Railway.

@@ -28,8 +28,9 @@
 
 - `BOT_TOKEN` (обязательно)
 - **`DATABASE_PATH`** (опционально) — файл **SQLite**; по умолчанию **`./data/vodovorot.db`**. В проде смонтируйте **том** на каталог `data` (в `docker-compose.yml` — `vodovorot-data:/app/data`) или задайте абсолютный путь на постоянный диск хоста.
-- `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_API_TOKEN` (обязательно для ИИ)
-- `CLOUDFLARE_AI_MODEL` (опционально) — если не задана, в коде используется **`@cf/meta/llama-3.1-8b-instruct`**. Для ещё более устойчивого русского при большей стоимости и задержке можно задать, например, **`@cf/meta/llama-4-scout-17b-16e-instruct`** или **`@cf/mistralai/mistral-small-3.1-24b-instruct`**; см. [Workers AI Models](https://developers.cloudflare.com/workers-ai/models/). Учитывайте: при «подозрении» на англоязычную выдачу бот делает **второй** запрос к Workers AI (ещё одна порция токенов и задержка, тот же провайдер).
+- **`OPENROUTER_API_KEY`** (обязательно для ИИ) — ключ [OpenRouter](https://openrouter.ai/keys). Толкования идут через [Chat Completions](https://openrouter.ai/docs/api/reference/overview).
+- Цепочка **бесплатных** моделей (`:free`) задана в [`src/openRouterModels.ts`](../src/openRouterModels.ts): последовательный **fallback** (не «умный роутер») — при 429, недоступной модели, гео-ограничении провайдера или пустом ответе пробуется следующая модель; при 401/прочих фатальных ошибках цепочку не перебираем.
+- При «подозрении» на англоязычную выдачу бот делает **второй** запрос (роль «редактор») с той же цепочкой моделей.
 - `ALLOWED_TELEGRAM_USER_IDS` (опционально) — см. ниже
 - **`ADMIN_TELEGRAM_USER_IDS`** (опционально) — числовые user id через запятую/пробел/`;`: при старте им в БД выставляется **админ** (полный доступ к раскладам независимо от whitelist).
 - `DAY_DRAW_STATE_PATH` (опционально) — только для **однократной миграции** слотов из JSON 1.x в SQLite; см. ниже
@@ -106,7 +107,7 @@ sqlite3 /path/to/vodovorot.db "INSERT INTO promo_codes (code, premium_days, vali
 
 ```bash
 docker build -t vodovorot-bot .
-docker run --rm -v vodovorot-data:/app/data -e BOT_TOKEN=... -e CLOUDFLARE_ACCOUNT_ID=... -e CLOUDFLARE_API_TOKEN=... -e ALLOWED_TELEGRAM_USER_IDS=123,456 vodovorot-bot
+docker run --rm -v vodovorot-data:/app/data -e BOT_TOKEN=... -e OPENROUTER_API_KEY=... -e ALLOWED_TELEGRAM_USER_IDS=123,456 vodovorot-bot
 ```
 
 ## DigitalOcean Droplet (основной сценарий)
@@ -116,7 +117,7 @@ docker run --rm -v vodovorot-data:/app/data -e BOT_TOKEN=... -e CLOUDFLARE_ACCOU
 ### Первичная настройка (один раз)
 
 1. **ОС:** Ubuntu 22.04/24.04, [Docker Engine](https://docs.docker.com/engine/install/ubuntu/) + `docker compose`.
-2. **`.env`** в `/opt/vodovorot-bot` (не в git): из [`.env.example`](../.env.example) — `BOT_TOKEN`, Cloudflare и при необходимости whitelist.
+2. **`.env`** в `/opt/vodovorot-bot` (не в git): из [`.env.example`](../.env.example) — `BOT_TOKEN`, `OPENROUTER_API_KEY` и при необходимости whitelist. Старые `CLOUDFLARE_*` удалите.
 3. **Git:** read-only **deploy key** в Settings → Deploy keys; клон по SSH — см. ниже или скрипт [`scripts/bootstrap-droplet.sh`](../scripts/bootstrap-droplet.sh) (сохраняет существующий `.env`, при необходимости создаёт **swap 2 GB** — на тарифе **512 MB** без swap `docker build` часто падает с `signal: killed`).
 4. **Секреты Actions** для автодеплоя — в следующем разделе.
 

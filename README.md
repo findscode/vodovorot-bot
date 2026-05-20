@@ -1,6 +1,6 @@
 # Водоворот (Vodovorot)
 
-Telegram-бот Таро на **Node.js 20+**, **TypeScript**, **Telegraf**. Толкования через Cloudflare Workers AI.
+Telegram-бот Таро на **Node.js 20+**, **TypeScript**, **Telegraf**. Толкования через **OpenRouter** (Chat Completions, free-tier fallback).
 
 **Прод** обычно на **DigitalOcean Droplet** (Docker Compose); переменные окружения и runbook — в [docs/DEPLOY.md](docs/DEPLOY.md).
 
