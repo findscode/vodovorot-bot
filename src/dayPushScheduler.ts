@@ -8,6 +8,11 @@ import {
   setDayPushEnabled,
 } from './db/usersRepo.js';
 import { DAY_PUSH_AI_UNAVAILABLE_MESSAGE } from './botCopy.js';
+import {
+  clearPushAiFailure,
+  pushAiFailKey,
+  recordPushAiFailure,
+} from './dayPushAiRetry.js';
 import { dayDrawCalendarDate, getDayDrawTimezone } from './dayDrawState.js';
 import { isAtOrPastLocalHm } from './pushSchedule.js';
 import { withTelegramTypingWhile } from './typingIndicator.js';
@@ -32,8 +37,11 @@ async function runDueDayPushes(bot: Telegraf): Promise<void> {
 
     if (hasDayDrawSlotUsedSync(uid, todayKey)) {
       markDayPushHandledSync(uid, todayKey);
+      clearPushAiFailure(pushAiFailKey(uid, todayKey));
       continue;
     }
+
+    const failKey = pushAiFailKey(uid, todayKey);
 
     try {
       const result = await deliverCardOfDayReading(bot.telegram, uid, 'push', (task) =>
@@ -41,23 +49,35 @@ async function runDueDayPushes(bot: Telegraf): Promise<void> {
       );
       if (result === 'ok') {
         markDayPushHandledSync(uid, todayKey);
+        clearPushAiFailure(failKey);
       } else if (result === 'slot_race') {
         markDayPushHandledSync(uid, todayKey);
+        clearPushAiFailure(failKey);
       } else if (result === 'ai_error') {
-        try {
-          await bot.telegram.sendMessage(uid, DAY_PUSH_AI_UNAVAILABLE_MESSAGE);
-        } catch (sendErr) {
-          console.error(
-            '[day_push] не удалось отправить сообщение об ошибке ИИ user',
-            uid,
-            sendErr,
+        const { count, shouldGiveUp } = recordPushAiFailure(failKey);
+        if (count === 1) {
+          try {
+            await bot.telegram.sendMessage(uid, DAY_PUSH_AI_UNAVAILABLE_MESSAGE);
+          } catch (sendErr) {
+            console.error(
+              '[day_push] не удалось отправить сообщение об ошибке ИИ user',
+              uid,
+              sendErr,
+            );
+          }
+        }
+        if (shouldGiveUp) {
+          markDayPushHandledSync(uid, todayKey);
+          clearPushAiFailure(failKey);
+          console.warn(
+            `[day_push] user ${uid}: сбой ИИ ${count} раз за ${todayKey}, рассылка отложена до завтра`,
           );
         }
-        markDayPushHandledSync(uid, todayKey);
       }
     } catch (e) {
       if (isForbiddenError(e)) {
         setDayPushEnabled(uid, false, s.day_push_timezone);
+        clearPushAiFailure(failKey);
         console.log(`[day_push] подписка отключена для user ${uid} (403)`);
       } else {
         console.error('[day_push] user', uid, e);
