@@ -31,10 +31,6 @@
 - Прод-сценарий: **Docker Compose** на VPS ([`docker-compose.yml`](docker-compose.yml)), том для `data/` (SQLite).
 - CI/CD: workflow [`.github/workflows/deploy-digitalocean.yml`](.github/workflows/deploy-digitalocean.yml) (SSH → `git pull` → `docker compose up -d --build`); удалён `deploy-railway.yml`.
 
-### Added
-
-- Скрипт первичной настройки дроплета: [`scripts/bootstrap-droplet.sh`](scripts/bootstrap-droplet.sh) (git clone, swap, `docker compose up`).
-
 ### Docs
 
 - [docs/DEPLOY.md](docs/DEPLOY.md) — runbook Droplet, автодеплой, deploy key, секреты `DO_SSH_*`.

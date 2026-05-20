@@ -118,7 +118,7 @@ docker run --rm -v vodovorot-data:/app/data -e BOT_TOKEN=... -e OPENROUTER_API_K
 
 1. **ОС:** Ubuntu 22.04/24.04, [Docker Engine](https://docs.docker.com/engine/install/ubuntu/) + `docker compose`.
 2. **`.env`** в `/opt/vodovorot-bot` (не в git): из [`.env.example`](../.env.example) — `BOT_TOKEN`, `OPENROUTER_API_KEY` и при необходимости whitelist. Старые `CLOUDFLARE_*` удалите.
-3. **Git:** read-only **deploy key** в Settings → Deploy keys; клон по SSH — см. ниже или скрипт [`scripts/bootstrap-droplet.sh`](../scripts/bootstrap-droplet.sh) (сохраняет существующий `.env`, при необходимости создаёт **swap 2 GB** — на тарифе **512 MB** без swap `docker build` часто падает с `signal: killed`).
+3. **Git:** read-only **deploy key** в Settings → Deploy keys; клон по SSH — см. ниже. На тарифе **512 MB** для `docker compose build` часто нужен **swap 2 GB** (см. блок «git + deploy key»).
 4. **Секреты Actions** для автодеплоя — в следующем разделе.
 
 Успешный старт: `docker compose logs -f bot` без ошибки про `BOT_TOKEN`; бот отвечает в Telegram.
@@ -185,11 +185,18 @@ cat /root/.ssh/github_deploy.pub
 gh repo deploy-key add ./github_deploy.pub --title droplet-finds
 ```
 
-Bootstrap целиком (на дроплете, после копирования скрипта и `.env`):
+Клон и первый запуск (на дроплете; `.env` заранее положите в `/opt/vodovorot-bot` или скопируйте после клона):
 
 ```bash
-bash /opt/vodovorot-bot/scripts/bootstrap-droplet.sh
+export GIT_SSH_COMMAND='ssh -i /root/.ssh/github_deploy -o IdentitiesOnly=yes'
+git clone git@github.com:findscode/vodovorot-bot.git /opt/vodovorot-bot
+cd /opt/vodovorot-bot
+# при необходимости swap 2 GB (один раз на 512 MB droplet):
+# fallocate -l 2G /swapfile && chmod 600 /swapfile && mkswap /swapfile && swapon /swapfile
+docker compose up -d --build
 ```
+
+Смена **`OPENROUTER_API_KEY`**: отредактируйте `.env` на сервере, затем `docker compose up -d --force-recreate`.
 
 Дальнейшие деплои из Actions: `git pull` + `docker compose up -d --build` в `DO_APP_DIR`.
 
