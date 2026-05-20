@@ -1,9 +1,10 @@
 import { join } from 'node:path';
 import { hasDayDrawSlotUsedSync, tryConsumeDayDrawSlotSync } from './db/dayDrawSlotsRepo.js';
 
-const DEFAULT_DAY_DRAW_TIMEZONE = 'UTC';
+/** UTC+3 — целевая аудитория; переопределяется через `DAY_DRAW_TIMEZONE`. */
+const DEFAULT_DAY_DRAW_TIMEZONE = 'Europe/Moscow';
 
-/** Часовой пояс границы «суток» для лимита «карта дня» (IANA, по умолчанию UTC). */
+/** Часовой пояс границы «суток» для лимита «карта дня» (IANA, по умолчанию Europe/Moscow). */
 export function getDayDrawTimezone(): string {
   const fromEnv = process.env.DAY_DRAW_TIMEZONE?.trim();
   return fromEnv || DEFAULT_DAY_DRAW_TIMEZONE;
@@ -11,14 +12,11 @@ export function getDayDrawTimezone(): string {
 
 /**
  * Календарная дата в часовом поясе лимита — `YYYY-MM-DD`.
- * Граница суток задаётся через `DAY_DRAW_TIMEZONE` или UTC.
+ * Граница суток задаётся через `DAY_DRAW_TIMEZONE` или Europe/Moscow.
  */
 export function dayDrawCalendarDate(now = new Date()): string {
   return calendarDateInTimezone(now, getDayDrawTimezone());
 }
-
-/** @deprecated Используйте `dayDrawCalendarDate`. */
-export const moscowCalendarDate = dayDrawCalendarDate;
 
 export function calendarDateInTimezone(d: Date, timeZone: string): string {
   return new Intl.DateTimeFormat('en-CA', {

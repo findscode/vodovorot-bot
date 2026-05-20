@@ -1,8 +1,8 @@
 # Roadmap: минорные релизы
 
-План улучшений **без** ветвления UX по уровню опыта пользователя. Сутки для лимита «карты дня» — **календарные** в часовом поясе **`Europe/Moscow`** (или `DAY_DRAW_TIMEZONE`). Бот — **только личные сообщения** (private).
+План улучшений **без** ветвления UX по уровню опыта пользователя. Сутки для лимита «карты дня» — **календарные** в **`DAY_DRAW_TIMEZONE`** (IANA; целевой дефолт **UTC+3** = `Europe/Moscow`, см. **2.11**). Бот — **только личные сообщения** (private).
 
-**Текущая версия в репозитории:** **2.6.2** — [CHANGELOG.md](../CHANGELOG.md), `package.json`. Milestone **v1.4.0–v1.9.0** из таблицы ниже **реализованы**; далее — ветка **2.x** (см. таблицу).
+**Текущая версия в репозитории:** **2.10.0** — [CHANGELOG.md](../CHANGELOG.md), `package.json`. Milestone **v1.4.0–v1.9.0** из таблицы ниже **реализованы**; ветка **2.x** — таблица ниже; **2.11+** — надёжность и поддерживаемость (см. [раздел после 2.10](#ветка-211--надёжность-и-поддерживаемость-post-roast-2026-05)).
 
 ### План ветки 2.x (польза и ощущение)
 
@@ -14,11 +14,18 @@
 | **2.4** | **UX: меньше шагов** (аудит 2026-04): подписка на рассылку **без обязательного второго экрана** времени (дефолт из env + кнопка **«Время рассылки»** / **`/pushtime`**); первый «на день» — **сразу полная клавиатура** под текстом, без отдельного экрана только с подпиской и **`/menu`**; расклад «три карты» — **хинт в конце последнего сообщения**, не отдельным пушем; **`/last`** — клавиатура на **каждом** чанке; тихий **`answerCbQuery`** при выборе пресета времени; убраны лишние отсылки к **`/menu`** там, где уже есть кнопки. |
 | **2.5** | **UX второй проход:** расклад «три карты» **без отдельного** «Секунду…» (только индикатор набора); ответы **«На день»** при debounce / лимите / ошибке ИИ и **отказ whitelist** — **с клавиатурой**; после подписки и после смены времени — клавиатура с **отпиской** и **«Время рассылки»**; **`/status`** — строка команд с **`/pushtime`** и **`/promo`**.                                                                                                                                                                                   |
 | **2.6** | **Ожидание ИИ без лишнего сообщения** у ручного **«На день»**: как у расклада в три карты и у push — только **`typing`** через `withTypingWhile` / `withTelegramTypingWhile`, без отдельной строки «Секунду…» в чате.                                                                                                                                                                                                                                                                                                                           |
-| _Далее_ | По желанию: мягкие напоминания, экспорт — отдельными минорами с оценкой влияния на PRIVACY и оператора.                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| **2.7** | Прод на **DigitalOcean** (Docker Compose, SSH deploy после CI).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| **2.8** | **OpenRouter** вместо Cloudflare; цепочка free-моделей.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| **2.9** | Полоса «карта дня»; толкование **ответом** на фото расклада.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| **2.10** | Нейтральные тексты суток; **UTC** по умолчанию; fix deploy `script_stop`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| **2.11–2.17** | Надёжность лимита дня, рассылки, разрезание `bot.ts`, планировщик, ИИ/ops — [ниже](#ветка-211--надёжность-и-поддерживаемость-post-roast-2026-05).                                                                                                                                                                                                                                                                                                                                                                                             |
+| _Позже_ | Мягкие напоминания, экспорт — отдельными минорами с оценкой PRIVACY и оператора.                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 
 ## GitHub: milestones и issues
 
-На GitHub созданы **milestones** [v1.4.0](https://github.com/findscode/vodovorot-bot/milestone/1) … [v1.9.0](https://github.com/findscode/vodovorot-bot/milestone/6) и **issues** с телами из [scripts/roadmap-issue-bodies/](../scripts/roadmap-issue-bodies/).
+**v1.4–v1.9:** milestones [v1.4.0](https://github.com/findscode/vodovorot-bot/milestone/1) … [v1.9.0](https://github.com/findscode/vodovorot-bot/milestone/6), issues [#8](https://github.com/findscode/vodovorot-bot/issues/8) … [#20](https://github.com/findscode/vodovorot-bot/issues/20).
+
+**v2.11–v2.17 (надёжность):** milestones [v2.11.0](https://github.com/findscode/vodovorot-bot/milestone/7) … [v2.17.0](https://github.com/findscode/vodovorot-bot/milestone/13), issues [#37](https://github.com/findscode/vodovorot-bot/issues/37) … [#46](https://github.com/findscode/vodovorot-bot/issues/46) — таблица [выше](#github-milestones-211-v2x-надёжность). Тела: [scripts/roadmap-issue-bodies/](../scripts/roadmap-issue-bodies/).
 
 | Roadmap ID | Issue                                                       |
 | ---------- | ----------------------------------------------------------- |
@@ -229,6 +236,231 @@
 
 ---
 
+## Ветка 2.11+ — Надёжность и поддерживаемость (post-roast 2026-05)
+
+Источник: код-ревью `/roast-me` (архитектура `bot.ts`, инварианты слота «карта дня», рассылка при сбое ИИ, in-memory state, планировщик, DX).
+
+**Принцип порядка:** сначала **инварианты продукта** (слот и push), потом **внутренний** рефакторинг без смены UX, потом docs/ops. Каждый активный пункт — отдельный **минор** SemVer и блок в [CHANGELOG.md](../CHANGELOG.md).
+
+### Решения продукта (2026-05)
+
+| Вопрос | Решение |
+| ------ | ------- |
+| Дефолт суток | **UTC+3** → в коде `Europe/Moscow` (переопределение через `DAY_DRAW_TIMEZONE` по-прежнему) |
+| Подписчики push | Сейчас **2**, ожидается **~10** — текущий cron раз в минуту **достаточен** |
+| Инстансы | **Один** процесс на дроплете; без SQLite «pending», без очередей |
+| Кап ИИ | **Не нужен** — free-модели OpenRouter, существующий лимит «карта дня» + whitelist |
+| GitHub | Milestones **v2.11.0–v2.17.0**, issues v2.11-1 … v2.17-1 |
+
+### Ограничения UX (не ломать текущий подход)
+
+Для релизов **2.11–2.13** (пользователь видит бота):
+
+- **Без** новых команд, кнопок и колбэков; те же `/start`, `/menu`, «На день», «Присылать каждый день», `/pushtime`.
+- **Без** смены порядка сообщений: фото → толкование ответом; только `typing`, без «Секунду…».
+- **Без** смены правила «слот после успешного ИИ» для ручного запроса — меняется только **момент резерва** слота (до выдачи) и **поведение push** при ошибке.
+- Тексты в чате **нейтральные** (как в 2.10) — города и IANA не возвращаем.
+- Рефакторинг **2.14–2.15** — только перенос кода; smoke: те же сценарии в ЛС.
+
+### План минорных релизов 2.11–2.17
+
+| Версия   | Фокус | Issues | Статус |
+| -------- | ----- | ------ | ------ |
+| **2.11** | Дефолт **UTC+3** + переименование `dayDrawCalendarDate` | v2.11-1, v2.11-2 | ✅ в репо **2.11.0** |
+| **2.12** | Слот: reserve → deliver → rollback при `ai_error` | v2.12-1, v2.12-2 | активен |
+| **2.13** | Push: повтор при сбое ИИ; макс. 3 попытки/сутки (in-memory) | v2.13-1, v2.13-2 | активен |
+| **2.14** | Вынести handlers из `bot.ts` (тонкий entry) | v2.14-1 | активен |
+| **2.15** | `bot.catch` + общий `sendReadingChunks` | v2.15-1, v2.15-2 | активен |
+| **2.16** | Планировщик batch/jitter | — | **backlog** (~50+ подписчиков) |
+| **2.17** | Runbook логов OpenRouter / push | v2.17-1 | активен (docs) |
+
+**Снято с плана:** v2.14-2 отдельный BotDeps-эпик (достаточно явных импортов в handlers); v2.17-1 кап ИИ; миграции БД для retry push.
+
+**Не входит (major / позже):** второй инстанс, Postgres, Redis-очередь, новые расклады.
+
+---
+
+### Milestone v2.11.0 — Дефолт UTC+3 и имена
+
+#### Issue v2.11-1 — Дефолт границы суток UTC+3
+
+| Поле | Содержимое |
+| ---- | ---------- |
+| **Title** | `fix(day): default DAY_DRAW_TIMEZONE Europe/Moscow (UTC+3)` |
+| **Labels** | `area/day-draw`, `type/fix`, `docs` |
+| **Description** | После 2.10 в коде дефолт UTC; продуктовое решение — **UTC+3** без обязательного `.env` на дроплете. UX текстов не менять. |
+| **Acceptance criteria** | - [ ] `DEFAULT_DAY_DRAW_TIMEZONE = 'Europe/Moscow'` в `dayDrawState.ts`<br>- [ ] [.env.example](../.env.example), [DEPLOY.md](./DEPLOY.md) согласованы<br>- [ ] Поведение при заданном `DAY_DRAW_TIMEZONE` в `.env` не ломается<br>- [ ] Тесты границы суток около полуночи UTC+3 |
+| **UX** | Пользователь по-прежнему видит «после полуночи» / «за календарные сутки» — без Москвы в чате. |
+
+#### Issue v2.11-2 — Переименование `moscowCalendarDate`
+
+| Поле | Содержимое |
+| ---- | ---------- |
+| **Title** | `refactor: dayDrawCalendarDate вместо moscowCalendarDate` |
+| **Labels** | `refactor`, `area/day-draw` |
+| **Acceptance criteria** | - [ ] Все импорты: `dayDrawCalendarDate`<br>- [ ] Удалён alias `moscowCalendarDate`<br>- [ ] Только внутренние имена; тексты бота не трогать |
+| **Blocked by** | — (можно в одном PR с v2.11-1) |
+
+---
+
+### Milestone v2.12.0 — Инвариант слота «карта дня»
+
+#### Issue v2.12-1 — Резерв слота до выдачи
+
+| Поле | Содержимое |
+| ---- | ---------- |
+| **Title** | `fix(day): резервировать слот до фото и ИИ` |
+| **Labels** | `area/bot`, `type/fix` |
+| **Description** | Сейчас `tryConsumeDayDrawSlotSync` в конце `deliverCardOfDayReading` → при `slot_race` пользователь уже получил контент. |
+| **Acceptance criteria** | - [ ] Слот резервируется **до** отправки фото/текста (или атомарная транзакция «pending → done»)<br>- [ ] При `ai_error` слот **освобождается** (`releaseDayDrawSlot` или delete row)<br>- [ ] Ручной «на день» в `bot.ts` по-прежнему проверяет `hasDayDrawSlotUsed` до входа в delivery<br>- [ ] Тесты: успех потребляет слот; `ai_error` не оставляет занятый слот; двойной клик — один слот |
+| **Files** | `cardOfDayDelivery.ts`, `dayDrawSlotsRepo.ts`, `bot.ts`, тесты |
+
+#### Issue v2.12-2 — In-flight (один процесс)
+
+| Поле | Содержимое |
+| ---- | ---------- |
+| **Title** | `fix(day): dayInFlight согласован с резервом слота` |
+| **Labels** | `area/bot`, `type/fix` |
+| **Blocked by** | v2.12-1 |
+| **Acceptance criteria** | - [ ] Повторный тап во время обработки не обходит лимит (уже занятый слот)<br>- [ ] `dayInFlight` остаётся in-memory; в DEPLOY: **один** контейнер, без горизонтального масштаба<br>- [ ] **Без** новых таблиц SQLite |
+| **UX** | Те же сообщения `DAY_IN_FLIGHT_MESSAGE` / debounce. |
+
+---
+
+### Milestone v2.13.0 — Рассылка «карта дня»
+
+#### Issue v2.13-1 — Не помечать день при `ai_error`
+
+| Поле | Содержимое |
+| ---- | ---------- |
+| **Title** | `fix(day_push): повтор рассылки после сбоя ИИ` |
+| **Labels** | `area/push`, `type/fix` |
+| **Description** | Сейчас `markDayPushHandledSync` вызывается и при `ai_error` — подписчик теряет push на сутки. |
+| **Acceptance criteria** | - [ ] При `ai_error` **не** вызывать `markDayPushHandledSync`<br>- [ ] Сообщение `DAY_PUSH_AI_UNAVAILABLE_MESSAGE` по-прежнему уходит<br>- [ ] Cron в ту же/следующие минуты может повторить попытку<br>- [ ] Тест или сценарий в DEPLOY для ручной проверки |
+| **Files** | `dayPushScheduler.ts` |
+
+#### Issue v2.13-2 — Потолок повторов push (простой)
+
+| Поле | Содержимое |
+| ---- | ---------- |
+| **Title** | `fix(day_push): не более 3 попыток ИИ за сутки (in-memory)` |
+| **Labels** | `area/push`, `type/fix` |
+| **Blocked by** | v2.13-1 |
+| **Description** | После v2.13-1 cron может долбить каждую минуту. При ~10 подписчиках достаточно счётчика в памяти процесса. |
+| **Acceptance criteria** | - [ ] `Map` или аналог: ключ `userId:todayKey`, макс. **3** `ai_error`, затем `markDayPushHandled`<br>- [ ] **Без** миграции схемы БД<br>- [ ] Одна строка в DEPLOY |
+| **UX** | То же `DAY_PUSH_AI_UNAVAILABLE_MESSAGE`; пользователь не видит счётчик попыток. |
+
+---
+
+### Milestone v2.14.0 — Структура `bot.ts`
+
+#### Issue v2.14-1 — Handlers и регистрация
+
+| Поле | Содержимое |
+| ---- | ---------- |
+| **Title** | `refactor(bot): вынести handlers из bot.ts` |
+| **Labels** | `refactor`, `area/bot` |
+| **Acceptance criteria** | - [ ] `src/handlers/`: commands, day, spread, push subscription<br>- [ ] `bot.ts` — init, middleware, `registerHandlers`, `launch`<br>- [ ] **Без** новых публичных API для пользователя<br>- [ ] Существующие `npm test` + ручной smoke в ЛС |
+| **Notes** | Отдельный `BotDeps` не обязателен — прямые импорты модулей достаточны для масштаба проекта. |
+
+---
+
+### Milestone v2.15.0 — Ошибки и DRY сообщений
+
+#### Issue v2.15-1 — Глобальный `bot.catch`
+
+| Поле | Содержимое |
+| ---- | ---------- |
+| **Title** | `feat(bot): глобальный обработчик необработанных ошибок` |
+| **Labels** | `area/bot`, `type/ux` |
+| **Blocked by** | v2.14-1 |
+| **Acceptance criteria** | - [ ] `bot.catch` логирует stack и отвечает коротким HTML + клавиатура `keyboardMainOrDayOnly`<br>- [ ] Не дублировать ответ, если хендлер уже ответил (по возможности) |
+
+#### Issue v2.15-2 — Общая отправка чтений
+
+| Поле | Содержимое |
+| ---- | ---------- |
+| **Title** | `refactor(bot): единый модуль sendReadingChunks` |
+| **Labels** | `refactor` |
+| **Acceptance criteria** | - [ ] `sendReadingChunks` в `bot.ts` и `sendDayReadingChunks` в `cardOfDayDelivery.ts` сведены к одной функции с параметрами (reply, keyboard, saveLast)<br>- [ ] Spread и day используют общий код |
+
+---
+
+### Milestone v2.16.0 — Планировщик push (backlog)
+
+**Не в ближайших релизах:** при **~10** подписчиках полный скан раз в минуту достаточен. Вернуться при **~50+** или заметных пиках CPU/латентности.
+
+Критерий активации эпика (зафиксировать в DEPLOY): подписчиков push &gt; 50 **или** p95 доставки &gt; 2 мин в пиковый час.
+
+Черновик будущего v2.16-1: batch K за тик, опциональный jitter — **без** смены UX времени для пользователя.
+
+---
+
+### Milestone v2.17.0 — Эксплуатация (docs)
+
+#### Issue v2.17-1 — Runbook логов
+
+| Поле | Содержимое |
+| ---- | ---------- |
+| **Title** | `docs: runbook OpenRouter и day_push в DEPLOY` |
+| **Labels** | `docs` |
+| **Acceptance criteria** | - [ ] Таблица: `[ai_error]`, `[ai_success]`, `[day_push]`, `slot_race` — что значит, что делать<br>- [ ] Рекомендация: `docker compose logs -f` + grep<br>- [ ] Ссылка на ротацию `OPENROUTER_API_KEY` |
+
+---
+
+### Сводка 2.11–2.17 (для агента / GitHub)
+
+| Roadmap ID | Milestone | Issue | Кратко |
+| ---------- | --------- | ----- | ------ |
+| v2.11-1 | [v2.11.0](https://github.com/findscode/vodovorot-bot/milestone/7) | [#37](https://github.com/findscode/vodovorot-bot/issues/37) | Дефолт `Europe/Moscow` |
+| v2.11-2 | v2.11.0 | [#38](https://github.com/findscode/vodovorot-bot/issues/38) | `dayDrawCalendarDate` |
+| v2.12-1 | [v2.12.0](https://github.com/findscode/vodovorot-bot/milestone/8) | [#40](https://github.com/findscode/vodovorot-bot/issues/40) | Слот до выдачи |
+| v2.12-2 | v2.12.0 | [#43](https://github.com/findscode/vodovorot-bot/issues/43) | in-flight, один процесс |
+| v2.13-1 | [v2.13.0](https://github.com/findscode/vodovorot-bot/milestone/9) | [#39](https://github.com/findscode/vodovorot-bot/issues/39) | Push retry при ai_error |
+| v2.13-2 | v2.13.0 | [#42](https://github.com/findscode/vodovorot-bot/issues/42) | ≤3 попытки, in-memory |
+| v2.14-1 | [v2.14.0](https://github.com/findscode/vodovorot-bot/milestone/10) | [#44](https://github.com/findscode/vodovorot-bot/issues/44) | handlers/ |
+| v2.15-1 | [v2.15.0](https://github.com/findscode/vodovorot-bot/milestone/11) | [#41](https://github.com/findscode/vodovorot-bot/issues/41) | bot.catch |
+| v2.15-2 | v2.15.0 | [#45](https://github.com/findscode/vodovorot-bot/issues/45) | DRY chunks |
+| — | [v2.16.0 backlog](https://github.com/findscode/vodovorot-bot/milestone/12) | — | perf push отложен |
+| v2.17-1 | [v2.17.0](https://github.com/findscode/vodovorot-bot/milestone/13) | [#46](https://github.com/findscode/vodovorot-bot/issues/46) | Runbook |
+
+Тела issues: [scripts/roadmap-issue-bodies/](../scripts/roadmap-issue-bodies/) (`v2.11-1.md` … `v2.17-1.md`).
+
+**Оценка:** 2.11 ≈ 0.5 дн; 2.12–2.13 ≈ 2 дн; 2.14–2.15 ≈ 3–4 дн; 2.17 ≈ 0.5 дн (docs).
+
+---
+
+## GitHub: milestones 2.11+ (v2.x надёжность)
+
+| Milestone | Описание |
+| --------- | -------- |
+| [v2.11.0](https://github.com/findscode/vodovorot-bot/milestone/7) | UTC+3 default, rename calendar fn |
+| [v2.12.0](https://github.com/findscode/vodovorot-bot/milestone/8) | Day slot invariant |
+| [v2.13.0](https://github.com/findscode/vodovorot-bot/milestone/9) | Push retry |
+| [v2.14.0](https://github.com/findscode/vodovorot-bot/milestone/10) | handlers split |
+| [v2.15.0](https://github.com/findscode/vodovorot-bot/milestone/11) | catch + DRY |
+| [v2.16.0](https://github.com/findscode/vodovorot-bot/milestone/12) | backlog: scheduler perf |
+| [v2.17.0](https://github.com/findscode/vodovorot-bot/milestone/13) | ops runbook |
+
+| Roadmap ID | Issue |
+| ---------- | ----- |
+| v2.11-1 | [#37](https://github.com/findscode/vodovorot-bot/issues/37) |
+| v2.11-2 | [#38](https://github.com/findscode/vodovorot-bot/issues/38) |
+| v2.12-1 | [#40](https://github.com/findscode/vodovorot-bot/issues/40) |
+| v2.12-2 | [#43](https://github.com/findscode/vodovorot-bot/issues/43) |
+| v2.13-1 | [#39](https://github.com/findscode/vodovorot-bot/issues/39) |
+| v2.13-2 | [#42](https://github.com/findscode/vodovorot-bot/issues/42) |
+| v2.14-1 | [#44](https://github.com/findscode/vodovorot-bot/issues/44) |
+| v2.15-1 | [#41](https://github.com/findscode/vodovorot-bot/issues/41) |
+| v2.15-2 | [#45](https://github.com/findscode/vodovorot-bot/issues/45) |
+| v2.17-1 | [#46](https://github.com/findscode/vodovorot-bot/issues/46) |
+
+Скрипт повторного создания (milestones уже есть): `scripts/create-roadmap-2.11-milestones.ps1`.
+
+**Зависимости (комментарии в issues):** [#42](https://github.com/findscode/vodovorot-bot/issues/42) после [#39](https://github.com/findscode/vodovorot-bot/issues/39); [#43](https://github.com/findscode/vodovorot-bot/issues/43) после [#40](https://github.com/findscode/vodovorot-bot/issues/40); [#41](https://github.com/findscode/vodovorot-bot/issues/41) желательно после [#44](https://github.com/findscode/vodovorot-bot/issues/44).
+
+---
+
 ## Сводная таблица версий
 
 Архив эпиков **до ветки 2.x** (история GitHub-milestones v1.4–v1.9). Текущая версия продукта — **в шапке этого файла**.
@@ -241,6 +473,7 @@
 | **1.7.0** | Слот после ИИ, ошибки           | v1.7-1, v1.7-2  | Выпущено в **1.9.0**                                                                 |
 | **1.8.0** | Клавиатура, callback, BotFather | v1.8-1 … v1.8-3 | Выпущено в **1.9.0**                                                                 |
 | **1.9.0** | `/last`                         | v1.9-1          | Выпущено в эпике 1.9.0; актуальная ветка **2.x** — в таблице выше и в `package.json` |
+| **2.11–2.17** | Надёжность, refactor, push, ИИ | v2.11-1 … v2.17-2 | **Запланировано** — [раздел 2.11+](#ветка-211--надёжность-и-поддерживаемость-post-roast-2026-05) |
 
 ---
 

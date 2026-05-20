@@ -16,7 +16,7 @@ import { tryConsumeDayDrawSlotSync } from './db/dayDrawSlotsRepo.js';
 import { saveLastReading } from './lastReadingStore.js';
 import { CARD_DAY_IMAGE_UNAVAILABLE_MESSAGE } from './botCopy.js';
 import { keyboardAfterDayReading } from './botKeyboards.js';
-import { moscowCalendarDate } from './dayDrawState.js';
+import { dayDrawCalendarDate } from './dayDrawState.js';
 
 const TG_CAPTION_MAX = 1024;
 
@@ -87,7 +87,7 @@ export async function deliverCardOfDayReading(
   kind: CardOfDayDeliveryKind,
   withTypingLoop: (task: () => Promise<string>) => Promise<string>,
 ): Promise<'ok' | 'ai_error' | 'slot_race'> {
-  const todayKey = moscowCalendarDate();
+  const todayKey = dayDrawCalendarDate();
   const drawn = drawOne();
   const captionHtml = dayCardFaceCaptionHtml(formatDrawnLine(drawn));
   const voice = drawVoiceArchetype();

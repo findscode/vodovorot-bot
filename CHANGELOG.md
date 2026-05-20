@@ -4,6 +4,19 @@
 
 ## [Unreleased]
 
+## [2.11.0] — 2026-05-20
+
+Минорный релиз: граница суток «карта дня» снова по UTC+3, единое имя `dayDrawCalendarDate`.
+
+### Changed
+
+- **`DAY_DRAW_TIMEZONE`** по умолчанию **`Europe/Moscow`** (UTC+3); переопределение через `.env` без изменений.
+- Везде **`dayDrawCalendarDate`** вместо устаревшего `moscowCalendarDate` (alias удалён).
+
+### Docs
+
+- [docs/DEPLOY.md](docs/DEPLOY.md), [`.env.example`](.env.example).
+
 ## [2.10.0] — 2026-05-20
 
 Минорный релиз: нейтральные тексты про сутки и UTC по умолчанию для границы «карта дня».

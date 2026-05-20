@@ -8,7 +8,7 @@ import {
   setDayPushEnabled,
 } from './db/usersRepo.js';
 import { DAY_PUSH_AI_UNAVAILABLE_MESSAGE } from './botCopy.js';
-import { moscowCalendarDate, getDayDrawTimezone } from './dayDrawState.js';
+import { dayDrawCalendarDate, getDayDrawTimezone } from './dayDrawState.js';
 import { isAtOrPastLocalHm } from './pushSchedule.js';
 import { withTelegramTypingWhile } from './typingIndicator.js';
 
@@ -22,7 +22,7 @@ function isForbiddenError(e: unknown): boolean {
 
 async function runDueDayPushes(bot: Telegraf): Promise<void> {
   const now = new Date();
-  const todayKey = moscowCalendarDate(now);
+  const todayKey = dayDrawCalendarDate(now);
   const subs = listDayPushSubscribersSync();
 
   for (const s of subs) {

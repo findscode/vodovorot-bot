@@ -1,37 +1,43 @@
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { closeDatabase, initDatabase } from './db/database.js';
 import {
   calendarDateInTimezone,
+  dayDrawCalendarDate,
+  getDayDrawTimezone,
   hasDayDrawSlotUsed,
-  moscowCalendarDate,
   tryConsumeDayDrawSlot,
 } from './dayDrawState.js';
 
 describe('dayDrawState / calendar date', () => {
-  it('moscowCalendarDate: до полуночи по Москве остаётся предыдущий календарный день', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it('dayDrawCalendarDate: до полуночи UTC+3 остаётся предыдущий календарный день', () => {
     const d = new Date('2026-04-09T20:59:59.000Z');
     expect(calendarDateInTimezone(d, 'Europe/Moscow')).toBe('2026-04-09');
   });
 
-  it('moscowCalendarDate: после полуночи по Москве — следующий день', () => {
+  it('dayDrawCalendarDate: после полуночи UTC+3 — следующий день', () => {
     const d = new Date('2026-04-09T21:00:00.000Z');
     expect(calendarDateInTimezone(d, 'Europe/Moscow')).toBe('2026-04-10');
   });
 
+  it('default timezone is Europe/Moscow when DAY_DRAW_TIMEZONE unset', () => {
+    vi.stubEnv('DAY_DRAW_TIMEZONE', '');
+    expect(getDayDrawTimezone()).toBe('Europe/Moscow');
+    const d = new Date('2026-04-09T21:00:00.000Z');
+    expect(dayDrawCalendarDate(d)).toBe('2026-04-10');
+  });
+
   it('respects DAY_DRAW_TIMEZONE when set', () => {
-    const prev = process.env.DAY_DRAW_TIMEZONE;
-    process.env.DAY_DRAW_TIMEZONE = 'Pacific/Honolulu';
-    try {
-      const d = new Date('2026-04-09T21:30:00.000Z');
-      expect(calendarDateInTimezone(d, 'Europe/Moscow')).toBe('2026-04-10');
-      expect(moscowCalendarDate(d)).toBe('2026-04-09');
-    } finally {
-      if (prev === undefined) delete process.env.DAY_DRAW_TIMEZONE;
-      else process.env.DAY_DRAW_TIMEZONE = prev;
-    }
+    vi.stubEnv('DAY_DRAW_TIMEZONE', 'Pacific/Honolulu');
+    const d = new Date('2026-04-09T21:30:00.000Z');
+    expect(calendarDateInTimezone(d, 'Europe/Moscow')).toBe('2026-04-10');
+    expect(dayDrawCalendarDate(d)).toBe('2026-04-09');
   });
 });
 

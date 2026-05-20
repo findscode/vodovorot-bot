@@ -36,7 +36,7 @@ import {
   getDayDrawTimezone,
   getDayDrawStatePath,
   hasDayDrawSlotUsed,
-  moscowCalendarDate,
+  dayDrawCalendarDate,
 } from './dayDrawState.js';
 import { drawThreeUnique, drawVoiceArchetype, formatDrawnLine } from './deck.js';
 import { completeChat } from './ai.js';
@@ -422,7 +422,7 @@ bot.action('day', async (ctx) => {
   }
   dayLastTap.set(uid, now);
 
-  const today = moscowCalendarDate();
+  const today = dayDrawCalendarDate();
   if (await hasDayDrawSlotUsed(uid, today)) {
     await ctx.reply(dayLimitMessage(), {
       ...keyboardMainOrDayOnly(uid),
