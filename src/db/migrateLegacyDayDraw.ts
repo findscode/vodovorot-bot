@@ -19,7 +19,9 @@ export function migrateLegacyDayDrawJsonIfNeeded(): void {
     const parsed: unknown = JSON.parse(raw);
     if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) return;
 
-    const ins = db.prepare('INSERT OR IGNORE INTO day_draw_slots (user_id, calendar_date) VALUES (?, ?)');
+    const ins = db.prepare(
+      'INSERT OR IGNORE INTO day_draw_slots (user_id, calendar_date) VALUES (?, ?)',
+    );
     db.transaction(() => {
       for (const [uidStr, cal] of Object.entries(parsed as Record<string, unknown>)) {
         const id = Number(uidStr);

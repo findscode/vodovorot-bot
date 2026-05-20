@@ -6,9 +6,7 @@ const LATIN_LETTER_RE = /[A-Za-z]/g;
  * вероятен уход модели в английский (абзацы, фразы), а не единичные термины.
  */
 export function textLooksNonRussianDominant(text: string): boolean {
-  const stripped = text
-    .replace(/https?:\/\/\S+/gi, ' ')
-    .replace(/<[^>]{0,200}?>/g, ' ');
+  const stripped = text.replace(/https?:\/\/\S+/gi, ' ').replace(/<[^>]{0,200}?>/g, ' ');
   const c = (stripped.match(CYRILLIC_LETTER_RE) ?? []).length;
   const l = (stripped.match(LATIN_LETTER_RE) ?? []).length;
   const total = c + l;

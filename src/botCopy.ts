@@ -3,7 +3,11 @@
  * Обращение — **на «ты»**; без имён переменных окружения и внутренней кухни.
  */
 
-import { dayDrawPhrasesForServer, formatHhmmForUser, phrasesForIanaTimezone } from './calendarDayUserPhrases.js';
+import {
+  dayDrawPhrasesForServer,
+  formatHhmmForUser,
+  phrasesForIanaTimezone,
+} from './calendarDayUserPhrases.js';
 
 export const ETHOS = 'Это не гарантия будущего, а повод присмотреться к себе и к картам.';
 

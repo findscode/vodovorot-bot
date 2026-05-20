@@ -23,7 +23,9 @@ export function tryConsumeDayDrawSlotSync(userId: number, calendarDayKey: string
       .prepare('SELECT 1 AS x FROM day_draw_slots WHERE user_id = ? AND calendar_date = ?')
       .get(userId, calendarDayKey);
     if (got !== undefined) return false;
-    database.prepare('INSERT INTO day_draw_slots (user_id, calendar_date) VALUES (?, ?)').run(userId, calendarDayKey);
+    database
+      .prepare('INSERT INTO day_draw_slots (user_id, calendar_date) VALUES (?, ?)')
+      .run(userId, calendarDayKey);
     return true;
   })();
 }

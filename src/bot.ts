@@ -270,7 +270,10 @@ bot.command('pushtime', async (ctx) => {
     const kbAfterPushtime = isDayPushEnabledSync(uid)
       ? keyboardMainOrDayPlusDayPushShortcut(uid)
       : keyboardMainOrDayOnly(uid);
-    await ctx.reply(pushtimeSavedMessageHtml(hhmm, tz), { ...kbAfterPushtime, ...TELEGRAM_HTML_PARSE });
+    await ctx.reply(pushtimeSavedMessageHtml(hhmm, tz), {
+      ...kbAfterPushtime,
+      ...TELEGRAM_HTML_PARSE,
+    });
     return;
   }
   await ctx.reply(PUSHTIME_PICK_PROMPT_HTML, {
@@ -308,7 +311,10 @@ bot.command('promo', async (ctx) => {
       : '';
   const code = text.split(/\s+/).slice(1).join(' ').trim();
   if (!code) {
-    await ctx.reply(PROMO_MESSAGES.needCode, { ...keyboardMainOrDayOnly(uid), ...TELEGRAM_HTML_PARSE });
+    await ctx.reply(PROMO_MESSAGES.needCode, {
+      ...keyboardMainOrDayOnly(uid),
+      ...TELEGRAM_HTML_PARSE,
+    });
     return;
   }
   const r = tryRedeemPromoCodeSync(uid, code);
@@ -421,11 +427,8 @@ bot.action('day', async (ctx) => {
   dayInFlight.add(uid);
 
   try {
-    const result = await deliverCardOfDayReading(
-      ctx.telegram,
-      uid,
-      'manual',
-      (task) => withTypingWhile(ctx, task),
+    const result = await deliverCardOfDayReading(ctx.telegram, uid, 'manual', (task) =>
+      withTypingWhile(ctx, task),
     );
     if (result === 'ai_error') {
       await ctx.reply(AI_TEXT_UNAVAILABLE_AFTER_CARD_MESSAGE, {
@@ -462,10 +465,7 @@ bot.action('spread', async (ctx) => {
     const photo = await spreadCompositePhotoInput(cards);
     await ctx.replyWithPhoto(photo, { caption: captionHtml, ...TELEGRAM_HTML_PARSE });
   } else {
-    await ctx.reply(
-      `${captionHtml}\n\n${SPREAD_IMAGES_UNAVAILABLE_SUFFIX}`,
-      TELEGRAM_HTML_PARSE,
-    );
+    await ctx.reply(`${captionHtml}\n\n${SPREAD_IMAGES_UNAVAILABLE_SUFFIX}`, TELEGRAM_HTML_PARSE);
   }
 
   const voice = drawVoiceArchetype();

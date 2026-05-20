@@ -1,8 +1,5 @@
 import { join } from 'node:path';
-import {
-  hasDayDrawSlotUsedSync,
-  tryConsumeDayDrawSlotSync,
-} from './db/dayDrawSlotsRepo.js';
+import { hasDayDrawSlotUsedSync, tryConsumeDayDrawSlotSync } from './db/dayDrawSlotsRepo.js';
 
 const DEFAULT_DAY_DRAW_TIMEZONE = 'Europe/Moscow';
 

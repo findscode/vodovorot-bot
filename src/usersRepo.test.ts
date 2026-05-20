@@ -68,13 +68,17 @@ describe('usersRepo / promo', () => {
 
   it('stacking premium adds days from current end', () => {
     extendPremiumByDaysSync(2000, 3);
-    const until1 = (getDb().prepare('SELECT premium_until FROM users WHERE telegram_user_id = 2000').get() as {
-      premium_until: string;
-    }).premium_until;
+    const until1 = (
+      getDb().prepare('SELECT premium_until FROM users WHERE telegram_user_id = 2000').get() as {
+        premium_until: string;
+      }
+    ).premium_until;
     extendPremiumByDaysSync(2000, 2);
-    const until2 = (getDb().prepare('SELECT premium_until FROM users WHERE telegram_user_id = 2000').get() as {
-      premium_until: string;
-    }).premium_until;
+    const until2 = (
+      getDb().prepare('SELECT premium_until FROM users WHERE telegram_user_id = 2000').get() as {
+        premium_until: string;
+      }
+    ).premium_until;
     expect(new Date(until2).getTime()).toBeGreaterThan(new Date(until1).getTime());
   });
 });

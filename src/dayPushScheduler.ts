@@ -47,7 +47,11 @@ async function runDueDayPushes(bot: Telegraf): Promise<void> {
         try {
           await bot.telegram.sendMessage(uid, DAY_PUSH_AI_UNAVAILABLE_MESSAGE);
         } catch (sendErr) {
-          console.error('[day_push] не удалось отправить сообщение об ошибке ИИ user', uid, sendErr);
+          console.error(
+            '[day_push] не удалось отправить сообщение об ошибке ИИ user',
+            uid,
+            sendErr,
+          );
         }
         markDayPushHandledSync(uid, todayKey);
       }

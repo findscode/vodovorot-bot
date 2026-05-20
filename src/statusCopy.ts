@@ -54,7 +54,9 @@ export function statusTextHtml(userId: number): string {
       `<b>Рассылка «карта дня»</b>: включена. Ориентир по времени — около ${t} (${clock.pushClockInstrumental}).`,
     );
   } else {
-    lines.push('<b>Рассылка «карта дня»</b>: выключена. Включить — кнопкой под разбором «на день».');
+    lines.push(
+      '<b>Рассылка «карта дня»</b>: выключена. Включить — кнопкой под разбором «на день».',
+    );
   }
 
   lines.push(

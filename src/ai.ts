@@ -73,7 +73,12 @@ async function runWorkersAi(
       ?.map((e) => e.message)
       .filter(Boolean)
       .join('; ');
-    console.error('[ai_error]', 'api_response', res.status, fromApi ? '(errors array present)' : '');
+    console.error(
+      '[ai_error]',
+      'api_response',
+      res.status,
+      fromApi ? '(errors array present)' : '',
+    );
     throw new Error(`ИИ API ${res.status}`);
   }
 
