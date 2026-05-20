@@ -44,8 +44,11 @@ async function runDueDayPushes(bot: Telegraf): Promise<void> {
     const failKey = pushAiFailKey(uid, todayKey);
 
     try {
-      const result = await deliverCardOfDayReading(bot.telegram, uid, 'push', (task) =>
-        withTelegramTypingWhile(bot.telegram, uid, task),
+      const result = await deliverCardOfDayReading(
+        bot.telegram,
+        uid,
+        (task) => withTelegramTypingWhile(bot.telegram, uid, task),
+        { at: now },
       );
       if (result === 'ok') {
         markDayPushHandledSync(uid, todayKey);
@@ -73,6 +76,8 @@ async function runDueDayPushes(bot: Telegraf): Promise<void> {
             `[day_push] user ${uid}: сбой ИИ ${count} раз за ${todayKey}, рассылка отложена до завтра`,
           );
         }
+      } else if (result === 'delivery_error') {
+        console.error(`[day_push] delivery_error user ${uid} (повтор на следующих тиках)`);
       }
     } catch (e) {
       if (isForbiddenError(e)) {

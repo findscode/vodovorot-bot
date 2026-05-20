@@ -4,6 +4,21 @@
 
 ## [Unreleased]
 
+## [2.18.0] — 2026-05-20
+
+Минорный релиз: точнее ошибки выдачи «карта дня» и единый порядок ИИ → фото.
+
+### Changed
+
+- «На день» (ручной и push): сначала ИИ, затем фото — при сбое OpenRouter нет «сиротской» картинки в чате.
+- `deliverCardOfDayReading`: опция `{ at }` для ключа календарного дня (планировщик передаёт `now` тика).
+- Результат `delivery_error` отдельно от `ai_error`; логи `[day_delivery] ai_error` / `delivery_error`.
+- Сообщения: `CARD_DAY_AI_UNAVAILABLE_MESSAGE`, `CARD_DAY_DELIVERY_ERROR_MESSAGE`.
+
+### Added
+
+- `aiErrors.ts` (`isAiFailure`) и тесты.
+
 ## [2.17.0] — 2026-05-20
 
 Минорный релиз: runbook логов для оператора.

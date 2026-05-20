@@ -23,9 +23,16 @@ export const UNHANDLED_BOT_ERROR_HTML =
 export const AI_TEXT_UNAVAILABLE_MESSAGE =
   'Не удалось получить текст толкования. Попробуй через пару минут.';
 
-/** После карты «на день», если ИИ не ответил — карта уже в чате. */
-export const AI_TEXT_UNAVAILABLE_AFTER_CARD_MESSAGE =
-  'Текст толкования сейчас не подтянулся — картинка карты уже выше. Попробуй «На день» чуть позже (лимит суток не тратится).';
+/** Сбой ИИ при «На день» (фото ещё не отправлено — порядок ИИ → фото). */
+export const CARD_DAY_AI_UNAVAILABLE_MESSAGE =
+  'Не удалось получить текст толкования. Попробуй «На день» чуть позже (лимит суток не тратится).';
+
+/** Сбой Telegram после успешного ИИ (фото/текст не дошли). */
+export const CARD_DAY_DELIVERY_ERROR_MESSAGE =
+  'Текст готов, но отправить сообщение в Telegram не вышло. Попробуй «На день» позже (лимит суток не тратится).';
+
+/** @deprecated Используйте CARD_DAY_AI_UNAVAILABLE_MESSAGE или CARD_DAY_DELIVERY_ERROR_MESSAGE. */
+export const AI_TEXT_UNAVAILABLE_AFTER_CARD_MESSAGE = CARD_DAY_AI_UNAVAILABLE_MESSAGE;
 
 /** Подписчикам: сбой ИИ в день рассылки. */
 export const DAY_PUSH_AI_UNAVAILABLE_MESSAGE =

@@ -1,6 +1,7 @@
 import type { Telegraf } from 'telegraf';
 import {
-  AI_TEXT_UNAVAILABLE_AFTER_CARD_MESSAGE,
+  CARD_DAY_AI_UNAVAILABLE_MESSAGE,
+  CARD_DAY_DELIVERY_ERROR_MESSAGE,
   DAY_DEBOUNCE_MESSAGE,
   DAY_IN_FLIGHT_MESSAGE,
   dayLimitMessage,
@@ -30,18 +31,18 @@ export function registerDayHandlers(bot: Telegraf): void {
       return;
     }
 
-    const now = Date.now();
+    const at = new Date();
     const prevTap = dayLastTap.get(uid) ?? 0;
-    if (now - prevTap < DAY_ACTION_DEBOUNCE_MS) {
+    if (at.getTime() - prevTap < DAY_ACTION_DEBOUNCE_MS) {
       await ctx.reply(DAY_DEBOUNCE_MESSAGE, {
         ...keyboardMainOrDayOnly(uid),
         ...TELEGRAM_HTML_PARSE,
       });
       return;
     }
-    dayLastTap.set(uid, now);
+    dayLastTap.set(uid, at.getTime());
 
-    const today = dayDrawCalendarDate();
+    const today = dayDrawCalendarDate(at);
     if (await hasDayDrawSlotUsed(uid, today)) {
       await ctx.reply(dayLimitMessage(), {
         ...keyboardMainOrDayOnly(uid),
@@ -52,11 +53,19 @@ export function registerDayHandlers(bot: Telegraf): void {
     dayInFlight.add(uid);
 
     try {
-      const result = await deliverCardOfDayReading(ctx.telegram, uid, 'manual', (task) =>
-        withTypingWhile(ctx, task),
+      const result = await deliverCardOfDayReading(
+        ctx.telegram,
+        uid,
+        (task) => withTypingWhile(ctx, task),
+        { at },
       );
       if (result === 'ai_error') {
-        await ctx.reply(AI_TEXT_UNAVAILABLE_AFTER_CARD_MESSAGE, {
+        await ctx.reply(CARD_DAY_AI_UNAVAILABLE_MESSAGE, {
+          ...keyboardMainOrDayOnly(uid),
+          ...TELEGRAM_HTML_PARSE,
+        });
+      } else if (result === 'delivery_error') {
+        await ctx.reply(CARD_DAY_DELIVERY_ERROR_MESSAGE, {
           ...keyboardMainOrDayOnly(uid),
           ...TELEGRAM_HTML_PARSE,
         });
@@ -68,7 +77,7 @@ export function registerDayHandlers(bot: Telegraf): void {
       }
     } catch (e) {
       logHandlerError('day', e);
-      await ctx.reply(AI_TEXT_UNAVAILABLE_AFTER_CARD_MESSAGE, {
+      await ctx.reply(CARD_DAY_DELIVERY_ERROR_MESSAGE, {
         ...keyboardMainOrDayOnly(uid),
         ...TELEGRAM_HTML_PARSE,
       });
