@@ -442,7 +442,10 @@ bot.action('day', async (ctx) => {
         ...TELEGRAM_HTML_PARSE,
       });
     } else if (result === 'slot_race') {
-      console.warn('[day] слот не зарезервирован после успеха (гонка)');
+      await ctx.reply(dayLimitMessage(), {
+        ...keyboardMainOrDayOnly(uid),
+        ...TELEGRAM_HTML_PARSE,
+      });
     }
   } catch (e) {
     logHandlerError('day', e);

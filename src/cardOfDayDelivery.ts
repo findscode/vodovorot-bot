@@ -12,7 +12,10 @@ import {
   TELEGRAM_HTML_PARSE,
 } from './readingTelegramHtml.js';
 import { splitForTelegram } from './telegramChunks.js';
-import { tryConsumeDayDrawSlotSync } from './db/dayDrawSlotsRepo.js';
+import {
+  releaseDayDrawSlotSync,
+  tryConsumeDayDrawSlotSync,
+} from './db/dayDrawSlotsRepo.js';
 import { saveLastReading } from './lastReadingStore.js';
 import { CARD_DAY_IMAGE_UNAVAILABLE_MESSAGE } from './botCopy.js';
 import { keyboardAfterDayReading } from './botKeyboards.js';
@@ -75,11 +78,10 @@ async function sendDayReadingChunks(
 }
 
 /**
- * Полная выдача «карты дня»: фото/текст, ИИ, нарезка сообщений, резерв слота на `todayKey`.
- * Вызывайте только если слот на `todayKey` ещё не занят.
+ * Полная выдача «карты дня»: резерв слота на `todayKey`, затем фото/ИИ/чанки.
+ * При сбое выдачи слот откатывается; при занятой дате — `slot_race` без сообщений в чат.
  *
- * Для **push** сначала запрашивается ИИ, затем карта и текст: при сбое API пользователь не получает
- * повторяющиеся фото из минутного cron.
+ * Для **push** сначала ИИ, затем карта и текст (меньше повторных фото из cron при сбое API).
  */
 export async function deliverCardOfDayReading(
   telegram: Telegraf['telegram'],
@@ -88,32 +90,27 @@ export async function deliverCardOfDayReading(
   withTypingLoop: (task: () => Promise<string>) => Promise<string>,
 ): Promise<'ok' | 'ai_error' | 'slot_race'> {
   const todayKey = dayDrawCalendarDate();
+  if (!tryConsumeDayDrawSlotSync(chatId, todayKey)) {
+    return 'slot_race';
+  }
+
   const drawn = drawOne();
   const captionHtml = dayCardFaceCaptionHtml(formatDrawnLine(drawn));
   const voice = drawVoiceArchetype();
-  if (kind === 'push') {
-    let rawText: string;
-    try {
-      rawText = await withTypingLoop(() => completeChat(cardOfDayPrompt(drawn, voice)));
-    } catch {
-      return 'ai_error';
-    }
-    const faceId = await sendCardFaceMessage(telegram, chatId, drawn, captionHtml);
-    await sendDayReadingChunks(telegram, chatId, rawText, faceId);
-  } else {
-    const faceId = await sendCardFaceMessage(telegram, chatId, drawn, captionHtml);
-    let rawText: string;
-    try {
-      rawText = await withTypingLoop(() => completeChat(cardOfDayPrompt(drawn, voice)));
-    } catch {
-      return 'ai_error';
-    }
-    await sendDayReadingChunks(telegram, chatId, rawText, faceId);
-  }
 
-  const reserved = tryConsumeDayDrawSlotSync(chatId, todayKey);
-  if (!reserved) {
-    return 'slot_race';
+  try {
+    if (kind === 'push') {
+      const rawText = await withTypingLoop(() => completeChat(cardOfDayPrompt(drawn, voice)));
+      const faceId = await sendCardFaceMessage(telegram, chatId, drawn, captionHtml);
+      await sendDayReadingChunks(telegram, chatId, rawText, faceId);
+    } else {
+      const faceId = await sendCardFaceMessage(telegram, chatId, drawn, captionHtml);
+      const rawText = await withTypingLoop(() => completeChat(cardOfDayPrompt(drawn, voice)));
+      await sendDayReadingChunks(telegram, chatId, rawText, faceId);
+    }
+    return 'ok';
+  } catch {
+    releaseDayDrawSlotSync(chatId, todayKey);
+    return 'ai_error';
   }
-  return 'ok';
 }

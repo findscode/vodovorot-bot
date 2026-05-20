@@ -29,3 +29,10 @@ export function tryConsumeDayDrawSlotSync(userId: number, calendarDayKey: string
     return true;
   })();
 }
+
+/** Освободить слот (например после сбоя ИИ до успешной выдачи). */
+export function releaseDayDrawSlotSync(userId: number, calendarDayKey: string): void {
+  getDb()
+    .prepare('DELETE FROM day_draw_slots WHERE user_id = ? AND calendar_date = ?')
+    .run(userId, calendarDayKey);
+}
