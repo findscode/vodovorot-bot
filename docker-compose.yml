@@ -1,0 +1,15 @@
+# Прод на VPS (DigitalOcean Droplet): docker compose up -d --build
+# Переменные — в .env рядом с этим файлом (см. .env.example, docs/DEPLOY.md).
+
+services:
+  bot:
+    build: .
+    image: vodovorot-bot:local
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - vodovorot-data:/app/data
+
+volumes:
+  vodovorot-data:

@@ -1,8 +1,8 @@
 # Деплой
 
-Бот — долгоживущий процесс (`npm start`), удобно крутить в контейнере или на VPS. Ниже: **Docker**, **Railway**, опционально **деплой из GitHub Actions**.
+Бот — долгоживущий процесс (`npm start`), удобно крутить в **Docker** на VPS. Основной сценарий с **2.7.0** — [DigitalOcean Droplet](https://www.digitalocean.com/products/droplets) и [`docker-compose.yml`](../docker-compose.yml); опционально **деплой из GitHub Actions** по SSH.
 
-**Где «сейчас» крутится прод:** в репозитории это **не фиксируется** — зависит от вашего аккаунта Railway, Fly, VPS и т.д. Смотрите панель провайдера, куда уходит образ/репозиторий и какие заданы секреты (`BOT_TOKEN`, `DATABASE_PATH` и др.).
+**Прод:** типично один Droplet с каталогом приложения (например `/opt/vodovorot-bot`), файлом **`.env`** на сервере и именованным томом Docker для **`data/`** (SQLite).
 
 **Личные сообщения:** бот рассчитан на работу **только в private-чате** с пользователем. В группах и каналах обновления **не обрабатываются** (ответов нет).
 
@@ -27,7 +27,7 @@
 Задайте те же переменные, что в [`.env.example`](../.env.example):
 
 - `BOT_TOKEN` (обязательно)
-- **`DATABASE_PATH`** (опционально) — файл **SQLite**; по умолчанию **`./data/vodovorot.db`**. Для стабильности на Railway/Fly смонтируйте **том** на каталог `data` или задайте абсолютный путь на постоянный диск.
+- **`DATABASE_PATH`** (опционально) — файл **SQLite**; по умолчанию **`./data/vodovorot.db`**. В проде смонтируйте **том** на каталог `data` (в `docker-compose.yml` — `vodovorot-data:/app/data`) или задайте абсолютный путь на постоянный диск хоста.
 - `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_API_TOKEN` (обязательно для ИИ)
 - `CLOUDFLARE_AI_MODEL` (опционально) — если не задана, в коде используется **`@cf/meta/llama-3.1-8b-instruct`**. Для ещё более устойчивого русского при большей стоимости и задержке можно задать, например, **`@cf/meta/llama-4-scout-17b-16e-instruct`** или **`@cf/mistralai/mistral-small-3.1-24b-instruct`**; см. [Workers AI Models](https://developers.cloudflare.com/workers-ai/models/). Учитывайте: при «подозрении» на англоязычную выдачу бот делает **второй** запрос к Workers AI (ещё одна порция токенов и задержка, тот же провайдер).
 - `ALLOWED_TELEGRAM_USER_IDS` (опционально) — см. ниже
@@ -35,7 +35,7 @@
 - `DAY_DRAW_STATE_PATH` (опционально) — только для **однократной миграции** слотов из JSON 1.x в SQLite; см. ниже
 - `DAY_DRAW_TIMEZONE`, **`DAY_PUSH_DEFAULT_HHMM`** (опционально) — см. разделы «Лимит карты дня» и «Подписка на карту дня»
 
-На платформе: **Secrets** / **Variables**, не файл в образе.
+В проде: файл **`.env`** рядом с `docker-compose.yml` (не в git), не внутри образа.
 
 ### Админы (полный доступ + флаг в БД)
 
@@ -57,7 +57,7 @@
 **Что сделать вручную:**
 
 1. Узнать **user id** приглашённых (например [@userinfobot](https://t.me/userinfobot)).
-2. **Локально / Railway Variables:** `ALLOWED_TELEGRAM_USER_IDS=<id1>,<id2>`, перезапуск сервиса.
+2. **Локально / `.env` на сервере:** `ALLOWED_TELEGRAM_USER_IDS=<id1>,<id2>`, перезапуск контейнера (`docker compose up -d`).
 3. Проверить: приглашённый видит **две** кнопки; посторонний — только **«На день»** и не открывает spread.
 4. Открыть всем полный доступ — **удалить** переменную или оставить пустой.
 
@@ -94,7 +94,7 @@ sqlite3 /path/to/vodovorot.db "INSERT INTO promo_codes (code, premium_days, vali
 
 ## Картинки карт
 
-Файлы **`assets/cards/00.jpg` … `77.jpg`** хранятся в репозитории (десятки МБ), чтобы Docker-образ на Railway сразу содержал изображения без отдельного тома.
+Файлы **`assets/cards/00.jpg` … `77.jpg`** хранятся в репозитории (десятки МБ), чтобы Docker-образ сразу содержал изображения без отдельного тома на диске.
 
 Обновить набор: локально `npm run download-cards`, затем коммит.
 
@@ -109,34 +109,127 @@ docker build -t vodovorot-bot .
 docker run --rm -v vodovorot-data:/app/data -e BOT_TOKEN=... -e CLOUDFLARE_ACCOUNT_ID=... -e CLOUDFLARE_API_TOKEN=... -e ALLOWED_TELEGRAM_USER_IDS=123,456 vodovorot-bot
 ```
 
-## Railway (основной сценарий)
+## DigitalOcean Droplet (основной сценарий)
 
-### Чеклист
+Бот ходит в Telegram через **long polling** (`bot.launch()`): **входящие порты на дроплете не нужны** (достаточно исходящего HTTPS).
 
-1. [Railway](https://railway.app/) → **New Project** → **Deploy from GitHub repo** → выбрать `vodovorot-bot`.
-2. Сервис должен собираться по **Dockerfile** в корне (при необходимости отключите Nixpacks / укажите Docker).
-3. **Variables**: все ключи из `.env.example` (значения только в Railway).
-4. **Deployments / Logs**: успешный старт, нет ошибки про отсутствие `BOT_TOKEN`.
+### Первичная настройка дроплета (один раз)
 
-### Два способа деплоя при push в `main`
+1. **ОС:** Ubuntu 22.04/24.04 (или другой Linux с Docker).
+2. **Docker:** [официальная инструкция](https://docs.docker.com/engine/install/ubuntu/) + плагин Compose (`docker compose version`).
+3. **Пользователь для деплоя** (рекомендуется не `root`): например `deploy` в группе `docker`.
+4. **SSH-ключ** для GitHub Actions: пара ключей на вашей машине → публичный ключ в `~deploy/.ssh/authorized_keys` на дроплете; приватный — в секрет **`DO_SSH_PRIVATE_KEY`**.
+5. **Клон репозитория** (read-only deploy key или HTTPS с PAT — на ваш выбор):
 
-| Способ            | Что сделать                                                                                                                                                |
-| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Встроенный**    | В Railway включён деплой из GitHub: каждый push в `main` собирает репо на стороне Railway.                                                                 |
-| **Через Actions** | Workflow [`.github/workflows/deploy-railway.yml`](../.github/workflows/deploy-railway.yml): после **успешного** CI на `main` вызывается `railway up --ci`. |
+```bash
+sudo mkdir -p /opt/vodovorot-bot
+sudo chown deploy:deploy /opt/vodovorot-bot
+sudo -u deploy git clone https://github.com/<org>/vodovorot-bot.git /opt/vodovorot-bot
+cd /opt/vodovorot-bot
+git checkout main
+```
 
-Используйте **что-то одно**. Если оставить оба, получите **два деплоя** на один push — отключите авто-деплой из GitHub в настройках сервиса Railway **или** не задавайте секрет `RAILWAY_TOKEN` (тогда workflow Deploy Railway будет пропускаться).
+6. **`.env` на сервере** (не в git): скопируйте с [`.env.example`](../.env.example), заполните `BOT_TOKEN`, Cloudflare, при необходимости whitelist и админов.
+7. **Старт:**
 
-### GitHub Actions → Railway
+```bash
+cd /opt/vodovorot-bot
+docker compose up -d --build
+docker compose logs -f bot
+```
 
-1. В Railway: **Project → Settings → Tokens** (или аналог) → создайте **Project token** для нужного окружения.
-2. В GitHub репозитория: **Settings → Secrets and variables → Actions**:
-   - **`RAILWAY_TOKEN`** — project token (обязательно для workflow).
-   - **`RAILWAY_SERVICE`** — имя сервиса в проекте, если сервисов несколько (опционально).
+Успешный старт: в логах нет ошибки про отсутствие `BOT_TOKEN`; бот отвечает в Telegram.
 
-3. Убедитесь, что в Railway **отключён** дублирующий деплой из GitHub (см. выше), если включили Actions.
+### Обновление вручную
 
-Ручной запуск: вкладка **Actions** → **Deploy Railway** → **Run workflow**.
+```bash
+cd /opt/vodovorot-bot
+git pull --ff-only origin main
+docker compose up -d --build
+```
+
+Том **`vodovorot-data`** сохраняет SQLite и подписки между пересборками.
+
+### Миграция с Railway
+
+1. **Скачайте БД** с Railway (том на `data/` или файл по `DATABASE_PATH`) — `vodovorot.db` и при необходимости legacy `day-draw-state.json`.
+2. На дроплете **остановите** старый прод на Railway только после того, как новый инстанс проверен (два бота с одним `BOT_TOKEN` — гонка обновлений).
+3. Скопируйте `vodovorot.db` в том Docker:
+
+```bash
+# пример: том называется vodovorot-bot_vodovorot-data (префикс = имя каталога проекта)
+docker compose down
+docker run --rm -v vodovorot-bot_vodovorot-data:/data -v "$PWD":/backup alpine \
+  cp /backup/vodovorot.db /data/vodovorot.db
+docker compose up -d
+```
+
+Имя тома уточните: `docker volume ls`.
+
+4. В GitHub удалите секреты **`RAILWAY_TOKEN`** / **`RAILWAY_SERVICE`**; остановите или удалите проект в Railway.
+
+### GitHub Actions → Droplet (автодеплой)
+
+Workflow [`.github/workflows/deploy-digitalocean.yml`](../.github/workflows/deploy-digitalocean.yml):
+
+1. Push в **`main`** → job **CI** (`lint-test-build`).
+2. После **успешного** CI автоматически стартует **Deploy DigitalOcean** (через `workflow_run`).
+3. На дроплете: `git pull` + `docker compose up -d --build`.
+
+Ручной запуск: **Actions** → **Deploy DigitalOcean** → **Run workflow**.
+
+Если не заданы **`DO_SSH_HOST`** и **`DO_SSH_PRIVATE_KEY`**, deploy-job пропускается.
+
+#### Секреты в GitHub
+
+**Settings → Secrets and variables → Actions**:
+
+| Секрет | Пример | Назначение |
+| ------ | ------ | ---------- |
+| **`DO_SSH_HOST`** | `134.122.69.116` | публичный IP дроплета |
+| **`DO_SSH_USER`** | `root` | пользователь SSH (тот, у кого в `authorized_keys` ваш ключ) |
+| **`DO_SSH_PRIVATE_KEY`** | содержимое `~/.ssh/id_ed25519` | ключ для входа Actions → дроплет (не deploy key репозитория) |
+| **`DO_APP_DIR`** | `/opt/vodovorot-bot` | опционально; каталог git-клона |
+
+Локально (PowerShell), если секретов ещё нет:
+
+```powershell
+gh secret set DO_SSH_HOST --body "134.122.69.116"
+gh secret set DO_SSH_USER --body "root"
+Get-Content $env:USERPROFILE\.ssh\id_ed25519 -Raw | gh secret set DO_SSH_PRIVATE_KEY
+gh secret set DO_APP_DIR --body "/opt/vodovorot-bot"
+```
+
+#### Один раз на дроплете: git + deploy key
+
+Репозиторий **приватный** — для `git pull` на сервере нужен **read-only deploy key** (отдельно от `DO_SSH_PRIVATE_KEY`).
+
+На дроплете:
+
+```bash
+ssh-keygen -t ed25519 -f /root/.ssh/github_deploy -N "" -C "vodovorot-droplet-deploy"
+cat /root/.ssh/github_deploy.pub
+```
+
+Публичный ключ добавьте в GitHub: **репозиторий → Settings → Deploy keys → Add deploy key** (read-only), заголовок например `droplet-finds`.
+
+Или с ПК (после `scp` ключа с дроплета):
+
+```bash
+gh repo deploy-key add ./github_deploy.pub --title droplet-finds --read-only
+```
+
+Клон и `.env` (значения не в git):
+
+```bash
+export GIT_SSH_COMMAND='ssh -i /root/.ssh/github_deploy -o IdentitiesOnly=yes'
+git clone git@github.com:findscode/vodovorot-bot.git /opt/vodovorot-bot
+cd /opt/vodovorot-bot
+cp /path/to/.env .env   # или создайте из .env.example
+docker compose up -d --build
+```
+
+Дальнейшие деплои из Actions обновляют код через `git pull` в `DO_APP_DIR`.
 
 ## Fly.io (кратко)
 

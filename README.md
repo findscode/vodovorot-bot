@@ -2,7 +2,7 @@
 
 Telegram-бот Таро на **Node.js 20+**, **TypeScript**, **Telegraf**. Толкования через Cloudflare Workers AI.
 
-Конкретный **прод-хостинг** (Railway, Fly, свой сервер и т.д.) в репозитории не указывается — это настройка оператора; типовые варианты и переменные окружения — в [docs/DEPLOY.md](docs/DEPLOY.md).
+**Прод** обычно на **DigitalOcean Droplet** (Docker Compose); переменные окружения и runbook — в [docs/DEPLOY.md](docs/DEPLOY.md).
 
 ## Быстрый старт
 
@@ -18,7 +18,7 @@ Telegram-бот Таро на **Node.js 20+**, **TypeScript**, **Telegraf**. Т�
 - [Глоссарий](docs/GLOSSARY.md)
 - [Схема веток](docs/BRANCHING.md)
 - [Процесс разработки и GitHub](docs/DEV-PROCESS.md)
-- [Деплой (Docker, Fly.io, Railway)](docs/DEPLOY.md)
+- [Деплой (Docker, DigitalOcean)](docs/DEPLOY.md)
 - [BotFather: About, Description, Privacy](docs/BOTFATHER.md)
 - [Roadmap минорных релизов и issues](docs/ROADMAP.md)
 

@@ -26,7 +26,7 @@
 **Settings → Secrets and variables → Actions**
 
 - Для текущего `ci.yml` секреты **не обязательны** (сборка без токена бота).
-- Для деплоя из Actions в Railway: **`RAILWAY_TOKEN`** (и при необходимости **`RAILWAY_SERVICE`**), см. [DEPLOY.md](DEPLOY.md). Другие примеры: `FLY_API_TOKEN`, `BOT_TOKEN` — только если соответствующий workflow включён; не коммитьте значения в репозиторий.
+- Для деплоя на Droplet из Actions: **`DO_SSH_HOST`**, **`DO_SSH_USER`**, **`DO_SSH_PRIVATE_KEY`** (опционально **`DO_APP_DIR`**), см. [DEPLOY.md](DEPLOY.md). Не коммитьте ключи и токены в репозиторий.
 
 ## Issues и PR
 

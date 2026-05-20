@@ -67,7 +67,7 @@ Git-теги релизов: **`v` + версия**, например `v1.2.3` (
 ```text
 fix(bot): handle empty AI response without crashing
 
-feat(deploy): add Railway deploy workflow after CI
+feat(deploy): add DigitalOcean SSH deploy workflow after CI
 ```
 
 **Не добавляйте** в конец сообщения служебные хвосты вроде `Made-with: Cursor` — они засоряют историю.

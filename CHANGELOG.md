@@ -4,6 +4,20 @@
 
 ## [Unreleased]
 
+## [2.7.0] — 2026-05-20
+
+Минорный релиз: **прод-деплой на DigitalOcean Droplet** вместо Railway.
+
+### Changed
+
+- Прод-сценарий: **Docker Compose** на VPS ([`docker-compose.yml`](docker-compose.yml)), том для `data/` (SQLite).
+- CI/CD: workflow [`.github/workflows/deploy-digitalocean.yml`](.github/workflows/deploy-digitalocean.yml) (SSH → `git pull` → `docker compose up -d --build`); удалён `deploy-railway.yml`.
+
+### Docs
+
+- [docs/DEPLOY.md](docs/DEPLOY.md) — runbook Droplet, миграция с Railway, секреты `DO_SSH_*`.
+- [README.md](README.md), [docs/DEV-PROCESS.md](docs/DEV-PROCESS.md).
+
 ## [2.6.2] — 2026-04-23
 
 Патч: единый вид **подписей к фото** с картами, фильтрация служебных фраз модели и сохранение «последнего разбора» без артефактов.
