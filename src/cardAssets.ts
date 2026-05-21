@@ -25,7 +25,11 @@ export function cardAssetPath(cardId: number): string {
   if (!isValidCardId(cardId)) {
     throw new RangeError(`Invalid card id: ${cardId}`);
   }
-  return join(CARDS_ASSETS_DIR, cardFileName(cardId));
+  const png = join(CARDS_ASSETS_DIR, cardFileName(cardId));
+  if (existsSync(png)) return png;
+  const jpg = join(CARDS_ASSETS_DIR, legacyCardJPEGFileName(cardId));
+  if (existsSync(jpg)) return jpg;
+  return png;
 }
 
 /** @deprecated Используйте {@link cardAssetPath}. */
