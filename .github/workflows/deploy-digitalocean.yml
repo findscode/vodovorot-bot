@@ -29,11 +29,25 @@ jobs:
         env:
           SSH_HOST: ${{ secrets.DO_SSH_HOST }}
           SSH_KEY: ${{ secrets.DO_SSH_PRIVATE_KEY }}
+          SSH_USER: ${{ secrets.DO_SSH_USER }}
         run: |
-          if [ -z "$SSH_HOST" ] || [ -z "$SSH_KEY" ]; then
-            echo "DO_SSH_HOST or DO_SSH_PRIVATE_KEY is empty — skipping deploy."
+          if [ -z "$SSH_HOST" ] || [ -z "$SSH_KEY" ] || [ -z "$SSH_USER" ]; then
+            echo "DO_SSH_HOST, DO_SSH_USER or DO_SSH_PRIVATE_KEY is empty — skipping deploy."
             echo "skip=true" >> "$GITHUB_OUTPUT"
+          elif ! printf '%s' "$SSH_KEY" | grep -q 'BEGIN.*PRIVATE KEY'; then
+            echo "DO_SSH_PRIVATE_KEY must be a full OpenSSH/PEM private key (see docs/DEPLOY.md)."
+            exit 1
           fi
+
+      - name: Prepare SSH key file
+        if: steps.gate.outputs.skip != 'true'
+        env:
+          SSH_KEY: ${{ secrets.DO_SSH_PRIVATE_KEY }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/do_deploy_key
+          chmod 600 ~/.ssh/do_deploy_key
+          ssh-keygen -y -f ~/.ssh/do_deploy_key > /dev/null
 
       - name: Deploy over SSH
         if: steps.gate.outputs.skip != 'true'
@@ -43,7 +57,8 @@ jobs:
         with:
           host: ${{ secrets.DO_SSH_HOST }}
           username: ${{ secrets.DO_SSH_USER }}
-          key: ${{ secrets.DO_SSH_PRIVATE_KEY }}
+          key_path: ~/.ssh/do_deploy_key
+          port: 22
           envs: APP_DIR
           command_timeout: 25m
           script: |

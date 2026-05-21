@@ -158,7 +158,7 @@ Workflow [`.github/workflows/deploy-digitalocean.yml`](../.github/workflows/depl
 | ------------------------ | ------------------------------ | ------------------------------------------------------------ |
 | **`DO_SSH_HOST`**        | `134.122.69.116`               | публичный IP дроплета                                        |
 | **`DO_SSH_USER`**        | `root`                         | пользователь SSH (тот, у кого в `authorized_keys` ваш ключ)  |
-| **`DO_SSH_PRIVATE_KEY`** | содержимое `~/.ssh/id_ed25519` | ключ для входа Actions → дроплет (не deploy key репозитория) |
+| **`DO_SSH_PRIVATE_KEY`** | **полный** приватный ключ `~/.ssh/id_ed25519` (от `-----BEGIN` до `-----END`, с переводами строк) | вход Actions → дроплет; **не** GitHub deploy key репозитория |
 | **`DO_APP_DIR`**         | `/opt/vodovorot-bot`           | опционально; каталог git-клона                               |
 
 Локально (PowerShell), если секретов ещё нет:
@@ -169,6 +169,16 @@ gh secret set DO_SSH_USER --body "root"
 Get-Content $env:USERPROFILE\.ssh\id_ed25519 -Raw | gh secret set DO_SSH_PRIVATE_KEY
 gh secret set DO_APP_DIR --body "/opt/vodovorot-bot"
 ```
+
+Проверка с ПК (тот же ключ, что в `DO_SSH_PRIVATE_KEY`):
+
+```powershell
+ssh -o BatchMode=yes root@134.122.69.116 "echo ok"
+```
+
+Публичная часть должна быть в `/root/.ssh/authorized_keys` на дроплете. Ошибка CI `unable to authenticate, attempted methods [none publickey]` почти всегда значит: в секрет попал **не тот** ключ (например deploy key), обрезанный текст или ключ без переводов строк — перезапишите секрет командой выше.
+
+Ручной прогон деплоя: **Actions → Deploy DigitalOcean → Run workflow**.
 
 #### Один раз на дроплете: git + deploy key
 
