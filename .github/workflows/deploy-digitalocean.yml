@@ -37,7 +37,7 @@ jobs:
 
       - name: Deploy over SSH
         if: steps.gate.outputs.skip != 'true'
-        uses: appleboy/ssh-action@v1.2.2
+        uses: appleboy/ssh-action@v1.2.5
         env:
           APP_DIR: ${{ secrets.DO_APP_DIR }}
         with:
