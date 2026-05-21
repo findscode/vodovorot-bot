@@ -71,9 +71,10 @@ export async function dayCardStripPhotoInput(drawn: DrawnCard): Promise<PhotoInp
 /**
  * Расклад «прошлое — настоящее — будущее»: три карты слева направо на чёрной полосе.
  */
-export async function spreadCompositePhotoInput(
+/** JPEG полосы из трёх карт (для расклада и глубинной диагностики). */
+export async function tripletStripJpegBuffer(
   drawn: [DrawnCard, DrawnCard, DrawnCard],
-): Promise<PhotoInput> {
+): Promise<{ buffer: Buffer; width: number; height: number }> {
   const resized = await Promise.all(drawn.map((d) => resizeCardForStrip(d)));
   const canvasH = Math.max(...resized.map((c) => c.height), 1);
   const composites: sharp.OverlayOptions[] = [];
@@ -84,6 +85,13 @@ export async function spreadCompositePhotoInput(
     x += card.width + STRIP_GAP_PX;
   }
   const canvasW = x - STRIP_GAP_PX;
-  const out = await renderStripOnBlack(canvasW, canvasH, composites);
-  return Input.fromBuffer(out, 'spread-past-present-future.jpg');
+  const buffer = await renderStripOnBlack(canvasW, canvasH, composites);
+  return { buffer, width: canvasW, height: canvasH };
+}
+
+export async function spreadCompositePhotoInput(
+  drawn: [DrawnCard, DrawnCard, DrawnCard],
+): Promise<PhotoInput> {
+  const { buffer } = await tripletStripJpegBuffer(drawn);
+  return Input.fromBuffer(buffer, 'spread-past-present-future.jpg');
 }

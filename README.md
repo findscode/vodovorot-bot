@@ -1,6 +1,6 @@
 # Водоворот (Vodovorot)
 
-Telegram-бот Таро на **Node.js 20+**, **TypeScript**, **Telegraf**. Толкования через **OpenRouter** (Chat Completions, free-tier fallback).
+Telegram-бот Таро на **Node.js 20+**, **TypeScript**, **Telegraf**. Толкования через **OpenRouter** (Chat Completions, free-tier fallback). **v3.0** — [глубинная диагностика](docs/ROADMAP.md#ветка-30--глубинная-диагностика) (до 7 вопросов за одно гадание).
 
 **Версия:** в `package.json` и [CHANGELOG.md](CHANGELOG.md). **Прод** — обычно **DigitalOcean Droplet** (Docker Compose); переменные, деплой и runbook — [docs/DEPLOY.md](docs/DEPLOY.md).
 

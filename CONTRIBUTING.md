@@ -1,6 +1,6 @@
 # Участие в разработке
 
-Документация проекта: [docs/README.md](docs/README.md). Текущая линия релизов — **2.x** (см. [CHANGELOG.md](CHANGELOG.md), [docs/ROADMAP.md](docs/ROADMAP.md)).
+Документация проекта: [docs/README.md](docs/README.md). Текущая линия — **3.0.x** (см. [CHANGELOG.md](CHANGELOG.md), [docs/ROADMAP.md](docs/ROADMAP.md#ветка-30--глубинная-диагностика)).
 
 ## Версионирование (SemVer)
 

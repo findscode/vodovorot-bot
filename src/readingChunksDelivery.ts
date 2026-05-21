@@ -1,5 +1,6 @@
 import type { Telegraf } from 'telegraf';
 import {
+  escapeTelegramHtml,
   formatReadingForTelegram,
   stripModelFormatArtifacts,
   TELEGRAM_HTML_PARSE,
@@ -27,6 +28,43 @@ export async function sendReadingChunksToChat(
   const normalized = stripModelFormatArtifacts(rawText);
   const parts = splitForTelegram(normalized);
   const formatted = parts.map((c) => formatReadingForTelegram(c));
+  const reply = { reply_parameters: { message_id: replyToMessageId } };
+
+  for (let i = 0; i < formatted.length; i++) {
+    const last = i === formatted.length - 1;
+    let body = formatted[i];
+    let extra: TelegramSendMessageExtra = {};
+    if (last) {
+      if (options.lastChunkSuffix) {
+        body = `${body}\n\n${options.lastChunkSuffix}`;
+      }
+      if (options.lastChunkExtra) {
+        extra = options.lastChunkExtra;
+      }
+    }
+    await telegram.sendMessage(chatId, body, {
+      ...reply,
+      ...extra,
+      ...TELEGRAM_HTML_PARSE,
+    });
+  }
+
+  if (options.saveLastReading !== false && formatted.length > 0) {
+    saveLastReading(chatId, normalized);
+  }
+}
+
+/** Толкование без меток разделов (глубинная диагностика, триплет). */
+export async function sendPlainReadingChunksToChat(
+  telegram: Telegraf['telegram'],
+  chatId: number,
+  rawText: string,
+  replyToMessageId: number,
+  options: ReadingChunksOptions = {},
+): Promise<void> {
+  const normalized = stripModelFormatArtifacts(rawText);
+  const parts = splitForTelegram(normalized);
+  const formatted = parts.map((c) => escapeTelegramHtml(c));
   const reply = { reply_parameters: { message_id: replyToMessageId } };
 
   for (let i = 0; i < formatted.length; i++) {

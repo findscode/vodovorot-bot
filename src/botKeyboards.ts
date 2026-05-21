@@ -4,27 +4,34 @@ import { DAY_PUSH_HHMM_PRESETS } from './dayPushPresets.js';
 import { hasFullSpreadAccess } from './accessResolve.js';
 import { isDayPushEnabledSync } from './db/usersRepo.js';
 
+function mainSpreadRows(userId: number | undefined) {
+  const rows: ReturnType<typeof Markup.button.callback>[][] = [
+    [Markup.button.callback('На день', 'day')],
+  ];
+  if (hasFullSpreadAccess(userId)) {
+    rows.push([Markup.button.callback('Прошлое — настоящее — будущее', 'spread')]);
+  }
+  rows.push([Markup.button.callback('Глубинная диагностика', 'deep')]);
+  return rows;
+}
+
 export function keyboardMainOrDayOnly(userId: number | undefined) {
-  const full = hasFullSpreadAccess(userId);
-  return full
-    ? Markup.inlineKeyboard([
-        [Markup.button.callback('На день', 'day')],
-        [Markup.button.callback('Прошлое — настоящее — будущее', 'spread')],
-      ])
-    : Markup.inlineKeyboard([[Markup.button.callback('На день', 'day')]]);
+  return Markup.inlineKeyboard(mainSpreadRows(userId));
+}
+
+export function keyboardDeepIntro() {
+  return Markup.inlineKeyboard([[Markup.button.callback('Отмена', 'deep_cancel')]]);
+}
+
+export function keyboardDeepInChain() {
+  return Markup.inlineKeyboard([[Markup.button.callback('Закончить гадание', 'deep_end')]]);
 }
 
 /**
  * После толкования «карта дня»: основные кнопки + подписка / отписка от ежедневной рассылки.
  */
 export function keyboardAfterDayReading(userId: number) {
-  const full = hasFullSpreadAccess(userId);
-  const rows = full
-    ? [
-        [Markup.button.callback('На день', 'day')],
-        [Markup.button.callback('Прошлое — настоящее — будущее', 'spread')],
-      ]
-    : [[Markup.button.callback('На день', 'day')]];
+  const rows = mainSpreadRows(userId);
 
   const subRow = isDayPushEnabledSync(userId)
     ? [Markup.button.callback('Отписаться от ежедневной карты', 'day_sub_off')]
@@ -40,13 +47,7 @@ export const DAY_PUSH_TIME_MENU_CALLBACK = 'dp:time';
  * После включения подписки: расклады + смена времени + отписка (без ожидания следующего «на день»).
  */
 export function keyboardMainOrDayPlusDayPushShortcut(userId: number | undefined) {
-  const full = hasFullSpreadAccess(userId);
-  const rows = full
-    ? [
-        [Markup.button.callback('На день', 'day')],
-        [Markup.button.callback('Прошлое — настоящее — будущее', 'spread')],
-      ]
-    : [[Markup.button.callback('На день', 'day')]];
+  const rows = mainSpreadRows(userId);
   rows.push([Markup.button.callback('Время рассылки', DAY_PUSH_TIME_MENU_CALLBACK)]);
   rows.push([Markup.button.callback('Отписаться от ежедневной карты', 'day_sub_off')]);
   return Markup.inlineKeyboard(rows);

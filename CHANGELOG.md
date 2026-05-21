@@ -4,6 +4,22 @@
 
 ## [Unreleased]
 
+## [3.0.0] — 2026-05-20
+
+Мажорный релиз: **глубинная диагностика** — сессионный расклад для всех пользователей.
+
+### Added
+
+- Кнопка **«Глубинная диагностика»** (`deep`): до **7** триплетов по 3 карты, вопросы текстом, финал без новых карт.
+- Модули `src/deepReading/` (сессия in-memory, TTL 24 ч, коллаж со 2-го шага, промпты, подписи с «»).
+- `registerDeepReadingHandlers`, `registerDeepSessionMiddleware`; клавиатуры и копирайт `/start`, `/help`.
+- Метки финала в `READING_SECTION_LABELS`: Общая картина, На что обратить внимание, Итог.
+- `drawTripletFromRemainingIds`, `shuffledDeckIds`, `tripletStripJpegBuffer`; тесты caption, sessionStore, modelOutput.
+
+### Docs
+
+- Спека v3.0 в [docs/ROADMAP.md](docs/ROADMAP.md#ветка-30--глубинная-диагностика); обновлены GLOSSARY, BRAND-GUIDE, PRIVACY, DEPLOY, BOTFATHER.
+
 ## [2.18.0] — 2026-05-20
 
 Минорный релиз: точнее ошибки выдачи «карта дня» и единый порядок ИИ → фото.

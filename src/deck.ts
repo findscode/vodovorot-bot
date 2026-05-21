@@ -110,6 +110,35 @@ export function drawThreeUnique(): [DrawnCard, DrawnCard, DrawnCard] {
   return [withOrientation(a), withOrientation(b), withOrientation(c)];
 }
 
+/** Перемешанные id всех карт (для сессии без повторов). */
+export function shuffledDeckIds(): number[] {
+  return random.sample(
+    DECK.map((c) => c.id),
+    DECK.length,
+  );
+}
+
+/** Три карты из оставшихся id сессии (без повторов внутри триплета). */
+export function drawTripletFromRemainingIds(remainingIds: number[]): {
+  drawn: [DrawnCard, DrawnCard, DrawnCard];
+  remaining: number[];
+} {
+  if (remainingIds.length < 3) {
+    throw new Error('В колоде сессии осталось меньше трёх карт');
+  }
+  const picked = random.sample([...remainingIds], 3);
+  const rest = remainingIds.filter((id) => !picked.includes(id));
+  const cards = picked.map((id) => {
+    const card = DECK.find((c) => c.id === id);
+    if (card === undefined) throw new Error(`Неизвестный id карты: ${id}`);
+    return withOrientation(card);
+  });
+  return {
+    drawn: [cards[0]!, cards[1]!, cards[2]!],
+    remaining: rest,
+  };
+}
+
 /** Случайный старший аркан как маска голоса толкования (не входит в расклад). */
 export function drawVoiceArchetype(): TarotCard {
   const c = random.choice([...MAJOR_ARCANA]);
