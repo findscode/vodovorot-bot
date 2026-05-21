@@ -35,5 +35,3 @@
 | `src/cardOfDayDelivery.ts`             | Выдача «карта дня» (ИИ → фото → чанки)           |
 | `src/dayPushScheduler.ts`              | Cron рассылки                                    |
 | `src/ai.ts`, `src/openRouterModels.ts` | OpenRouter и промпты                             |
-
-Шаблоны тел GitHub issues (архив): [scripts/roadmap-issue-bodies/](../scripts/roadmap-issue-bodies/).

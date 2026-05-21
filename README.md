@@ -8,9 +8,10 @@ Telegram-бот Таро на **Node.js 20+**, **TypeScript**, **Telegraf**. Т�
 
 1. Скопируйте `.env.example` в `.env` и заполните переменные.
 2. `npm install`
-3. (Опционально) картинки карт: `npm run download-cards`
-4. Разработка: `npm run dev`
-5. Прод: `npm run build` → `npm start`
+3. Разработка: `npm run dev`
+4. Прод: `npm run build` → `npm start`
+
+Изображения карт — в `assets/cards/` (уже в репозитории).
 
 ## Документация
 

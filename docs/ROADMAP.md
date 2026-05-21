@@ -25,7 +25,7 @@
 
 **v1.4–v1.9:** milestones [v1.4.0](https://github.com/findscode/vodovorot-bot/milestone/1) … [v1.9.0](https://github.com/findscode/vodovorot-bot/milestone/6), issues [#8](https://github.com/findscode/vodovorot-bot/issues/8) … [#20](https://github.com/findscode/vodovorot-bot/issues/20).
 
-**v2.11–v2.18 (надёжность):** milestones [v2.11.0](https://github.com/findscode/vodovorot-bot/milestone/7) … [v2.17.0](https://github.com/findscode/vodovorot-bot/milestone/13), issues [#37](https://github.com/findscode/vodovorot-bot/issues/37) … [#46](https://github.com/findscode/vodovorot-bot/issues/46) — таблица [ниже](#github-milestones-211-v2x-надёжность). **2.18.0** — без отдельного milestone/issue (см. [CHANGELOG 2.18](../CHANGELOG.md#2180--2026-05-20)). Тела issues: [scripts/roadmap-issue-bodies/](../scripts/roadmap-issue-bodies/).
+**v2.11–v2.18 (надёжность):** milestones [v2.11.0](https://github.com/findscode/vodovorot-bot/milestone/7) … [v2.17.0](https://github.com/findscode/vodovorot-bot/milestone/13), issues [#37](https://github.com/findscode/vodovorot-bot/issues/37) … [#46](https://github.com/findscode/vodovorot-bot/issues/46) — таблица [ниже](#github-milestones-211-v2x-надёжность). **2.18.0** — без отдельного milestone/issue (см. [CHANGELOG 2.18](../CHANGELOG.md#2180--2026-05-20)).
 
 | Roadmap ID | Issue                                                       |
 | ---------- | ----------------------------------------------------------- |
@@ -454,8 +454,6 @@
 | v2.17-1    | [v2.17.0](https://github.com/findscode/vodovorot-bot/milestone/13)         | [#46](https://github.com/findscode/vodovorot-bot/issues/46) | Runbook                       | ✅        |
 | **2.18**   | —                                                                          | —                                                           | ИИ→фото, `at`, delivery_error | ✅ (репо) |
 
-Тела issues: [scripts/roadmap-issue-bodies/](../scripts/roadmap-issue-bodies/) (`v2.11-1.md` … `v2.17-1.md`).
-
 **Фактическая оценка (выполнено 2026-05):** 2.11 ≈ 0.5 дн; 2.12–2.13 ≈ 2 дн; 2.14–2.15 ≈ 3–4 дн; 2.17 ≈ 0.5 дн; 2.18 ≈ 0.5–1 дн.
 
 ---
@@ -485,8 +483,6 @@
 | v2.15-1    | [#41](https://github.com/findscode/vodovorot-bot/issues/41) |
 | v2.15-2    | [#45](https://github.com/findscode/vodovorot-bot/issues/45) |
 | v2.17-1    | [#46](https://github.com/findscode/vodovorot-bot/issues/46) |
-
-Скрипт повторного создания (milestones уже есть): `scripts/create-roadmap-2.11-milestones.ps1`.
 
 **Зависимости (комментарии в issues):** [#42](https://github.com/findscode/vodovorot-bot/issues/42) после [#39](https://github.com/findscode/vodovorot-bot/issues/39); [#43](https://github.com/findscode/vodovorot-bot/issues/43) после [#40](https://github.com/findscode/vodovorot-bot/issues/40); [#41](https://github.com/findscode/vodovorot-bot/issues/41) желательно после [#44](https://github.com/findscode/vodovorot-bot/issues/44).
 

@@ -9,7 +9,6 @@
     "build": "tsc",
     "start": "node dist/bot.js",
     "dev": "tsx watch src/bot.ts",
-    "download-cards": "node scripts/download-tarot-assets.mjs",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
