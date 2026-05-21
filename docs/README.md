@@ -28,11 +28,12 @@
 
 ## Код (ориентир после 2.14)
 
-| Путь                                   | Роль                                             |
-| -------------------------------------- | ------------------------------------------------ |
-| `src/bot.ts`                           | Запуск Telegraf, `registerHandlers`, `bot.catch` |
-| `src/handlers/`                        | Команды, «На день», расклад, push, middleware    |
-| `src/cardOfDayDelivery.ts`             | Выдача «карта дня» (ИИ → фото → чанки)           |
-| `src/dayPushScheduler.ts`              | Cron рассылки                                    |
-| `src/ai.ts`, `src/openRouterModels.ts` | OpenRouter и промпты                             |
-| `src/deepReading/`                     | Глубинная диагностика (сессия, коллаж, v3.0)     |
+| Путь                                   | Роль                                              |
+| -------------------------------------- | ------------------------------------------------- |
+| `src/bot.ts`                           | Запуск Telegraf, `registerHandlers`, `bot.catch`  |
+| `src/handlers/`                        | Команды, «На день», расклад, push, middleware     |
+| `src/cardOfDayDelivery.ts`             | Выдача «карта дня» (ИИ → фото → чанки)            |
+| `src/dayPushScheduler.ts`              | Cron рассылки                                     |
+| `src/ai.ts`, `src/openRouterModels.ts` | OpenRouter и промпты                              |
+| `src/deepReading/`                     | Глубинная диагностика (сессия, коллаж)            |
+| `scripts/normalize-card-assets.ts`     | Нормализация PNG карт (`npm run normalize-cards`) |

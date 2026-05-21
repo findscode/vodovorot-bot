@@ -1,7 +1,7 @@
 import sharp from 'sharp';
 import type { DrawnCard } from '../deck.js';
 import { tripletStripJpegBuffer } from '../spreadComposite.js';
-import { DEEP_COMPOSITE_MAX_SIDE_PX, DEEP_STACK_PEEK_RATIO } from './constants.js';
+import { DEEP_COMPOSITE_MAX_SIDE_PX, DEEP_STRIP_STACK_GAP_PX } from './constants.js';
 
 export type CompositeFrame = { jpeg: Buffer; width: number; height: number };
 
@@ -12,22 +12,32 @@ export async function buildTripletStripFrame(
   return { jpeg: buffer, width, height };
 }
 
-/** Накопительный коллаж: ~15% предыдущего сверху + полный новый триплет снизу. */
+async function scaleFrameToWidth(frame: CompositeFrame, targetW: number): Promise<Buffer> {
+  return sharp(frame.jpeg)
+    .resize({ width: targetW, fit: 'inside' })
+    .jpeg({ quality: 88 })
+    .toBuffer();
+}
+
+/**
+ * Накопительный коллаж: полный предыдущий стол сверху, новый триплет снизу.
+ * После N триплетов видно 3×N карт (9 при N=3, 12 при N=4).
+ */
 export async function stackTripletOnPrevious(
   previous: CompositeFrame,
   newStrip: CompositeFrame,
 ): Promise<CompositeFrame> {
-  const targetW = newStrip.width;
-  const prevMeta = await sharp(previous.jpeg).metadata();
+  const targetW = Math.max(previous.width, newStrip.width, 1);
+  const [prevBuf, newBuf] = await Promise.all([
+    scaleFrameToWidth(previous, targetW),
+    scaleFrameToWidth(newStrip, targetW),
+  ]);
+  const prevMeta = await sharp(prevBuf).metadata();
+  const newMeta = await sharp(newBuf).metadata();
   const prevH = prevMeta.height ?? previous.height;
-  const peekH = Math.max(1, Math.round(prevH * DEEP_STACK_PEEK_RATIO));
-  const prevTop = await sharp(previous.jpeg)
-    .resize({ width: targetW, height: peekH, fit: 'cover', position: 'top' })
-    .toBuffer();
-  const newScaled = await sharp(newStrip.jpeg).resize({ width: targetW, fit: 'inside' }).toBuffer();
-  const newMeta = await sharp(newScaled).metadata();
   const newH = newMeta.height ?? newStrip.height;
-  const canvasH = peekH + newH;
+  const gap = DEEP_STRIP_STACK_GAP_PX;
+  const canvasH = prevH + gap + newH;
   const jpeg = await sharp({
     create: {
       width: targetW,
@@ -37,8 +47,8 @@ export async function stackTripletOnPrevious(
     },
   })
     .composite([
-      { input: prevTop, left: 0, top: 0 },
-      { input: newScaled, left: 0, top: peekH },
+      { input: prevBuf, left: 0, top: 0 },
+      { input: newBuf, left: 0, top: prevH + gap },
     ])
     .jpeg({ quality: 86 })
     .toBuffer();

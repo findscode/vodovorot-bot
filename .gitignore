@@ -7,7 +7,7 @@ coverage/
 .env
 .env.*
 !.env.example
-# JPEG карт лежат в репозитории (~70 МБ); обновление — замена файлов в assets/cards/
+# PNG карт в assets/cards/ (нормализация: npm run normalize-cards); legacy *.jpg можно не коммитить
 *.log
 .DS_Store
 

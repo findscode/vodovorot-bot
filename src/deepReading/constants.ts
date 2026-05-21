@@ -4,8 +4,8 @@ export const DEEP_MAX_TRIPLETS = 7;
 /** TTL сессии без активности (24 ч). */
 export const DEEP_SESSION_TTL_MS = 24 * 60 * 60 * 1000;
 
-/** Доля высоты предыдущего коллажа, видимая под новым триплетом (v1). */
-export const DEEP_STACK_PEEK_RATIO = 0.15;
+/** Зазор между полосами триплетов в накопительном коллаже. */
+export const DEEP_STRIP_STACK_GAP_PX = 12;
 
 /** Макс. сторона JPEG коллажа (подгонка под Telegram). */
 export const DEEP_COMPOSITE_MAX_SIDE_PX = 1280;

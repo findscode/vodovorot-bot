@@ -8,7 +8,12 @@ const pkgRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
 
 export const CARDS_ASSETS_DIR = join(pkgRoot, 'assets', 'cards');
 
-function cardFileName(cardId: number): string {
+export function cardFileName(cardId: number): string {
+  return `${String(cardId).padStart(2, '0')}.png`;
+}
+
+/** Устаревшее имя JPEG (источник для `npm run normalize-cards`). */
+export function legacyCardJPEGFileName(cardId: number): string {
   return `${String(cardId).padStart(2, '0')}.jpg`;
 }
 
@@ -16,14 +21,21 @@ export function isValidCardId(cardId: number): boolean {
   return Number.isInteger(cardId) && cardId >= 0 && cardId < DECK.length;
 }
 
-export function cardJPEGPath(cardId: number): string {
+export function cardAssetPath(cardId: number): string {
   if (!isValidCardId(cardId)) {
     throw new RangeError(`Invalid card id: ${cardId}`);
   }
   return join(CARDS_ASSETS_DIR, cardFileName(cardId));
 }
 
+/** @deprecated Используйте {@link cardAssetPath}. */
+export function cardJPEGPath(cardId: number): string {
+  return cardAssetPath(cardId);
+}
+
 export function cardImageExists(cardId: number): boolean {
   if (!isValidCardId(cardId)) return false;
-  return existsSync(join(CARDS_ASSETS_DIR, cardFileName(cardId)));
+  const png = join(CARDS_ASSETS_DIR, cardFileName(cardId));
+  if (existsSync(png)) return true;
+  return existsSync(join(CARDS_ASSETS_DIR, legacyCardJPEGFileName(cardId)));
 }

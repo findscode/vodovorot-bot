@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { cardImageExists, cardJPEGPath, isValidCardId } from './cardAssets.js';
+import { cardAssetPath, cardImageExists, cardJPEGPath, isValidCardId } from './cardAssets.js';
 
 describe('cardAssets', () => {
   it('isValidCardId accepts deck range only', () => {
@@ -11,8 +11,9 @@ describe('cardAssets', () => {
     expect(isValidCardId(NaN)).toBe(false);
   });
 
-  it('cardJPEGPath rejects out-of-range ids', () => {
-    expect(() => cardJPEGPath(-1)).toThrow(RangeError);
+  it('cardAssetPath rejects out-of-range ids', () => {
+    expect(() => cardAssetPath(-1)).toThrow(RangeError);
+    expect(() => cardAssetPath(78)).toThrow(RangeError);
     expect(() => cardJPEGPath(78)).toThrow(RangeError);
   });
 
