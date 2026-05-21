@@ -7,7 +7,7 @@ coverage/
 .env
 .env.*
 !.env.example
-# PNG карт в assets/cards/ (нормализация: npm run normalize-cards); legacy *.jpg можно не коммитить
+# PNG карт в assets/cards/ (~90 МБ в репозитории)
 *.log
 .DS_Store
 

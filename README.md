@@ -11,7 +11,7 @@ Telegram-бот Таро на **Node.js 20+**, **TypeScript**, **Telegraf**. Т�
 3. Разработка: `npm run dev`
 4. Прод: `npm run build` → `npm start`
 
-Изображения карт — в `assets/cards/` (`*.png`, нормализация: `npm run normalize-cards`).
+Изображения карт — в `assets/cards/` (`00.png` … `77.png`, единый холст 512×896).
 
 ## Документация
 

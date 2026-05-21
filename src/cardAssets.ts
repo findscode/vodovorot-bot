@@ -8,13 +8,13 @@ const pkgRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
 
 export const CARDS_ASSETS_DIR = join(pkgRoot, 'assets', 'cards');
 
+/** Размер нормализованного PNG в репозитории (все карты одинаковые). */
+export const CARD_ASSET_WIDTH = 512;
+export const CARD_ASSET_HEIGHT = 896;
+export const CARD_CORNER_RADIUS_PX = 16;
+
 export function cardFileName(cardId: number): string {
   return `${String(cardId).padStart(2, '0')}.png`;
-}
-
-/** Устаревшее имя JPEG (источник для `npm run normalize-cards`). */
-export function legacyCardJPEGFileName(cardId: number): string {
-  return `${String(cardId).padStart(2, '0')}.jpg`;
 }
 
 export function isValidCardId(cardId: number): boolean {
@@ -25,11 +25,7 @@ export function cardAssetPath(cardId: number): string {
   if (!isValidCardId(cardId)) {
     throw new RangeError(`Invalid card id: ${cardId}`);
   }
-  const png = join(CARDS_ASSETS_DIR, cardFileName(cardId));
-  if (existsSync(png)) return png;
-  const jpg = join(CARDS_ASSETS_DIR, legacyCardJPEGFileName(cardId));
-  if (existsSync(jpg)) return jpg;
-  return png;
+  return join(CARDS_ASSETS_DIR, cardFileName(cardId));
 }
 
 /** @deprecated Используйте {@link cardAssetPath}. */
@@ -39,7 +35,5 @@ export function cardJPEGPath(cardId: number): string {
 
 export function cardImageExists(cardId: number): boolean {
   if (!isValidCardId(cardId)) return false;
-  const png = join(CARDS_ASSETS_DIR, cardFileName(cardId));
-  if (existsSync(png)) return true;
-  return existsSync(join(CARDS_ASSETS_DIR, legacyCardJPEGFileName(cardId)));
+  return existsSync(cardAssetPath(cardId));
 }
