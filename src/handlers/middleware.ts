@@ -1,12 +1,18 @@
 import type { Telegraf } from 'telegraf';
 import {
   accessDeniedMessage,
+  DEEP_ALREADY_ACTIVE_MESSAGE,
+  deepSessionBlockedMessageHtml,
   isPublicEntryCommand,
   WHITELIST_NO_SPREAD_ACCESS_CALLBACK,
 } from '../botCopy.js';
 import { hasFullSpreadAccess } from '../accessResolve.js';
 import { getAccessWhitelist } from '../runtimeConfig.js';
-import { DAY_PUSH_TIME_MENU_CALLBACK, keyboardMainOrDayOnly } from '../botKeyboards.js';
+import {
+  DAY_PUSH_TIME_MENU_CALLBACK,
+  keyboardDeepInChain,
+  keyboardMainOrDayOnly,
+} from '../botKeyboards.js';
 import { TELEGRAM_HTML_PARSE } from '../readingTelegramHtml.js';
 import { answerCbQuerySafe } from './botHelpers.js';
 import { hasActiveDeepSession } from '../deepReading/sessionStore.js';
@@ -15,7 +21,6 @@ import {
   DEEP_CANCEL_CALLBACK,
   DEEP_END_CALLBACK,
 } from '../deepReading/constants.js';
-import { DEEP_SESSION_BUSY_MESSAGE } from '../botCopy.js';
 
 /** Только личные чаты: в группах и каналах не отвечаем и не обрабатываем расклады. */
 export function registerPrivateChatMiddleware(bot: Telegraf): void {
@@ -36,19 +41,24 @@ export function registerDeepSessionMiddleware(bot: Telegraf): void {
       return next();
     }
 
+    const blockedHtml = deepSessionBlockedMessageHtml();
+    const blockedKeyboard = keyboardDeepInChain();
+
     const cq = ctx.callbackQuery;
     if (cq && 'data' in cq) {
       const d = cq.data;
       if (d === DEEP_CANCEL_CALLBACK || d === DEEP_END_CALLBACK) {
         return next();
       }
+      await answerCbQuerySafe(ctx);
       if (d === DEEP_CALLBACK) {
-        return;
-      }
-      if (ctx.callbackQuery) {
-        await answerCbQuerySafe(ctx);
-        await ctx.reply(DEEP_SESSION_BUSY_MESSAGE, {
-          ...keyboardMainOrDayOnly(uid),
+        await ctx.reply(DEEP_ALREADY_ACTIVE_MESSAGE, {
+          ...blockedKeyboard,
+          ...TELEGRAM_HTML_PARSE,
+        });
+      } else {
+        await ctx.reply(blockedHtml, {
+          ...blockedKeyboard,
           ...TELEGRAM_HTML_PARSE,
         });
       }
@@ -58,6 +68,10 @@ export function registerDeepSessionMiddleware(bot: Telegraf): void {
     if (ctx.message && 'text' in ctx.message) {
       const text = ctx.message.text.trim();
       if (text.startsWith('/')) {
+        await ctx.reply(blockedHtml, {
+          ...blockedKeyboard,
+          ...TELEGRAM_HTML_PARSE,
+        });
         return;
       }
     }

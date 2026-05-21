@@ -1,7 +1,7 @@
 import sharp from 'sharp';
 import type { DrawnCard } from '../deck.js';
-import { tripletStripJpegBuffer } from '../spreadComposite.js';
-import { DEEP_COMPOSITE_MAX_SIDE_PX, DEEP_STRIP_STACK_GAP_PX } from './constants.js';
+import { STRIP_CARD_HEIGHT, tripletStripJpegBuffer } from '../spreadComposite.js';
+import { DEEP_COMPOSITE_MAX_SIDE_PX, DEEP_STRIP_STACK_OFFSET_FRACTION } from './constants.js';
 
 export type CompositeFrame = { jpeg: Buffer; width: number; height: number };
 
@@ -20,8 +20,8 @@ async function scaleFrameToWidth(frame: CompositeFrame, targetW: number): Promis
 }
 
 /**
- * Накопительный коллаж: полный предыдущий стол сверху, новый триплет снизу.
- * После N триплетов видно 3×N карт (9 при N=3, 12 при N=4).
+ * Накопительный коллаж: новый триплет поверх предыдущего со смещением вниз
+ * (как стопка на узком столе — верх предыдущих карт чуть виден).
  */
 export async function stackTripletOnPrevious(
   previous: CompositeFrame,
@@ -36,8 +36,8 @@ export async function stackTripletOnPrevious(
   const newMeta = await sharp(newBuf).metadata();
   const prevH = prevMeta.height ?? previous.height;
   const newH = newMeta.height ?? newStrip.height;
-  const gap = DEEP_STRIP_STACK_GAP_PX;
-  const canvasH = prevH + gap + newH;
+  const offsetY = Math.round(STRIP_CARD_HEIGHT * DEEP_STRIP_STACK_OFFSET_FRACTION);
+  const canvasH = Math.max(prevH, offsetY + newH);
   const jpeg = await sharp({
     create: {
       width: targetW,
@@ -48,7 +48,7 @@ export async function stackTripletOnPrevious(
   })
     .composite([
       { input: prevBuf, left: 0, top: 0 },
-      { input: newBuf, left: 0, top: prevH + gap },
+      { input: newBuf, left: 0, top: offsetY },
     ])
     .jpeg({ quality: 86 })
     .toBuffer();

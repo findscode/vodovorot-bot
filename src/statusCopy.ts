@@ -35,6 +35,17 @@ export function statusTextHtml(userId: number): string {
     );
   }
 
+  const spreadStatus =
+    wl === null || full
+      ? '• <b>Прошлое — настоящее — будущее</b> — доступен'
+      : '• <b>Прошлое — настоящее — будущее</b> — Premium, промокод или список доступа';
+  lines.push(
+    '<b>Расклады</b>',
+    '• <b>На день</b> — доступен',
+    '• <b>Глубинная диагностика</b> — доступна (до 7 вопросов за гадание)',
+    spreadStatus,
+  );
+
   lines.push(`Лимит «на день»: не чаще раза в сутки ${phrases.dayLimitCalendar}.`);
 
   const prem = getActivePremiumUntilSync(userId);

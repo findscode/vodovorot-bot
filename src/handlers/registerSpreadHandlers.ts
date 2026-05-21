@@ -1,6 +1,7 @@
 import type { Telegraf } from 'telegraf';
 import {
   AI_TEXT_UNAVAILABLE_MESSAGE,
+  SPREAD_AI_RETRY_SUFFIX,
   SPREAD_DONE_HINT,
   SPREAD_IMAGES_UNAVAILABLE_SUFFIX,
 } from '../botCopy.js';
@@ -57,7 +58,7 @@ export function registerSpreadHandlers(bot: Telegraf): void {
       });
     } catch (e) {
       logHandlerError('spread', e);
-      await ctx.reply(AI_TEXT_UNAVAILABLE_MESSAGE, {
+      await ctx.reply(`${AI_TEXT_UNAVAILABLE_MESSAGE}\n\n${SPREAD_AI_RETRY_SUFFIX}`, {
         ...keyboardMainOrDayOnly(uid),
         ...TELEGRAM_HTML_PARSE,
       });

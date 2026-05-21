@@ -3,7 +3,8 @@ import type { Context } from 'telegraf';
 import {
   AI_TEXT_UNAVAILABLE_MESSAGE,
   DEEP_AI_RETRY_MESSAGE,
-  DEEP_CONTINUE_HINT,
+  DEEP_COLLAGE_HINT_MESSAGE,
+  DEEP_CONTINUE_HINT_MESSAGE,
   DEEP_DONE_HINT,
   DEEP_FINAL_INTRO_MESSAGE,
   DEEP_IMAGES_UNAVAILABLE_SUFFIX,
@@ -74,6 +75,10 @@ export async function deliverDeepTriplet(
   const allExist = drawn.every((d) => cardImageExists(d.card.id));
   let faceMessageId: number;
 
+  if (tripletIndex >= 4) {
+    await ctx.reply(DEEP_COLLAGE_HINT_MESSAGE, TELEGRAM_HTML_PARSE);
+  }
+
   if (allExist) {
     const jpeg = await fitCompositeForTelegram(frame);
     const photo = Input.fromBuffer(jpeg, `deep-triplet-${tripletIndex + 1}.jpg`);
@@ -116,7 +121,7 @@ export async function deliverDeepTriplet(
       return 'ok';
     }
 
-    await ctx.reply(DEEP_CONTINUE_HINT, {
+    await ctx.reply(DEEP_CONTINUE_HINT_MESSAGE, {
       ...keyboardDeepInChain(),
       ...TELEGRAM_HTML_PARSE,
     });

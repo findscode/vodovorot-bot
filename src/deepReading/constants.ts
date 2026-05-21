@@ -4,8 +4,8 @@ export const DEEP_MAX_TRIPLETS = 7;
 /** TTL сессии без активности (24 ч). */
 export const DEEP_SESSION_TTL_MS = 24 * 60 * 60 * 1000;
 
-/** Зазор между полосами триплетов в накопительном коллаже. */
-export const DEEP_STRIP_STACK_GAP_PX = 12;
+/** Смещение нового триплета вниз поверх предыдущего (доля высоты карты на полосе, ~10–15%). */
+export const DEEP_STRIP_STACK_OFFSET_FRACTION = 0.125;
 
 /** Макс. сторона JPEG коллажа (подгонка под Telegram). */
 export const DEEP_COMPOSITE_MAX_SIDE_PX = 1280;

@@ -1,5 +1,6 @@
 import type { Telegraf } from 'telegraf';
 import {
+  DEEP_ALREADY_ACTIVE_MESSAGE,
   DEEP_CANCELLED_MESSAGE,
   DEEP_EMPTY_QUESTION_MESSAGE,
   DEEP_INTRO_HTML,
@@ -31,7 +32,13 @@ export function registerDeepReadingHandlers(bot: Telegraf): void {
     await answerCbQuerySafe(ctx);
     const uid = ctx.from?.id;
     if (uid === undefined) return;
-    if (hasActiveDeepSession(uid)) return;
+    if (hasActiveDeepSession(uid)) {
+      await ctx.reply(DEEP_ALREADY_ACTIVE_MESSAGE, {
+        ...keyboardDeepInChain(),
+        ...TELEGRAM_HTML_PARSE,
+      });
+      return;
+    }
 
     beginDeepSession(uid, uid);
     await ctx.reply(DEEP_INTRO_HTML, {
