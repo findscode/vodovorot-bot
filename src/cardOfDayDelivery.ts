@@ -6,12 +6,9 @@ import { isAiFailure } from './aiErrors.js';
 import { cardOfDayPrompt } from './prompts.js';
 import { cardImageExists } from './cardAssets.js';
 import { dayCardStripPhotoInput } from './spreadComposite.js';
-import { dayCardFaceCaptionHtml, TELEGRAM_HTML_PARSE } from './readingTelegramHtml.js';
+import { dayCardFaceCaptionHtml } from './readingTelegramHtml.js';
 import { sendReadingChunksToChat } from './readingChunksDelivery.js';
-import {
-  releaseDayDrawSlotSync,
-  tryConsumeDayDrawSlotSync,
-} from './db/dayDrawSlotsRepo.js';
+import { releaseDayDrawSlotSync, tryConsumeDayDrawSlotSync } from './db/dayDrawSlotsRepo.js';
 import { CARD_DAY_IMAGE_UNAVAILABLE_MESSAGE } from './botCopy.js';
 import { keyboardAfterDayReading } from './botKeyboards.js';
 import { dayDrawCalendarDate } from './dayDrawState.js';

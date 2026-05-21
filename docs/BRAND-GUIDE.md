@@ -2,7 +2,7 @@
 
 **Водоворот** (_Vodovorot_) — Telegram-бот для раскладов Таро. Этот документ задаёт, **как мы говорим с человеком** и **как выглядит готовое толкование** в чате.
 
-Реализация формата ответов модели: `src/brandFormat.ts` → `prompts.ts`; общий тон и язык: `src/ai.ts` (`SYSTEM_PROMPT`). Сообщения самого бота (приветствие, ожидание, ошибки): `src/botCopy.ts` и `src/bot.ts`. Подписи к фото с картами (жирный заголовок расклада, двоеточие, пустая строка, строки карт): `src/readingTelegramHtml.ts` → `src/cardOfDayDelivery.ts`, `src/bot.ts` (расклад в три карты). Фразы про **границу календарных суток** и время рассылки (без сырого IANA в чате): `src/calendarDayUserPhrases.ts`; сводка для пользователя: **`/status`** (`src/statusCopy.ts`). Пресеты времени рассылки: `src/dayPushPresets.ts`, клавиатура — `src/botKeyboards.ts`.
+Реализация формата ответов модели: `src/brandFormat.ts` → `prompts.ts`; общий тон и язык: `src/ai.ts` (`SYSTEM_PROMPT`). Сообщения бота (приветствие, ошибки): `src/botCopy.ts`; хендлеры — `src/handlers/`. Подписи к фото: `src/readingTelegramHtml.ts` → `cardOfDayDelivery.ts` («на день»), `handlers/registerSpreadHandlers.ts` (три карты). Нарезка толкования в чат: `readingChunksDelivery.ts`. Фразы про **сутки** и рассылку (без IANA в чате): `calendarDayUserPhrases.ts`; **`/status`**: `statusCopy.ts`. Пресеты push: `dayPushPresets.ts`, клавиатура — `botKeyboards.ts`.
 
 **Профиль бота в Telegram:** поля About, Description, Privacy Policy URL и команды — в [docs/BOTFATHER.md](BOTFATHER.md) (формулировки **деловые, без рекламного тона**); политика для URL — [docs/PRIVACY.md](PRIVACY.md).
 
@@ -85,4 +85,4 @@
 
 ## 6. Сопровождение
 
-Меняя метки или смысл блоков, обновляйте **одновременно**: `brandFormat.ts` (массив `READING_SECTION_LABELS` и текст промпта), этот файл, `ai.ts`, при необходимости — `prompts.ts`, `readingTelegramHtml.ts` (в т.ч. заголовки подписей к фото), `cardOfDayDelivery.ts`, `botCopy.ts`, `bot.ts` и `docs/GLOSSARY.md`. Меняя обещания пользователю на уровне продукта — синхронизируйте [BOTFATHER.md](BOTFATHER.md) и [PRIVACY.md](PRIVACY.md).
+Меняя метки или смысл блоков, обновляйте **одновременно**: `brandFormat.ts` (массив `READING_SECTION_LABELS` и текст промпта), этот файл, `ai.ts`, при необходимости — `prompts.ts`, `readingTelegramHtml.ts`, `cardOfDayDelivery.ts`, `handlers/`, `botCopy.ts` и `docs/GLOSSARY.md`. Меняя обещания пользователю на уровне продукта — синхронизируйте [BOTFATHER.md](BOTFATHER.md) и [PRIVACY.md](PRIVACY.md).

@@ -8,11 +8,7 @@ import {
   setDayPushEnabled,
 } from './db/usersRepo.js';
 import { DAY_PUSH_AI_UNAVAILABLE_MESSAGE } from './botCopy.js';
-import {
-  clearPushAiFailure,
-  pushAiFailKey,
-  recordPushAiFailure,
-} from './dayPushAiRetry.js';
+import { clearPushAiFailure, pushAiFailKey, recordPushAiFailure } from './dayPushAiRetry.js';
 import { dayDrawCalendarDate, getDayDrawTimezone } from './dayDrawState.js';
 import { isAtOrPastLocalHm } from './pushSchedule.js';
 import { withTelegramTypingWhile } from './typingIndicator.js';

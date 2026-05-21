@@ -1,5 +1,7 @@
 # Участие в разработке
 
+Документация проекта: [docs/README.md](docs/README.md). Текущая линия релизов — **2.x** (см. [CHANGELOG.md](CHANGELOG.md), [docs/ROADMAP.md](docs/ROADMAP.md)).
+
 ## Версионирование (SemVer)
 
 Версия в `package.json` следует [Semantic Versioning 2.0.0](https://semver.org/lang/ru/): **`MAJOR.MINOR.PATCH`**.

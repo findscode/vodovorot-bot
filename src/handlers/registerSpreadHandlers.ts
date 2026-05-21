@@ -1,5 +1,9 @@
 import type { Telegraf } from 'telegraf';
-import { AI_TEXT_UNAVAILABLE_MESSAGE, SPREAD_DONE_HINT, SPREAD_IMAGES_UNAVAILABLE_SUFFIX } from '../botCopy.js';
+import {
+  AI_TEXT_UNAVAILABLE_MESSAGE,
+  SPREAD_DONE_HINT,
+  SPREAD_IMAGES_UNAVAILABLE_SUFFIX,
+} from '../botCopy.js';
 import { keyboardMainOrDayOnly } from '../botKeyboards.js';
 import { completeChat } from '../ai.js';
 import { cardImageExists } from '../cardAssets.js';

@@ -2,7 +2,7 @@
 
 Telegram-бот Таро на **Node.js 20+**, **TypeScript**, **Telegraf**. Толкования через **OpenRouter** (Chat Completions, free-tier fallback).
 
-**Прод** обычно на **DigitalOcean Droplet** (Docker Compose); переменные окружения и runbook — в [docs/DEPLOY.md](docs/DEPLOY.md).
+**Версия:** в `package.json` и [CHANGELOG.md](CHANGELOG.md). **Прод** — обычно **DigitalOcean Droplet** (Docker Compose); переменные, деплой и runbook — [docs/DEPLOY.md](docs/DEPLOY.md).
 
 ## Быстрый старт
 
@@ -14,13 +14,11 @@ Telegram-бот Таро на **Node.js 20+**, **TypeScript**, **Telegraf**. Т�
 
 ## Документация
 
-- [Бренд и тон](docs/BRAND-GUIDE.md)
-- [Глоссарий](docs/GLOSSARY.md)
-- [Схема веток](docs/BRANCHING.md)
-- [Процесс разработки и GitHub](docs/DEV-PROCESS.md)
-- [Деплой (Docker, DigitalOcean)](docs/DEPLOY.md)
-- [BotFather: About, Description, Privacy](docs/BOTFATHER.md)
-- [Roadmap минорных релизов и issues](docs/ROADMAP.md)
+Полный указатель: **[docs/README.md](docs/README.md)**.
+
+- [Деплой и runbook](docs/DEPLOY.md) · [BotFather](docs/BOTFATHER.md) · [Privacy](docs/PRIVACY.md)
+- [Roadmap](docs/ROADMAP.md) · [Бренд](docs/BRAND-GUIDE.md) · [Глоссарий](docs/GLOSSARY.md)
+- [Ветки](docs/BRANCHING.md) · [GitHub-процесс](docs/DEV-PROCESS.md) · [Участие и релизы](CONTRIBUTING.md)
 
 ## Версии и релизы
 

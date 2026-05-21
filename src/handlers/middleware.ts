@@ -1,5 +1,9 @@
 import type { Telegraf } from 'telegraf';
-import { accessDeniedMessage, isPublicEntryCommand, WHITELIST_NO_SPREAD_ACCESS_CALLBACK } from '../botCopy.js';
+import {
+  accessDeniedMessage,
+  isPublicEntryCommand,
+  WHITELIST_NO_SPREAD_ACCESS_CALLBACK,
+} from '../botCopy.js';
 import { hasFullSpreadAccess } from '../accessResolve.js';
 import { getAccessWhitelist } from '../runtimeConfig.js';
 import { DAY_PUSH_TIME_MENU_CALLBACK, keyboardMainOrDayOnly } from '../botKeyboards.js';

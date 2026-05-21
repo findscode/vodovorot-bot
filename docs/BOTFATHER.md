@@ -55,4 +55,4 @@ promo - Активировать промокод Premium
 
 ## Сопровождение
 
-При смене функций или провайдеров обновляйте [PRIVACY.md](PRIVACY.md) и при необходимости тексты здесь и в [BRAND-GUIDE.md](BRAND-GUIDE.md).
+При смене функций или провайдеров обновляйте [PRIVACY.md](PRIVACY.md), [DEPLOY.md](DEPLOY.md) (команды) и при необходимости тексты здесь и в [BRAND-GUIDE.md](BRAND-GUIDE.md). Указатель документации: [README.md](README.md).

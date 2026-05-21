@@ -7,9 +7,7 @@ import {
 import { saveLastReading } from './lastReadingStore.js';
 import { splitForTelegram } from './telegramChunks.js';
 
-type TelegramSendMessageExtra = NonNullable<
-  Parameters<Telegraf['telegram']['sendMessage']>[2]
->;
+type TelegramSendMessageExtra = NonNullable<Parameters<Telegraf['telegram']['sendMessage']>[2]>;
 
 export type ReadingChunksOptions = {
   saveLastReading?: boolean;
