@@ -41,13 +41,16 @@ jobs:
 
       - name: Prepare SSH key file
         if: steps.gate.outputs.skip != 'true'
+        id: ssh_key
         env:
           SSH_KEY: ${{ secrets.DO_SSH_PRIVATE_KEY }}
         run: |
-          install -m 700 -d ~/.ssh
-          printf '%s\n' "$SSH_KEY" > ~/.ssh/do_deploy_key
-          chmod 600 ~/.ssh/do_deploy_key
-          ssh-keygen -y -f ~/.ssh/do_deploy_key > /dev/null
+          KEY_FILE="${RUNNER_TEMP}/do_deploy_key"
+          install -m 700 -d "$(dirname "$KEY_FILE")"
+          printf '%s\n' "$SSH_KEY" > "$KEY_FILE"
+          chmod 600 "$KEY_FILE"
+          ssh-keygen -y -f "$KEY_FILE" > /dev/null
+          echo "path=$KEY_FILE" >> "$GITHUB_OUTPUT"
 
       - name: Deploy over SSH
         if: steps.gate.outputs.skip != 'true'
@@ -57,7 +60,7 @@ jobs:
         with:
           host: ${{ secrets.DO_SSH_HOST }}
           username: ${{ secrets.DO_SSH_USER }}
-          key_path: ~/.ssh/do_deploy_key
+          key_path: ${{ steps.ssh_key.outputs.path }}
           port: 22
           envs: APP_DIR
           command_timeout: 25m
