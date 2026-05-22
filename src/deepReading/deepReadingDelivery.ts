@@ -15,11 +15,8 @@ import { completeChat } from '../ai.js';
 import { cardImageExists } from '../cardAssets.js';
 import { drawTripletFromRemainingIds, drawVoiceArchetype } from '../deck.js';
 import { deepReadingCaptionHtmlBounded } from './deepReadingCaption.js';
-import {
-  buildTripletStripFrame,
-  fitCompositeForTelegram,
-  stackTripletOnPrevious,
-} from './compositeStack.js';
+import { tripletStripFrame } from '../spreadComposite.js';
+import { fitCompositeForTelegram, stackTripletOnPrevious } from './compositeStack.js';
 import { splitTripletModelOutput } from './modelOutput.js';
 import { deepFinalPrompt, deepTripletPrompt } from './prompts.js';
 import {
@@ -58,9 +55,10 @@ export async function deliverDeepTriplet(
   const questions = [...session.triplets.map((t) => t.question), question];
   const captionHtml = deepReadingCaptionHtmlBounded(questions, tripletIndex, TG_CAPTION_MAX);
 
+  const newStrip = await tripletStripFrame(drawn);
   let frame =
     tripletIndex === 0
-      ? await buildTripletStripFrame(drawn)
+      ? newStrip
       : session.lastCompositeJpeg !== null
         ? await stackTripletOnPrevious(
             {
@@ -68,9 +66,10 @@ export async function deliverDeepTriplet(
               width: session.lastCompositeWidth,
               height: session.lastCompositeHeight,
             },
-            await buildTripletStripFrame(drawn),
+            newStrip,
+            tripletIndex,
           )
-        : await buildTripletStripFrame(drawn);
+        : newStrip;
 
   const allExist = drawn.every((d) => cardImageExists(d.card.id));
   let faceMessageId: number;

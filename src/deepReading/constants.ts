@@ -11,6 +11,7 @@ export const DEEP_STRIP_STACK_OFFSET_FRACTION = 0.125;
 export const DEEP_COMPOSITE_MAX_SIDE_PX = 1280;
 
 export const DEEP_CALLBACK = 'deep';
+export const DEEP_START_CALLBACK = 'deep_start';
 export const DEEP_CANCEL_CALLBACK = 'deep_cancel';
 export const DEEP_END_CALLBACK = 'deep_end';
 

@@ -57,10 +57,12 @@ export async function dayCardStripPhotoInput(drawn: DrawnCard): Promise<PhotoInp
   return Input.fromBuffer(out, 'spread-day-card.jpg');
 }
 
-/** JPEG полосы из трёх карт (для расклада и глубинной диагностики). */
-export async function tripletStripJpegBuffer(
+export type TripletStripFrame = { jpeg: Buffer; width: number; height: number };
+
+/** JPEG полосы из трёх карт — общая сборка для spread и 1-го триплета deep. */
+export async function tripletStripFrame(
   drawn: [DrawnCard, DrawnCard, DrawnCard],
-): Promise<{ buffer: Buffer; width: number; height: number }> {
+): Promise<TripletStripFrame> {
   const resized = await Promise.all(drawn.map((d) => rasterCardForStrip(d, STRIP_CARD_HEIGHT)));
   const slotW = Math.max(...resized.map((c) => c.width), 1);
   const canvasH = Math.max(...resized.map((c) => c.height), 1);
@@ -73,13 +75,21 @@ export async function tripletStripJpegBuffer(
     x += slotW + STRIP_GAP_PX;
   }
   const canvasW = slotW * 3 + STRIP_GAP_PX * 2;
-  const buffer = await renderStripOnBlack(canvasW, canvasH, composites);
-  return { buffer, width: canvasW, height: canvasH };
+  const jpeg = await renderStripOnBlack(canvasW, canvasH, composites);
+  return { jpeg, width: canvasW, height: canvasH };
+}
+
+/** @deprecated Используй {@link tripletStripFrame}. */
+export async function tripletStripJpegBuffer(
+  drawn: [DrawnCard, DrawnCard, DrawnCard],
+): Promise<{ buffer: Buffer; width: number; height: number }> {
+  const { jpeg, width, height } = await tripletStripFrame(drawn);
+  return { buffer: jpeg, width, height };
 }
 
 export async function spreadCompositePhotoInput(
   drawn: [DrawnCard, DrawnCard, DrawnCard],
 ): Promise<PhotoInput> {
-  const { buffer } = await tripletStripJpegBuffer(drawn);
-  return Input.fromBuffer(buffer, 'spread-past-present-future.jpg');
+  const { jpeg } = await tripletStripFrame(drawn);
+  return Input.fromBuffer(jpeg, 'spread-past-present-future.jpg');
 }

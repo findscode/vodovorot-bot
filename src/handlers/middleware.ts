@@ -20,6 +20,7 @@ import {
   DEEP_CALLBACK,
   DEEP_CANCEL_CALLBACK,
   DEEP_END_CALLBACK,
+  DEEP_START_CALLBACK,
 } from '../deepReading/constants.js';
 
 /** Только личные чаты: в группах и каналах не отвечаем и не обрабатываем расклады. */
@@ -47,7 +48,7 @@ export function registerDeepSessionMiddleware(bot: Telegraf): void {
     const cq = ctx.callbackQuery;
     if (cq && 'data' in cq) {
       const d = cq.data;
-      if (d === DEEP_CANCEL_CALLBACK || d === DEEP_END_CALLBACK) {
+      if (d === DEEP_START_CALLBACK || d === DEEP_CANCEL_CALLBACK || d === DEEP_END_CALLBACK) {
         return next();
       }
       await answerCbQuerySafe(ctx);
@@ -98,6 +99,7 @@ export function registerAccessWhitelistMiddleware(bot: Telegraf): void {
         d === 'day_sub_off' ||
         d === DAY_PUSH_TIME_MENU_CALLBACK ||
         d === DEEP_CALLBACK ||
+        d === DEEP_START_CALLBACK ||
         d === DEEP_CANCEL_CALLBACK ||
         d === DEEP_END_CALLBACK ||
         /^pt:\d{2}:\d{2}$/.test(d)

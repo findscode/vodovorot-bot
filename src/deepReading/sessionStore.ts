@@ -1,7 +1,7 @@
 import type { DrawnCard } from '../deck.js';
 import { DEEP_MAX_TRIPLETS, DEEP_SESSION_TTL_MS } from './constants.js';
 
-export type DeepSessionPhase = 'awaiting_first_question' | 'in_chain';
+export type DeepSessionPhase = 'intro' | 'awaiting_first_question' | 'in_chain';
 
 export type DeepTripletRecord = {
   question: string;
@@ -50,7 +50,7 @@ export function getDeepSession(userId: number): DeepSession | undefined {
 export function startDeepSession(userId: number, chatId: number, deckIds: number[]): void {
   sessions.set(userId, {
     chatId,
-    phase: 'awaiting_first_question',
+    phase: 'intro',
     deckRemaining: deckIds,
     triplets: [],
     pendingQuestion: null,

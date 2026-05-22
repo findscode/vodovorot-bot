@@ -20,6 +20,16 @@ export function keyboardMainOrDayOnly(userId: number | undefined) {
 }
 
 export function keyboardDeepIntro() {
+  return Markup.inlineKeyboard([
+    [
+      Markup.button.callback('Начать', 'deep_start'),
+      Markup.button.callback('Отмена', 'deep_cancel'),
+    ],
+  ]);
+}
+
+/** После «Начать» — ждём первый вопрос, только отмена. */
+export function keyboardDeepAwaitingFirst() {
   return Markup.inlineKeyboard([[Markup.button.callback('Отмена', 'deep_cancel')]]);
 }
 

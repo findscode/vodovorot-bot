@@ -17,7 +17,7 @@ describe('sessionStore', () => {
     expect(hasActiveDeepSession(uid)).toBe(false);
     startDeepSession(uid, uid, [0, 1, 2]);
     expect(hasActiveDeepSession(uid)).toBe(true);
-    expect(getDeepSession(uid)?.phase).toBe('awaiting_first_question');
+    expect(getDeepSession(uid)?.phase).toBe('intro');
     endDeepSession(uid);
     expect(hasActiveDeepSession(uid)).toBe(false);
   });
