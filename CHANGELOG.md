@@ -4,10 +4,22 @@
 
 ## [Unreleased]
 
+## [3.5.0] — 2026-05-20
+
+Минорный релиз: прозрачный композитинг коллажей, перенормализация PNG карт, более конкретные промпты триплетов deep.
+
+### Added
+
+- Тест формата ассетов (512×896, прозрачные углы) и альфы в `compositeStack`.
+
+### Fixed
+
+- Коллаж и полосы spread/deep: RGBA + PNG вместо JPEG на чёрном фоне — прозрачные области карт и углы не чернеют.
+
 ### Changed
 
-- Документация: [AGENTS.md](AGENTS.md) как навигация для агентов; ROADMAP §3.0 сверен с кодом; [UX-POLISH-PLAN.md](docs/UX-POLISH-PLAN.md) — архив.
-- Cursor rules (progressive disclosure): `core`, `documentation`, `bot-copy`, `deep-reading`, `card-flows`, `ai-prompts` в `.cursor/rules/`.
+- Промпт триплета deep: короче, конкретнее, лаконичная «символика»; мягкий тон без вредных императивов.
+- Расклады и deep отправляют PNG (`spread-*.png`, `deep-triplet-*.png`).
 
 ## [3.4.0] — 2026-05-20
 

@@ -9,7 +9,10 @@ export const STRIP_CARD_HEIGHT = 320;
 
 type PhotoInput = ReturnType<typeof Input.fromBuffer>;
 
-async function renderStripOnBlack(
+/** Полоса или кадр коллажа: PNG с альфой (прозрачный фон между картами). */
+export type TripletStripFrame = { png: Buffer; width: number; height: number };
+
+async function renderStripTransparent(
   canvasW: number,
   canvasH: number,
   overlays: sharp.OverlayOptions[],
@@ -18,12 +21,12 @@ async function renderStripOnBlack(
     create: {
       width: canvasW,
       height: canvasH,
-      channels: 3,
-      background: '#000000',
+      channels: 4,
+      background: { r: 0, g: 0, b: 0, alpha: 0 },
     },
   })
     .composite(overlays)
-    .jpeg({ quality: 88 })
+    .png()
     .toBuffer();
 }
 
@@ -45,7 +48,7 @@ export function middleStripSlotLeft(slotWidth: number): number {
 }
 
 /**
- * «Карта дня»: та же геометрия полосы, что у трёх карт — горизонтальный кадр, чёрный фон,
+ * «Карта дня»: та же геометрия полосы, что у трёх карт — прозрачный фон,
  * одна вертикальная карта в среднем слоте.
  */
 export async function dayCardStripPhotoInput(drawn: DrawnCard): Promise<PhotoInput> {
@@ -53,13 +56,11 @@ export async function dayCardStripPhotoInput(drawn: DrawnCard): Promise<PhotoInp
   const { width: canvasW, height: canvasH } = tripleStripCanvasDimensions(card.width, card.height);
   const left = middleStripSlotLeft(card.width);
   const top = Math.round((canvasH - card.height) / 2);
-  const out = await renderStripOnBlack(canvasW, canvasH, [{ input: card.buffer, left, top }]);
-  return Input.fromBuffer(out, 'spread-day-card.jpg');
+  const out = await renderStripTransparent(canvasW, canvasH, [{ input: card.buffer, left, top }]);
+  return Input.fromBuffer(out, 'spread-day-card.png');
 }
 
-export type TripletStripFrame = { jpeg: Buffer; width: number; height: number };
-
-/** JPEG полосы из трёх карт — общая сборка для spread и 1-го триплета deep. */
+/** PNG полосы из трёх карт — общая сборка для spread и 1-го триплета deep. */
 export async function tripletStripFrame(
   drawn: [DrawnCard, DrawnCard, DrawnCard],
 ): Promise<TripletStripFrame> {
@@ -75,21 +76,21 @@ export async function tripletStripFrame(
     x += slotW + STRIP_GAP_PX;
   }
   const canvasW = slotW * 3 + STRIP_GAP_PX * 2;
-  const jpeg = await renderStripOnBlack(canvasW, canvasH, composites);
-  return { jpeg, width: canvasW, height: canvasH };
+  const png = await renderStripTransparent(canvasW, canvasH, composites);
+  return { png, width: canvasW, height: canvasH };
 }
 
 /** @deprecated Используй {@link tripletStripFrame}. */
 export async function tripletStripJpegBuffer(
   drawn: [DrawnCard, DrawnCard, DrawnCard],
 ): Promise<{ buffer: Buffer; width: number; height: number }> {
-  const { jpeg, width, height } = await tripletStripFrame(drawn);
-  return { buffer: jpeg, width, height };
+  const { png, width, height } = await tripletStripFrame(drawn);
+  return { buffer: png, width, height };
 }
 
 export async function spreadCompositePhotoInput(
   drawn: [DrawnCard, DrawnCard, DrawnCard],
 ): Promise<PhotoInput> {
-  const { jpeg } = await tripletStripFrame(drawn);
-  return Input.fromBuffer(jpeg, 'spread-past-present-future.jpg');
+  const { png } = await tripletStripFrame(drawn);
+  return Input.fromBuffer(png, 'spread-past-present-future.png');
 }

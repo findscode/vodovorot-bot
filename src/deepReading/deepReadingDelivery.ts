@@ -59,10 +59,10 @@ export async function deliverDeepTriplet(
   let frame =
     tripletIndex === 0
       ? newStrip
-      : session.lastCompositeJpeg !== null
+      : session.lastCompositePng !== null
         ? await stackTripletOnPrevious(
             {
-              jpeg: session.lastCompositeJpeg,
+              png: session.lastCompositePng,
               width: session.lastCompositeWidth,
               height: session.lastCompositeHeight,
             },
@@ -79,14 +79,14 @@ export async function deliverDeepTriplet(
   }
 
   if (allExist) {
-    const jpeg = await fitCompositeForTelegram(frame);
-    const photo = Input.fromBuffer(jpeg, `deep-triplet-${tripletIndex + 1}.jpg`);
+    const png = await fitCompositeForTelegram(frame);
+    const photo = Input.fromBuffer(png, `deep-triplet-${tripletIndex + 1}.png`);
     const faceMsg = await ctx.replyWithPhoto(photo, {
       caption: captionHtml,
       ...TELEGRAM_HTML_PARSE,
     });
     faceMessageId = faceMsg.message_id;
-    frame = { jpeg, width: frame.width, height: frame.height };
+    frame = { png, width: frame.width, height: frame.height };
   } else {
     const faceMsg = await ctx.reply(
       `${captionHtml}\n\n${DEEP_IMAGES_UNAVAILABLE_SUFFIX}`,
@@ -104,7 +104,7 @@ export async function deliverDeepTriplet(
     );
     const { userText, summary } = splitTripletModelOutput(raw);
     appendTriplet(userId, { question, cards: drawn, summary }, remaining, {
-      jpeg: frame.jpeg,
+      png: frame.png,
       width: frame.width,
       height: frame.height,
     });

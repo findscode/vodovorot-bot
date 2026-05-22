@@ -16,7 +16,7 @@ export type DeepSession = {
   triplets: DeepTripletRecord[];
   /** Вопрос, ожидающий повторной отправки после ai_error (триплет не засчитан). */
   pendingQuestion: string | null;
-  lastCompositeJpeg: Buffer | null;
+  lastCompositePng: Buffer | null;
   lastCompositeWidth: number;
   lastCompositeHeight: number;
   updatedAt: number;
@@ -54,7 +54,7 @@ export function startDeepSession(userId: number, chatId: number, deckIds: number
     deckRemaining: deckIds,
     triplets: [],
     pendingQuestion: null,
-    lastCompositeJpeg: null,
+    lastCompositePng: null,
     lastCompositeWidth: 0,
     lastCompositeHeight: 0,
     updatedAt: now(),
@@ -92,14 +92,14 @@ export function appendTriplet(
   userId: number,
   record: DeepTripletRecord,
   remainingDeck: number[],
-  composite: { jpeg: Buffer; width: number; height: number },
+  composite: { png: Buffer; width: number; height: number },
 ): void {
   const s = sessions.get(userId);
   if (!s) return;
   s.triplets.push(record);
   s.deckRemaining = remainingDeck;
   s.pendingQuestion = null;
-  s.lastCompositeJpeg = composite.jpeg;
+  s.lastCompositePng = composite.png;
   s.lastCompositeWidth = composite.width;
   s.lastCompositeHeight = composite.height;
   s.phase = 'in_chain';
