@@ -4,6 +4,10 @@
 
 **Версия:** `package.json` → сейчас **3.4.0**. История — [CHANGELOG.md](CHANGELOG.md).
 
+## Правила Cursor (`.cursor/rules/`)
+
+Краткие guardrails; полная карта — в этом файле и `docs/`. **alwaysApply:** `core.mdc`, `documentation.mdc`. **По открытым файлам:** `bot-copy.mdc`, `deep-reading.mdc`, `card-flows.mdc`, `ai-prompts.mdc`.
+
 ---
 
 ## Куда нести изменения (без новых `*-PLAN.md`)

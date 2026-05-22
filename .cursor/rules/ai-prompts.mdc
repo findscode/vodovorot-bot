@@ -1,0 +1,10 @@
+---
+description: LLM prompts and brand format — change only when asked
+globs: src/prompts.ts,src/brandFormat.ts,src/ai.ts
+alwaysApply: false
+---
+
+# Промпты и ИИ
+
+- Менять `prompts.ts` / `brandFormat.ts` / `ai.ts` только по **явному** запросу на толкования или промпты.
+- Структура и метки — [docs/BRAND-GUIDE.md](../../docs/BRAND-GUIDE.md) §4–5, `READING_SECTION_LABELS` в `brandFormat.ts`.

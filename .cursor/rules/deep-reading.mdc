@@ -1,0 +1,14 @@
+---
+description: Deep session — phases, collage, handlers
+globs: src/deepReading/**,src/handlers/registerDeepReadingHandlers.ts
+alwaysApply: false
+---
+
+# Глубинная диагностика
+
+- Фазы: `intro` | `awaiting_first_question` | `in_chain` (`sessionStore.ts`).
+- Callbacks: `deep`, `deep_start`, `deep_cancel`, `deep_end`.
+- 1-й триплет = `tripletStripFrame`; 2+ = `compositeStack.ts` (наслоение `k × 12.5%` высоты карты).
+- **Не менять** `prompts.ts` / `compositeStack.ts` без явной задачи на промпты или визуал.
+- UX/поток/ограничения — [docs/ROADMAP.md](../../docs/ROADMAP.md) §3.0 при смене поведения.
+- Правки `compositeStack.ts` — прогон `compositeStack.test.ts`.

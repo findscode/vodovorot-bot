@@ -1,0 +1,12 @@
+---
+description: UI strings — ty, spread names, толкование
+globs: src/botCopy.ts,src/statusCopy.ts
+alwaysApply: false
+---
+
+# botCopy / statusCopy
+
+- Обращение на **ты**; без «Вы» / «Ваш».
+- Названия раскладов как на кнопках: «На день», «Прошлое — настоящее — будущее», глубинная диагностика.
+- В сообщениях пользователю — **толкование**, не «разбор».
+- Тон и дисклеймеры — [docs/BRAND-GUIDE.md](../../docs/BRAND-GUIDE.md) §1 (не пересказывать целиком в rule).

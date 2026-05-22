@@ -10,7 +10,7 @@
 | [ROADMAP.md](./ROADMAP.md) §3.0    | Глубинная диагностика: поток, визуал, ограничения                                   |
 | [BRAND-GUIDE.md](./BRAND-GUIDE.md) | Тон «ты», тексты UI, формат толкований                                              |
 
-Не создавать новые `*-PLAN.md` без явной просьбы — см. [.cursor/rules/documentation.mdc](../.cursor/rules/documentation.mdc).
+Не создавать новые `*-PLAN.md` без явной просьбы — см. [.cursor/rules/](../.cursor/rules/) (`core.mdc`, `documentation.mdc`).
 
 ## Оператор и деплой
 

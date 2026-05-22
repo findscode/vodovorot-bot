@@ -1,0 +1,10 @@
+---
+description: «На день» and spread — delivery order, tripletStripFrame
+globs: src/handlers/registerDayHandlers.ts,src/handlers/registerSpreadHandlers.ts,src/cardOfDayDelivery.ts,src/spreadComposite.ts
+alwaysApply: false
+---
+
+# Карточные расклады
+
+- **«На день»:** порядок **ИИ → фото → текст** — не менять без явного запроса.
+- Spread и 1-й триплет deep — общая сборка `tripletStripFrame()` в `spreadComposite.ts`.

@@ -1,31 +1,9 @@
 ---
-description: Куда писать документацию и задачи; не плодить отдельные plan-файлы
+description: Docs hub only — no new plan files, UX-POLISH archive
 alwaysApply: true
 ---
 
-# Документация и скоуп задач
+# Документация
 
-Перед изменениями открой [AGENTS.md](../../AGENTS.md) — карта кода и таблица «куда нести изменения».
-
-## Не создавать без явной просьбы пользователя
-
-- Новые `*-PLAN.md`, `*-SPEC.md`, `DEEP-UX-*.md` и аналоги.
-- Дублировать один и тот же скоуп в нескольких markdown-файлах.
-
-## Куда распределять улучшения
-
-| Тип | Файл |
-| --- | ---- |
-| Продукт, поток deep, визуал, ограничения | `docs/ROADMAP.md` (§3.0) |
-| Тон, «ты», UI-строки | `docs/BRAND-GUIDE.md` §1 + `src/botCopy.ts`, `src/statusCopy.ts` |
-| Термины | `docs/GLOSSARY.md` |
-| Формат толкований ИИ | `docs/BRAND-GUIDE.md` §4–5, `src/brandFormat.ts` |
-| Релиз | `CHANGELOG.md`, `package.json` |
-| Деплой / ops | `docs/DEPLOY.md` |
-| Временный чеклист | `CHANGELOG [Unreleased]` или краткая секция в ROADMAP |
-
-`docs/UX-POLISH-PLAN.md` — **архив**, не дополнять.
-
-## Верификация
-
-После правок доков сверь утверждения с кодом (`src/handlers/middleware.ts`, `sessionStore.ts`, `compositeStack.ts` и т.д.). Устаревшие формулировки в ROADMAP исправляй, а не дублируй в новом файле.
+- Навигация и таблица «куда писать» — только [AGENTS.md](../../AGENTS.md), не дублировать в чате или новых md.
+- [docs/UX-POLISH-PLAN.md](../../docs/UX-POLISH-PLAN.md) — **архив**, не дополнять.
