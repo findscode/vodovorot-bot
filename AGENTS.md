@@ -2,7 +2,7 @@
 
 Краткий ориентир для **Cursor-агентов** и разработчиков. Человекочитаемые детали — в `docs/`; здесь только «куда смотреть» и «куда писать».
 
-**Версия:** `package.json` → сейчас **3.6.0**. История — [CHANGELOG.md](CHANGELOG.md). Запуск фокус-группы — [docs/FOCUS-GROUP.md](docs/FOCUS-GROUP.md).
+**Версия:** `package.json` → сейчас **3.6.3**. История — [CHANGELOG.md](CHANGELOG.md). Запуск фокус-группы — [docs/FOCUS-GROUP.md](docs/FOCUS-GROUP.md).
 
 ## Правила Cursor (`.cursor/rules/`)
 
@@ -12,18 +12,18 @@
 
 ## Куда нести изменения (без новых `*-PLAN.md`)
 
-| Задача                                  | Документ                                          | Код (типично)                                               |
-| --------------------------------------- | ------------------------------------------------- | ----------------------------------------------------------- |
-| Продукт, поток, визуал, ограничения 3.x | [docs/ROADMAP.md](docs/ROADMAP.md) §3.0           | `src/deepReading/`, `src/handlers/`                         |
-| Тон, «ты», строки UI, emoji tiers       | [docs/BRAND-GUIDE.md](docs/BRAND-GUIDE.md) §1, §4 | `src/botCopy.ts`, `src/statusCopy.ts`, `src/tierDisplay.ts` |
-| Термины ↔ код                           | [docs/GLOSSARY.md](docs/GLOSSARY.md)              | по смыслу                                                   |
-| Формат толкований ИИ                    | [docs/BRAND-GUIDE.md](docs/BRAND-GUIDE.md) §4–5   | `src/brandFormat.ts`, `src/prompts.ts`                      |
-| Подписи к фото                          | BRAND-GUIDE §3                                    | `src/readingTelegramHtml.ts`                                |
-| Релиз                                   | [CHANGELOG.md](CHANGELOG.md) + `package.json`     | SemVer — [CONTRIBUTING.md](CONTRIBUTING.md)                 |
-| Деплой, env, ops                        | [docs/DEPLOY.md](docs/DEPLOY.md)                  | Docker, workflow                                            |
-| Фокус-группа                            | [docs/FOCUS-GROUP.md](docs/FOCUS-GROUP.md)        | Smoke, промокоды, бриф                                      |
-| BotFather-тексты                        | [docs/BOTFATHER.md](docs/BOTFATHER.md)            | вне кода                                                    |
-| Индекс всех доков                       | [docs/README.md](docs/README.md)                  | —                                                           |
+| Задача                                  | Документ                                          | Код (типично)                                                                      |
+| --------------------------------------- | ------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| Продукт, поток, визуал, ограничения 3.x | [docs/ROADMAP.md](docs/ROADMAP.md) §3.0           | `src/deepReading/`, `src/handlers/`                                                |
+| Тон, «ты», строки UI, emoji tiers       | [docs/BRAND-GUIDE.md](docs/BRAND-GUIDE.md) §1, §4 | `src/botCopy.ts`, `src/spreadLabels.ts`, `src/statusCopy.ts`, `src/tierDisplay.ts` |
+| Термины ↔ код                           | [docs/GLOSSARY.md](docs/GLOSSARY.md)              | по смыслу                                                                          |
+| Формат толкований ИИ                    | [docs/BRAND-GUIDE.md](docs/BRAND-GUIDE.md) §4–5   | `src/brandFormat.ts`, `src/prompts.ts`                                             |
+| Подписи к фото                          | BRAND-GUIDE §3                                    | `src/readingTelegramHtml.ts`                                                       |
+| Релиз                                   | [CHANGELOG.md](CHANGELOG.md) + `package.json`     | SemVer — [CONTRIBUTING.md](CONTRIBUTING.md)                                        |
+| Деплой, env, ops                        | [docs/DEPLOY.md](docs/DEPLOY.md)                  | Docker, workflow                                                                   |
+| Фокус-группа                            | [docs/FOCUS-GROUP.md](docs/FOCUS-GROUP.md)        | Smoke, промокоды, бриф                                                             |
+| BotFather-тексты                        | [docs/BOTFATHER.md](docs/BOTFATHER.md)            | вне кода                                                                           |
+| Индекс всех доков                       | [docs/README.md](docs/README.md)                  | —                                                                                  |
 
 Временный чеклист — секция **«В работе»** в ROADMAP или пункты в CHANGELOG `[Unreleased]`, не отдельный plan-файл.
 
@@ -35,7 +35,8 @@
 | -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
 | Запуск бота                            | `src/bot.ts` → `registerHandlers()`                                                                                                            |
 | Команды, /help, /status                | `src/handlers/registerCommands.ts`                                                                                                             |
-| «На день»                              | `src/handlers/registerDayHandlers.ts`, `src/cardOfDayDelivery.ts`                                                                              |
+| «На день» + push                       | `registerDayHandlers.ts`, `cardOfDayDelivery.ts`, `dayPushScheduler.ts`, `dayPushTickLogic.ts`                                                 |
+| Названия раскладов в текстах           | `src/spreadLabels.ts` (`SPREAD_BUTTON_LABEL`)                                                                                                  |
 | Spread «Прошлое — настоящее — будущее» | `src/handlers/registerSpreadHandlers.ts`, `src/spreadComposite.ts`                                                                             |
 | Чёрный фон фото карт                   | `src/compositeBackground.ts` (полосы, коллаж, `cardPhotoInput`)                                                                                |
 | Уровни доступа (модель C)              | `src/accessTier.ts`, `src/tierDisplay.ts`; промо — `promoCodeGenerator.ts`, `promoRedeemLimit.ts`; админ — `handlers/registerAdminHandlers.ts` |

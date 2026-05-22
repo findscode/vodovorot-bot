@@ -23,12 +23,11 @@
 
 ## Продукт и контент
 
-| Документ                                 | Зачем                                                             |
-| ---------------------------------------- | ----------------------------------------------------------------- |
-| [BRAND-GUIDE.md](./BRAND-GUIDE.md)       | Тон бота и правила формата толкований                             |
-| [GLOSSARY.md](./GLOSSARY.md)             | Термины для копирайта и промптов                                  |
-| [ROADMAP.md](./ROADMAP.md)               | Релизы 2.x–3.x, эпики, milestones                                 |
-| [UX-POLISH-PLAN.md](./UX-POLISH-PLAN.md) | **Архив** плана 3.2.0 (история; актуальное — ROADMAP + CHANGELOG) |
+| Документ                           | Зачем                                 |
+| ---------------------------------- | ------------------------------------- |
+| [BRAND-GUIDE.md](./BRAND-GUIDE.md) | Тон бота и правила формата толкований |
+| [GLOSSARY.md](./GLOSSARY.md)       | Термины для копирайта и промптов      |
+| [ROADMAP.md](./ROADMAP.md)         | Релизы 2.x–3.x, эпики, milestones     |
 
 ## Разработка
 
@@ -40,16 +39,18 @@
 
 ## Код (ориентир)
 
-| Путь                     | Роль                                         |
-| ------------------------ | -------------------------------------------- |
-| `src/bot.ts`             | Telegraf, `registerHandlers`, `bot.catch`    |
-| `src/botCopy.ts`         | Все системные тексты пользователю            |
-| `src/tierDisplay.ts`     | Emoji и подписи уровней в UI                 |
-| `src/statusCopy.ts`      | `/status`                                    |
-| `src/promoConfig.ts`     | Срок Premium по промокоду, лимиты `/promo`   |
-| `src/handlers/`          | Команды, day, spread, deep, push, middleware |
-| `src/deepReading/`       | Сессия, коллаж, промпты deep                 |
-| `src/spreadComposite.ts` | Полоса трёх карт (spread + 1-й триплет deep) |
-| `assets/cards/`          | PNG колоды (`512×896`)                       |
+| Путь                      | Роль                                             |
+| ------------------------- | ------------------------------------------------ |
+| `src/bot.ts`              | Telegraf, `registerHandlers`, `bot.catch`        |
+| `src/botCopy.ts`          | Системные тексты (`/start`, `/menu`, ошибки)     |
+| `src/spreadLabels.ts`     | Названия раскладов как на кнопках, обзор доступа |
+| `src/tierDisplay.ts`      | Emoji и подписи уровней в UI                     |
+| `src/statusCopy.ts`       | `/status`                                        |
+| `src/dayPushScheduler.ts` | Авторассылка «карта дня» (cron)                  |
+| `src/promoConfig.ts`      | Срок Premium по промокоду, лимиты `/promo`       |
+| `src/handlers/`           | Команды, day, spread, deep, push, middleware     |
+| `src/deepReading/`        | Сессия, коллаж, промпты deep                     |
+| `src/spreadComposite.ts`  | Полоса трёх карт (spread + 1-й триплет deep)     |
+| `assets/cards/`           | PNG колоды (`512×896`)                           |
 
 Подробная таблица — в [AGENTS.md](../AGENTS.md).

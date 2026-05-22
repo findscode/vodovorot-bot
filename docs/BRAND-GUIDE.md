@@ -4,7 +4,7 @@
 
 **Навигация по репозиторию (агенты и люди):** [AGENTS.md](../AGENTS.md). Индекс доков — [docs/README.md](README.md).
 
-Реализация формата ответов модели: `src/brandFormat.ts` → `prompts.ts`; общий тон и язык: `src/ai.ts` (`SYSTEM_PROMPT`). Сообщения бота (приветствие, ошибки): `src/botCopy.ts`; хендлеры — `src/handlers/`. Emoji уровней в кнопках и справках: `src/tierDisplay.ts`. Подписи к фото: `src/readingTelegramHtml.ts` → `cardOfDayDelivery.ts` («на день»), `handlers/registerSpreadHandlers.ts` (три карты). Нарезка толкования в чат: `readingChunksDelivery.ts`. Фразы про **сутки** и рассылку (без IANA в чате): `calendarDayUserPhrases.ts`; **`/status`**: `statusCopy.ts`. Пресеты push: `dayPushPresets.ts`, клавиатура — `botKeyboards.ts`. Авторассылка «карта дня»: `dayPushScheduler.ts`, `dayPushTickLogic.ts`, `dayPushApplyResult.ts`, `pushSchedule.ts`.
+Реализация формата ответов модели: `src/brandFormat.ts` → `prompts.ts`; общий тон и язык: `src/ai.ts` (`SYSTEM_PROMPT`). Сообщения бота (приветствие, ошибки): `src/botCopy.ts`; названия раскладов и блок «доступ» в `/start` / `/menu`: `src/spreadLabels.ts` (`SPREAD_BUTTON_LABEL`); хендлеры — `src/handlers/`. Emoji уровней в кнопках и справках: `src/tierDisplay.ts`. Подписи к фото: `src/readingTelegramHtml.ts` → `cardOfDayDelivery.ts` («на день»), `handlers/registerSpreadHandlers.ts` (три карты); заголовок гадания в подписи deep-коллажа — `deepReading/deepReadingCaption.ts`. Нарезка толкования в чат: `readingChunksDelivery.ts`. Фразы про **сутки** (без IANA в чате): `calendarDayUserPhrases.ts`; **`/status`**: `statusCopy.ts`. Пресеты push: `dayPushPresets.ts`, клавиатура — `botKeyboards.ts`. Авторассылка: `dayPushScheduler.ts`, `dayPushTickLogic.ts`, `dayPushApplyResult.ts`, `dayPushRetry.ts`, `pushSchedule.ts`.
 
 **Профиль бота в Telegram:** поля About, Description, Privacy Policy URL и команды — в [docs/BOTFATHER.md](BOTFATHER.md) (формулировки **деловые, без рекламного тона**); политика для URL — [docs/PRIVACY.md](PRIVACY.md).
 
@@ -14,7 +14,7 @@
 
 - **Простой русский:** как в разговоре с знакомым, без канцелярита и без слов из разработки.
 - **Обращение на «ты»** — во всех системных сообщениях из `botCopy.ts` и в ответах об ошибках; единый тон с приветствием `/start`. Без «Вы» / «Ваш».
-- **Названия раскладов** в чате — как на кнопках: «На день», «Прошлое — настоящее — будущее»; сессионный режим — **глубинная диагностика** (в заголовках можно `<b>Глубинная диагностика</b>`). Для тела ответа модели — **толкование** (не смешивать с «разбор» в `botCopy.ts`).
+- **Названия раскладов** в чате — **в кавычках «…»**, строго как на кнопках (`spreadLabels.ts`): «На день», «Прошлое — настоящее — будущее», «Глубинная диагностика»; у пункта — emoji уровня (🌱 / ⭐️). В `/start` и `/menu` — список: один расклад на абзац, между абзацами пустая строка. Для тела ответа модели — **толкование** (не смешивать с «разбор» в `botCopy.ts`).
 - **Уважение и ясность:** не запугивать и не заискивать; можно коротко объяснить, что происходит.
 - **Честность:** толкование — не предсказание судьбы; без обещаний событий и без медицинских, юридических и финансовых советов.
 - **Техника:** не раскрывать, что «ответ пишет программа» или из какого сервиса он приходит.

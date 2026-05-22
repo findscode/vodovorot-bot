@@ -1,9 +1,9 @@
 ---
-description: Docs hub only — no new plan files, UX-POLISH archive
+description: Docs hub only — no new plan files
 alwaysApply: true
 ---
 
 # Документация
 
 - Навигация и таблица «куда писать» — только [AGENTS.md](../../AGENTS.md), не дублировать в чате или новых md.
-- [docs/UX-POLISH-PLAN.md](../../docs/UX-POLISH-PLAN.md) — **архив**, не дополнять.
+- История релизов и эпики — [docs/ROADMAP.md](../../docs/ROADMAP.md) и [CHANGELOG.md](../../CHANGELOG.md). Отдельные `*-PLAN.md` не создавать.

@@ -407,7 +407,7 @@ stateDiagram-v2
 
 **Снято с плана:** v2.14-2 отдельный BotDeps-эпик (достаточно явных импортов в handlers); v2.17-1 кап ИИ.
 
-**Доработка push (✅ 3.6.1):** `day_push_last_sent_date` (только успешный push); `markDayPushSentSync`; catch-up при старте; лимит 3× для `ai`/`delivery`; `dayPushTickLogic` / `dayPushApplyResult` / `dayPushRetry`; уведомление при занятом слоте; параллельные подписчики — [CHANGELOG 3.6.1](../CHANGELOG.md#361--2026-05-22), [DEPLOY § push](./DEPLOY.md#подписка-на-карту-дня-авто).
+**Push и копирайт (✅ 3.6.1–3.6.3):** надёжная рассылка (`day_push_last_sent_date`, catch-up, `dayPushRetry`); без вне контекста сообщений при занятом слоте; `spreadLabels.ts` и структура `/start` / `/menu`; вычитка русских текстов — [CHANGELOG 3.6.3](../CHANGELOG.md#363--2026-05-22), [DEPLOY § push](./DEPLOY.md#подписка-на-карту-дня-авто).
 
 **Следующие миноры (идеи, без номера):** мягкие напоминания, экспорт — с оценкой PRIVACY и оператора; активация **2.16** при росте подписчиков push.
 
