@@ -57,7 +57,7 @@ export async function deliverDeepTriplet(
   const { drawn, remaining } = drawTripletFromRemainingIds(session.deckRemaining);
   const tripletIndex = session.triplets.length;
   const questions = [...session.triplets.map((t) => t.question), question];
-  const captionHtml = deepReadingCaptionHtmlBounded(questions, tripletIndex, TG_CAPTION_MAX);
+  const captionHtml = deepReadingCaptionHtmlBounded(questions, tripletIndex, TG_CAPTION_MAX, tier);
 
   const newStrip = await tripletStripFrame(drawn);
   let frame =

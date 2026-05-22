@@ -6,8 +6,15 @@
 
 import type { AccessTier } from './accessTier.js';
 import { canUseFullDeepFinal } from './accessTier.js';
-import { dayDrawPhrasesForServer, formatHhmmForUser } from './calendarDayUserPhrases.js';
+import { formatHhmmForUser } from './calendarDayUserPhrases.js';
+import {
+  quotedSpreadLabel,
+  SPREAD_BUTTON_LABEL,
+  spreadAccessOverviewHtml,
+  type SpreadAccessOverviewOpts,
+} from './spreadLabels.js';
 import { basicTrackPrefix, premiumFeaturePrefix } from './tierDisplay.js';
+import { spreadTitleLineHtml } from './spreadLabels.js';
 
 export const ETHOS =
   'любое толкование — не гарантия будущего, а повод присмотреться к себе и к картам.';
@@ -96,8 +103,8 @@ export const DEEP_COLLAGE_HINT_MESSAGE =
   'Коллаж наслоен — на экране телефона мелкий; опирайся на текст толкования ниже.';
 
 /** Сообщение при блокировке команд и других раскладов во время deep-сессии. */
-export function deepSessionBlockedMessageHtml(): string {
-  return `Сейчас идёт <b>глубинная диагностика</b>. Дождись ответа или нажми «Закончить гадание».
+export function deepSessionBlockedMessageHtml(tier: AccessTier): string {
+  return `Сейчас идёт ${spreadTitleLineHtml(tier, 'deep')}. Дождись ответа или нажми «Закончить гадание».
 
 <code>/menu</code> и <code>/help</code> снова сработают после общего вывода.`;
 }
@@ -189,31 +196,24 @@ export function promoOkMessageHtml(until: Date): string {
   return `<b>Готово</b>, промокод принят. ⭐️ <b>Premium</b> на месяц (до ${dateRu}) — открыты расклад «Прошлое — настоящее — будущее» и полная глубинная диагностика. Подробности — <code>/status</code>. Обнови меню: <code>/menu</code>.`;
 }
 
-export function startTextHtml(): string {
-  const p = dayDrawPhrasesForServer();
-  return `Привет, я <b>Водоворот</b>. Ниже расклады — от простых к сложным.
+export function startTextHtml(opts: SpreadAccessOverviewOpts): string {
+  return `Привет, я <b>Водоворот</b>. Ниже — расклады от простых к сложным.
 
-🌱 «На день» (раз в сутки ${p.dayLimitCalendar}) и 🌱 глубинная диагностика до трёх вопросов. ⭐️ Полный доступ — <code>/promo КОД</code>.
+${spreadAccessOverviewHtml(opts)}
 
 ${START_ETHOS}`;
 }
 
-export function menuTextHtml(): string {
-  return 'Расклады ниже — 🌱 базовый трек и ⭐️ Premium. Промокод — кнопка или <code>/promo</code>.';
+export function menuTextHtml(opts: SpreadAccessOverviewOpts): string {
+  return `<b>Расклады</b>
+
+${spreadAccessOverviewHtml(opts)}`;
 }
 
-export function helpTextHtml(opts: { tier: AccessTier }): string {
-  const p = dayDrawPhrasesForServer();
-  const premiumDeep = canUseFullDeepFinal(opts.tier);
-  const dayLine = `• ${basicTrackPrefix()}<b>На день</b> — одна карта и толкование на сутки. Не чаще раза в сутки ${p.dayLimitCalendar}.\n`;
-
-  const spreadLine = premiumDeep
-    ? `• ${premiumFeaturePrefix()}<b>Прошлое — настоящее — будущее</b> — три карты и связное толкование.\n`
-    : `• ${premiumFeaturePrefix()}<b>Прошлое — настоящее — будущее</b> — с Premium; <code>/promo КОД</code>.\n`;
-
-  const deepLine = premiumDeep
-    ? `• ${premiumFeaturePrefix()}<b>Глубинная диагностика</b> — до семи вопросов и общий финал; <b>Начать</b> → вопросы текстом.\n`
-    : `• ${basicTrackPrefix()}<b>Глубинная диагностика</b> — до трёх вопросов; полный цикл — ${premiumFeaturePrefix()}Premium (<code>/promo</code>).\n`;
+export function helpTextHtml(opts: SpreadAccessOverviewOpts): string {
+  const overview = spreadAccessOverviewHtml(opts);
+  const dayQ = quotedSpreadLabel(SPREAD_BUTTON_LABEL.day);
+  const spreadQ = quotedSpreadLabel(SPREAD_BUTTON_LABEL.spread);
 
   return `<b>Водоворот</b> — толкование карт Таро в личке. Работает <b>только в личных сообщениях</b>.
 
@@ -227,15 +227,17 @@ export function helpTextHtml(opts: { tier: AccessTier }): string {
 /promo КОД — активировать одноразовый промокод Premium
 
 <b>Расклады</b>
-${dayLine}${spreadLine}${deepLine}
+${overview}
 
 <b>Как выбрать</b>
-• <b>На день</b> — одна карта на сутки, без твоих вопросов.
-• <b>Прошлое — настоящее — будущее</b> — один связный расклад из трёх карт, без уточняющих вопросов.
-• <b>Глубинная диагностика</b> — «Начать», затем вопросы текстом и общий финал.
+${basicTrackPrefix()}${dayQ} — одна карта на сутки, без твоих вопросов.
+
+${premiumFeaturePrefix()}${spreadQ} — один связный расклад из трёх карт.
+
+${spreadTitleLineHtml(opts.tier, 'deep')} — кнопка <b>Начать</b>, затем вопросы текстом${canUseFullDeepFinal(opts.tier) ? ' и общий финал' : ''}.
 
 <b>Подписка на карту дня</b>
-После «На день» можно включить ежедневную отправку кнопкой «Присылать каждый день». Один раз в сутки — и на ручной запрос, и на рассылку. Время по умолчанию из настроек бота; смена — кнопка <b>«Время рассылки»</b> или <code>/pushtime 14:30</code>. Отписка — в том же сообщении после включения или под следующим толкованием «На день».
+После ${dayQ} можно включить ежедневную отправку кнопкой «Присылать каждый день». Один раз в сутки — и на ручной запрос, и на рассылку. Время по умолчанию из настроек бота; смена — кнопка <b>«Время рассылки»</b> или <code>/pushtime 14:30</code>. Отписка — в том же сообщении после включения или под следующим толкованием ${dayQ}.
 
 <b>Важно</b>
 ${DISCLAIMER_HELP}`;

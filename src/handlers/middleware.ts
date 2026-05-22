@@ -1,4 +1,5 @@
 import type { Telegraf } from 'telegraf';
+import { resolveAccessTier } from '../accessTier.js';
 import { DEEP_ALREADY_ACTIVE_MESSAGE, deepSessionBlockedMessageHtml } from '../botCopy.js';
 import { keyboardDeepInChain } from '../botKeyboards.js';
 import { TELEGRAM_HTML_PARSE } from '../readingTelegramHtml.js';
@@ -30,7 +31,7 @@ export function registerDeepSessionMiddleware(bot: Telegraf): void {
       return next();
     }
 
-    const blockedHtml = deepSessionBlockedMessageHtml();
+    const blockedHtml = deepSessionBlockedMessageHtml(resolveAccessTier(uid));
     const blockedKeyboard = keyboardDeepInChain();
 
     const cq = ctx.callbackQuery;

@@ -41,7 +41,7 @@ export function statusTextHtml(userId: number): string {
     spreadStatus,
   );
 
-  lines.push(`Лимит «На день»: не чаще раза в сутки ${phrases.dayLimitCalendar}.`);
+  lines.push(`Лимит «На день»: не чаще раза в ${phrases.dayLimitCalendar}.`);
 
   const prem = getActivePremiumUntilSync(userId);
   if (prem && tier !== 'admin') {

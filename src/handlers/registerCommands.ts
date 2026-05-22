@@ -1,5 +1,5 @@
 import type { Telegraf } from 'telegraf';
-import { resolveAccessTier } from '../accessTier.js';
+import { spreadAccessOptsForUser } from '../spreadLabels.js';
 import {
   helpTextHtml,
   LAST_EMPTY_MESSAGE,
@@ -38,18 +38,26 @@ export function registerCommands(bot: Telegraf): void {
   bot.start(async (ctx) => {
     const uid = ctx.from?.id;
     if (uid !== undefined) getOrCreateUser(uid);
-    await ctx.reply(startTextHtml(), { ...keyboardMainOrDayOnly(uid), ...TELEGRAM_HTML_PARSE });
+    const accessOpts = spreadAccessOptsForUser(uid);
+    await ctx.reply(startTextHtml(accessOpts), {
+      ...keyboardMainOrDayOnly(uid),
+      ...TELEGRAM_HTML_PARSE,
+    });
   });
 
   bot.command('menu', async (ctx) => {
     const uid = ctx.from?.id;
     if (uid !== undefined) getOrCreateUser(uid);
-    await ctx.reply(menuTextHtml(), { ...keyboardMainOrDayOnly(uid), ...TELEGRAM_HTML_PARSE });
+    const accessOpts = spreadAccessOptsForUser(uid);
+    await ctx.reply(menuTextHtml(accessOpts), {
+      ...keyboardMainOrDayOnly(uid),
+      ...TELEGRAM_HTML_PARSE,
+    });
   });
 
   bot.command('help', async (ctx) => {
-    const tier = resolveAccessTier(ctx.from?.id);
-    await ctx.reply(helpTextHtml({ tier }), {
+    const accessOpts = spreadAccessOptsForUser(ctx.from?.id);
+    await ctx.reply(helpTextHtml(accessOpts), {
       ...keyboardMainOrDayOnly(ctx.from?.id),
       ...TELEGRAM_HTML_PARSE,
     });

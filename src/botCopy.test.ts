@@ -7,23 +7,32 @@ import {
   startTextHtml,
 } from './botCopy.js';
 
+const basicOpts = { tier: 'basic' as const, fullSpread: false };
+
 describe('botCopy', () => {
   it('deepSessionBlockedMessageHtml explains blocked state without counters', () => {
-    const html = deepSessionBlockedMessageHtml();
-    expect(html).toContain('глубинная диагностика');
+    const html = deepSessionBlockedMessageHtml('basic');
+    expect(html).toContain('«Глубинная диагностика»');
     expect(html).not.toMatch(/осталось|сделано \d/i);
   });
 
   it('startText points to buttons and states ethos', () => {
-    expect(startTextHtml()).toContain('от простых к сложным');
-    expect(startTextHtml()).toContain('Запомни:');
-    expect(startTextHtml()).toContain('не гарантия будущего');
-    expect(startTextHtml()).toContain('/promo');
+    const html = startTextHtml(basicOpts);
+    expect(html).toContain('от простых к сложным');
+    expect(html).toContain('«На день»');
+    expect(html).toContain('«Глубинная диагностика»');
+    expect(html).toContain('\n\n');
+    expect(html).toContain('Запомни:');
+    expect(html).toContain('не гарантия будущего');
+    expect(html).toContain('/promo');
   });
 
-  it('menuText explains basic and premium tracks', () => {
-    expect(menuTextHtml()).toContain('🌱');
-    expect(menuTextHtml()).toContain('⭐️');
+  it('menuText lists spreads with emoji and quotes', () => {
+    const html = menuTextHtml(basicOpts);
+    expect(html).toContain('<b>Расклады</b>');
+    expect(html).toContain('🌱');
+    expect(html).toContain('⭐️');
+    expect(html).toContain('«На день»');
   });
 
   it('promoOkMessageHtml confirms premium with date', () => {

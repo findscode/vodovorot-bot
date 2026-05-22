@@ -8,7 +8,7 @@ import {
 describe('calendarDayUserPhrases', () => {
   it('нейтральные формулировки без городов и IANA', () => {
     const p = dayDrawPhrasesForServer();
-    expect(p.dayLimitCalendar).toBe('за календарные сутки');
+    expect(p.dayLimitCalendar).toBe('календарные сутки');
     expect(p.midnight).toBe('после полуночи');
     expect(p.midnight).not.toMatch(/Москв/i);
     expect(p.dayLimitCalendar).not.toMatch(/москов/i);

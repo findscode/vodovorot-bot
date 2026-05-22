@@ -1,5 +1,6 @@
 import type { AccessTier } from './accessTier.js';
 import { canUseFullDeepFinal } from './accessTier.js';
+import { quotedSpreadLabel, SPREAD_BUTTON_LABEL } from './spreadLabels.js';
 
 /**
  * Emoji-метки уровней (UI).
@@ -63,7 +64,8 @@ export function tierLabelWithEmojiForAdmin(tier: AccessTier): string {
 /** Вступление к глубинной диагностике с учётом tier. */
 export function deepIntroHtml(tier: AccessTier): string {
   const premiumDeep = canUseFullDeepFinal(tier);
-  const heading = featureHeadingHtml('Глубинная диагностика', { premiumMark: premiumDeep });
+  const prefix = premiumDeep ? premiumFeaturePrefix() : basicTrackPrefix();
+  const heading = `${prefix}<b>${quotedSpreadLabel(SPREAD_BUTTON_LABEL.deep)}</b>`;
   const body = premiumDeep
     ? 'До семи вопросов подряд — на каждый три карты и короткое толкование. В конце — общий вывод. Нажми <b>Начать</b>, когда будешь готов.'
     : `До трёх вопросов за одно гадание — на каждый три карты и толкование. Полный цикл (семь вопросов и общий вывод) — ${premiumFeaturePrefix()}Premium. Нажми <b>Начать</b>, когда будешь готов.`;
@@ -72,6 +74,7 @@ export function deepIntroHtml(tier: AccessTier): string {
 
 export function deepIntroReadyHtml(tier: AccessTier): string {
   const premiumDeep = canUseFullDeepFinal(tier);
-  const heading = featureHeadingHtml('Глубинная диагностика', { premiumMark: premiumDeep });
+  const prefix = premiumDeep ? premiumFeaturePrefix() : basicTrackPrefix();
+  const heading = `${prefix}<b>${quotedSpreadLabel(SPREAD_BUTTON_LABEL.deep)}</b>`;
   return `${heading}\n\nНапиши первый вопрос или утверждение <b>одним сообщением</b> в чат. Выйти можно кнопкой «Отмена».`;
 }
