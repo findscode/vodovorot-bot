@@ -59,7 +59,9 @@
 ## Перед завершением задачи
 
 ```bash
-npm run build && npm test && npm run format:check
+npm run lint:fix && npm run format && npm run build && npm test && npm run lint && npm run format:check
 ```
+
+При коммите **pre-commit** (Husky + lint-staged) сам чинит staged-файлы и гоняет `lint` + `format:check` как в CI — не полагайся только на ручной прогон.
 
 Сверить затронутый раздел ROADMAP / BRAND-GUIDE с фактическим поведением в коде (особенно deep: фазы, middleware, коллаж).

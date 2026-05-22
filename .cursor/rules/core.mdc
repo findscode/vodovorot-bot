@@ -9,5 +9,6 @@ alwaysApply: true
 - Не создавать `*-PLAN.md` / `*-SPEC.md`. Скоуп и карта кода — [AGENTS.md](../../AGENTS.md).
 - Прочитай **AGENTS.md**, если задача затрагивает: `src/deepReading/`, `src/handlers/`, `src/botCopy.ts`, `src/statusCopy.ts`, `src/spreadComposite.ts`, `src/prompts.ts` или тексты/UX раскладов.
 - Инварианты продукта (deep in-memory, нет `/deep`, «На день» ИИ→фото) — в AGENTS.md; не ломать без явного запроса.
-- Перед завершением: `npm run build && npm test && npm run format:check`.
+- Перед завершением: `npm run lint:fix && npm run format && npm run build && npm test && npm run lint && npm run format:check` (дублирует pre-commit при коммите).
+- Перед коммитом не обходи Husky без явной просьбы пользователя; CI = `format:check` + `lint` + `test` + `build`.
 - Утверждения в docs сверяй с кодом; не копируй ROADMAP в новые файлы.

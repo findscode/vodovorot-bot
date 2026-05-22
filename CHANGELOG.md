@@ -4,6 +4,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- Pre-commit (Husky + lint-staged): автофикс ESLint/Prettier на staged-файлах, затем `lint` и `format:check` как в CI.
+
 ## [3.5.0] — 2026-05-20
 
 Минорный релиз: прозрачный композитинг коллажей, перенормализация PNG карт, более конкретные промпты триплетов deep.

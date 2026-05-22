@@ -93,9 +93,17 @@ git -c core.hooksPath=/path/to/empty-dir commit …
 
 ## Локальные проверки
 
+После `npm ci` активируется **pre-commit** (Husky): на файлах в индексе — `eslint --fix` и Prettier; затем те же **`npm run lint`** и **`npm run format:check`**, что и в CI. Коммит не пройдёт, пока линтер или форматирование по репозиторию красные.
+
+Ручной прогон (как в CI, без коммита):
+
 ```bash
-npm run format:check
+npm run lint:fix
+npm run format
 npm run lint
+npm run format:check
 npm test
 npm run build
 ```
+
+Обойти хук (редко, осознанно): `git commit --no-verify` или `git -c core.hooksPath=/path/to/empty-dir commit …` — см. выше про Cursor.
