@@ -1,5 +1,7 @@
-# Локальные настройки Cursor / IDE
-.cursor/
+# Локальные настройки Cursor / IDE (правила проекта — в репозитории)
+.cursor/*
+!.cursor/rules/
+!.cursor/rules/**
 
 node_modules/
 dist/
