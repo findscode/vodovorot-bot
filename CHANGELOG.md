@@ -4,13 +4,28 @@
 
 ## [Unreleased]
 
+## [3.6.0] — 2026-05-21
+
+Минорный релиз: публичный бот, модель доступа C (basic / Premium / админ), промокоды для фокус-группы, emoji в UI.
+
 ### Added
 
-- TDD: `npm run test:coverage`, пороги в `vitest.config.ts`, CI вместо голого `test`; правило `testing.mdc`; тесты deck/sessionStore/фото/копирайт.
+- Модель C: tiers `basic` | `premium` | `admin` (`accessTier.ts`); deep для basic — 3 триплета без общего финала.
+- Публичный бот (без `ALLOWED_TELEGRAM_USER_IDS`); spread — только Premium/админ.
+- Промокоды: `/admin promo` (автогенерация таро-кода + криптосуффикс), `/admin promo list`; активация `/promo КОД`; 31 день Premium (`promoConfig.ts`, `promoCodeGenerator.ts`).
+- Защита промокодов: лимит попыток `/promo`, единый ответ при ошибке (без oracle «код есть в БД»).
+- Emoji-метки UI: ⭐️ Premium-фичи, 🌱 базовый трек, 🍀 админ (`tierDisplay.ts`) — кнопки, `/help`, `/status`, deep-intro.
+- Админ: `/admin grant|revoke|info|stats`.
+- Документ [docs/FOCUS-GROUP.md](docs/FOCUS-GROUP.md) — runbook запуска фокус-группы.
 
 ### Changed
 
-- `/start` и `/menu`: приветствие с отсылкой к кнопкам «от простых к сложным»; дисклеймер «Запомни: любое толкование…».
+- `/start` и `/menu`: приветствие «от простых к сложным»; дисклеймер «Запомни: любое толкование…».
+- [BOTFATHER.md](docs/BOTFATHER.md), [DEPLOY.md](docs/DEPLOY.md), [GLOSSARY.md](docs/GLOSSARY.md), [BRAND-GUIDE.md](docs/BRAND-GUIDE.md) — публичный доступ, промокоды, tiers, emoji.
+
+### Removed
+
+- Whitelist `ALLOWED_TELEGRAM_USER_IDS` и связанный middleware (`accessWhitelist.ts`, `runtimeConfig.ts`).
 
 ## [3.5.1] — 2026-05-20
 

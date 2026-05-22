@@ -4,7 +4,9 @@ import {
   SPREAD_AI_RETRY_SUFFIX,
   SPREAD_DONE_HINT,
   SPREAD_IMAGES_UNAVAILABLE_SUFFIX,
+  spreadPremiumRequiredMessage,
 } from '../botCopy.js';
+import { hasFullSpreadAccess } from '../accessResolve.js';
 import { keyboardMainOrDayOnly } from '../botKeyboards.js';
 import { completeChat } from '../ai.js';
 import { cardImageExists } from '../cardAssets.js';
@@ -23,6 +25,14 @@ export function registerSpreadHandlers(bot: Telegraf): void {
     await answerCbQuerySafe(ctx);
     const uid = ctx.from?.id;
     if (uid === undefined) return;
+
+    if (!hasFullSpreadAccess(uid)) {
+      await ctx.reply(spreadPremiumRequiredMessage(), {
+        ...keyboardMainOrDayOnly(uid),
+        ...TELEGRAM_HTML_PARSE,
+      });
+      return;
+    }
 
     const cards = drawThreeUnique();
     const positions = ['Прошлое', 'Настоящее', 'Будущее'] as const;

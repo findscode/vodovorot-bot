@@ -3,8 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { closeDatabase, initDatabase } from './db/database.js';
-import { setAccessWhitelist } from './runtimeConfig.js';
-import { setDayPushEnabled } from './db/usersRepo.js';
+import { extendPremiumByDaysSync, setDayPushEnabled } from './db/usersRepo.js';
 import { statusTextHtml } from './statusCopy.js';
 
 describe('statusCopy', () => {
@@ -14,20 +13,29 @@ describe('statusCopy', () => {
     dir = await mkdtemp(join(tmpdir(), 'vodovorot-status-'));
     closeDatabase();
     initDatabase(join(dir, 't.db'));
-    setAccessWhitelist(null);
   });
 
   afterEach(async () => {
     closeDatabase();
-    setAccessWhitelist(null);
     await rm(dir, { recursive: true, force: true });
   });
 
-  it('в открытом режиме упоминает все расклады', () => {
+  it('basic user sees sprout on base features, star on premium hints', () => {
     const html = statusTextHtml(1);
-    expect(html).toContain('открытый');
-    expect(html).toContain('все расклады');
+    expect(html).not.toMatch(/новичок|basic/i);
+    expect(html).toContain('🌱');
+    expect(html).toContain('⭐️');
+    expect(html).toContain('/promo');
+    expect(html).toContain('трёх');
     expect(html).toContain('Рассылка');
+  });
+
+  it('premium user sees star Premium active', () => {
+    extendPremiumByDaysSync(3, 7);
+    const html = statusTextHtml(3);
+    expect(html).toContain('⭐️');
+    expect(html).toContain('Premium');
+    expect(html).not.toMatch(/новичок/i);
   });
 
   it('при включённой подписке показывает время', () => {

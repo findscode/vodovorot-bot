@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest';
 import {
   deepSessionBlockedMessageHtml,
   isPublicEntryCommand,
-  menuTextFull,
-  startTextFull,
-  startTextLimited,
+  menuTextHtml,
+  promoOkMessageHtml,
+  startTextHtml,
 } from './botCopy.js';
 
 describe('botCopy', () => {
@@ -15,15 +15,21 @@ describe('botCopy', () => {
   });
 
   it('startText points to buttons and states ethos', () => {
-    expect(startTextFull()).toContain('от простых к сложным');
-    expect(startTextFull()).toContain('Запомни:');
-    expect(startTextFull()).toContain('не гарантия будущего');
-    expect(startTextLimited()).toContain('по приглашению');
-    expect(startTextLimited()).toContain('Запомни:');
+    expect(startTextHtml()).toContain('от простых к сложным');
+    expect(startTextHtml()).toContain('Запомни:');
+    expect(startTextHtml()).toContain('не гарантия будущего');
+    expect(startTextHtml()).toContain('/promo');
   });
 
-  it('menuText matches simple-to-complex framing', () => {
-    expect(menuTextFull()).toContain('от простого к сложному');
+  it('menuText explains basic and premium tracks', () => {
+    expect(menuTextHtml()).toContain('🌱');
+    expect(menuTextHtml()).toContain('⭐️');
+  });
+
+  it('promoOkMessageHtml confirms premium with date', () => {
+    const html = promoOkMessageHtml(new Date('2026-06-01T12:00:00.000Z'));
+    expect(html).toContain('Готово');
+    expect(html).toContain('Premium');
   });
 
   it('isPublicEntryCommand recognizes start, menu, help', () => {

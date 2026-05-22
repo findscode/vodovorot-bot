@@ -3,9 +3,7 @@ import {
   DEEP_ALREADY_ACTIVE_MESSAGE,
   DEEP_CANCELLED_MESSAGE,
   DEEP_EMPTY_QUESTION_MESSAGE,
-  DEEP_INTRO_HTML,
   DEEP_INTRO_PRESS_START_MESSAGE,
-  DEEP_INTRO_READY_HTML,
   DEEP_QUESTION_TOO_LONG_MESSAGE,
 } from '../botCopy.js';
 import {
@@ -34,6 +32,8 @@ import {
   hasActiveDeepSession,
   setDeepPhase,
 } from '../deepReading/sessionStore.js';
+import { resolveAccessTier } from '../accessTier.js';
+import { deepIntroHtml, deepIntroReadyHtml } from '../tierDisplay.js';
 import { answerCbQuerySafe, logHandlerError } from './botHelpers.js';
 
 export function registerDeepReadingHandlers(bot: Telegraf): void {
@@ -50,7 +50,8 @@ export function registerDeepReadingHandlers(bot: Telegraf): void {
     }
 
     beginDeepSession(uid, uid);
-    await ctx.reply(DEEP_INTRO_HTML, {
+    const tier = resolveAccessTier(uid);
+    await ctx.reply(deepIntroHtml(tier), {
       ...keyboardDeepIntro(),
       ...TELEGRAM_HTML_PARSE,
     });
@@ -64,6 +65,8 @@ export function registerDeepReadingHandlers(bot: Telegraf): void {
     if (!session || session.phase !== 'intro') return;
 
     setDeepPhase(uid, 'awaiting_first_question');
+    const tier = resolveAccessTier(uid);
+    const readyHtml = deepIntroReadyHtml(tier);
     const editOpts = {
       ...keyboardDeepAwaitingFirst(),
       ...TELEGRAM_HTML_PARSE,
@@ -75,7 +78,7 @@ export function registerDeepReadingHandlers(bot: Telegraf): void {
           msg.chat.id,
           msg.message_id,
           undefined,
-          DEEP_INTRO_READY_HTML,
+          readyHtml,
           editOpts,
         );
         return;
@@ -83,7 +86,7 @@ export function registerDeepReadingHandlers(bot: Telegraf): void {
         /* старое сообщение — fallback reply */
       }
     }
-    await ctx.reply(DEEP_INTRO_READY_HTML, editOpts);
+    await ctx.reply(readyHtml, editOpts);
   });
 
   bot.action(DEEP_CANCEL_CALLBACK, async (ctx) => {

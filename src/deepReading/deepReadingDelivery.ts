@@ -1,5 +1,6 @@
 import { Input } from 'telegraf';
 import type { Context } from 'telegraf';
+import { canUseFullDeepFinal, deepMaxTripletsForTier, resolveAccessTier } from '../accessTier.js';
 import {
   AI_TEXT_UNAVAILABLE_MESSAGE,
   DEEP_AI_RETRY_MESSAGE,
@@ -9,6 +10,8 @@ import {
   DEEP_FINAL_INTRO_MESSAGE,
   DEEP_IMAGES_UNAVAILABLE_SUFFIX,
   DEEP_MAX_TRIPLETS_MESSAGE,
+  DEEP_BASIC_END_WITHOUT_FINAL_MESSAGE,
+  DEEP_BASIC_TRIPLET_CAP_MESSAGE,
 } from '../botCopy.js';
 import { keyboardDeepInChain, keyboardMainOrDayOnly } from '../botKeyboards.js';
 import { completeChat } from '../ai.js';
@@ -29,7 +32,6 @@ import {
   type DeepSession,
 } from './sessionStore.js';
 import { shuffledDeckIds } from './sessionDeck.js';
-import { DEEP_MAX_TRIPLETS } from './constants.js';
 import { TELEGRAM_HTML_PARSE } from '../readingTelegramHtml.js';
 import { sendPlainReadingChunksToChat, sendReadingChunksToChat } from '../readingChunksDelivery.js';
 import { withTypingWhile } from '../typingIndicator.js';
@@ -48,7 +50,9 @@ export async function deliverDeepTriplet(
   question: string,
 ): Promise<'ok' | 'ai_error' | 'deck_empty'> {
   const session = getDeepSession(userId);
-  if (!session || !canAddTriplet(session)) return 'deck_empty';
+  const tier = resolveAccessTier(userId);
+  const maxTriplets = deepMaxTripletsForTier(tier);
+  if (!session || !canAddTriplet(session, maxTriplets)) return 'deck_empty';
 
   const { drawn, remaining } = drawTripletFromRemainingIds(session.deckRemaining);
   const tripletIndex = session.triplets.length;
@@ -114,9 +118,17 @@ export async function deliverDeepTriplet(
     });
 
     const updated = getDeepSession(userId);
-    if (updated && updated.triplets.length >= DEEP_MAX_TRIPLETS) {
-      await ctx.reply(DEEP_MAX_TRIPLETS_MESSAGE, TELEGRAM_HTML_PARSE);
-      await runDeepFinal(ctx, userId);
+    if (updated && updated.triplets.length >= maxTriplets) {
+      if (canUseFullDeepFinal(tier)) {
+        await ctx.reply(DEEP_MAX_TRIPLETS_MESSAGE, TELEGRAM_HTML_PARSE);
+        await runDeepFinal(ctx, userId);
+      } else {
+        await ctx.reply(DEEP_BASIC_TRIPLET_CAP_MESSAGE, {
+          ...keyboardMainOrDayOnly(userId),
+          ...TELEGRAM_HTML_PARSE,
+        });
+        endDeepSession(userId);
+      }
       return 'ok';
     }
 
@@ -139,6 +151,16 @@ export async function deliverDeepTriplet(
 export async function runDeepFinal(ctx: Context, userId: number): Promise<void> {
   const session = getDeepSession(userId);
   if (!session || session.triplets.length === 0) {
+    endDeepSession(userId);
+    return;
+  }
+
+  const tier = resolveAccessTier(userId);
+  if (!canUseFullDeepFinal(tier)) {
+    await ctx.reply(DEEP_BASIC_END_WITHOUT_FINAL_MESSAGE, {
+      ...keyboardMainOrDayOnly(userId),
+      ...TELEGRAM_HTML_PARSE,
+    });
     endDeepSession(userId);
     return;
   }

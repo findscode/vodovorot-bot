@@ -1,5 +1,5 @@
 import type { DrawnCard } from '../deck.js';
-import { DEEP_MAX_TRIPLETS, DEEP_SESSION_TTL_MS } from './constants.js';
+import { DEEP_MAX_TRIPLETS_PREMIUM, DEEP_SESSION_TTL_MS } from './constants.js';
 
 export type DeepSessionPhase = 'intro' | 'awaiting_first_question' | 'in_chain';
 
@@ -84,8 +84,11 @@ export function setPendingQuestion(userId: number, question: string | null): voi
   s.updatedAt = now();
 }
 
-export function canAddTriplet(session: DeepSession): boolean {
-  return session.triplets.length < DEEP_MAX_TRIPLETS;
+export function canAddTriplet(
+  session: DeepSession,
+  maxTriplets: number = DEEP_MAX_TRIPLETS_PREMIUM,
+): boolean {
+  return session.triplets.length < maxTriplets;
 }
 
 export function appendTriplet(

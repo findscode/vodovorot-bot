@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { DECK } from '../deck.js';
-import { DEEP_MAX_TRIPLETS } from './constants.js';
+import { DEEP_MAX_TRIPLETS_BASIC, DEEP_MAX_TRIPLETS_PREMIUM } from './constants.js';
 import {
   appendTriplet,
   canAddTriplet,
@@ -51,11 +51,11 @@ describe('sessionStore', () => {
     expect(s?.deckRemaining).toEqual([3, 4, 5]);
   });
 
-  it('canAddTriplet respects DEEP_MAX_TRIPLETS', () => {
+  it('canAddTriplet respects tier max', () => {
     startDeepSession(uid, uid, shuffledIds());
     const s = getDeepSession(uid)!;
-    expect(canAddTriplet(s)).toBe(true);
-    s.triplets = Array.from({ length: DEEP_MAX_TRIPLETS }, (_, i) => ({
+    expect(canAddTriplet(s, DEEP_MAX_TRIPLETS_BASIC)).toBe(true);
+    s.triplets = Array.from({ length: DEEP_MAX_TRIPLETS_BASIC }, (_, i) => ({
       question: `q${i}`,
       cards: [
         { card: DECK[0]!, reversed: false },
@@ -64,7 +64,8 @@ describe('sessionStore', () => {
       ],
       summary: 's',
     }));
-    expect(canAddTriplet(s)).toBe(false);
+    expect(canAddTriplet(s, DEEP_MAX_TRIPLETS_BASIC)).toBe(false);
+    expect(canAddTriplet(s, DEEP_MAX_TRIPLETS_PREMIUM)).toBe(true);
   });
 
   it('setPendingQuestion and setDeepPhase update session', () => {

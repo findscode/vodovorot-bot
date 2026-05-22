@@ -1,12 +1,12 @@
-import { parseAllowlistFromEnvString } from '../accessWhitelist.js';
+import { parseTelegramUserIdsFromEnv } from '../telegramUserIdList.js';
 import { setUserAdminSync } from './usersRepo.js';
 
-/** Опционально: `ADMIN_TELEGRAM_USER_IDS` — те же правила списка, что у whitelist. */
+/** Опционально: `ADMIN_TELEGRAM_USER_IDS` — при старте выставляется `is_admin` в БД. */
 export function seedAdminsFromEnv(): void {
   const raw = process.env.ADMIN_TELEGRAM_USER_IDS?.trim();
   if (!raw) return;
   try {
-    const ids = parseAllowlistFromEnvString(raw);
+    const ids = parseTelegramUserIdsFromEnv(raw);
     for (const id of ids) {
       setUserAdminSync(id, true);
     }

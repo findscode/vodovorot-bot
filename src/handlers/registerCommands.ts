@@ -1,17 +1,17 @@
 import type { Telegraf } from 'telegraf';
-import { hasFullSpreadAccess } from '../accessResolve.js';
+import { resolveAccessTier } from '../accessTier.js';
 import {
   helpTextHtml,
   LAST_EMPTY_MESSAGE,
-  menuTextFull,
-  menuTextLimited,
+  menuTextHtml,
+  PROMO_HELP_HTML,
   PROMO_MESSAGES,
+  promoOkMessageHtml,
   PUSHTIME_INVALID_FORMAT_HTML,
   PUSHTIME_NEED_SUBSCRIPTION_HTML,
   PUSHTIME_PICK_PROMPT_HTML,
   pushtimeSavedMessageHtml,
-  startTextFull,
-  startTextLimited,
+  startTextHtml,
 } from '../botCopy.js';
 import {
   keyboardDayPushTimePresets,
@@ -23,7 +23,9 @@ import { normalizeDayPushHhmm } from '../dayPushPresets.js';
 import { formatReadingForTelegram, TELEGRAM_HTML_PARSE } from '../readingTelegramHtml.js';
 import { getLastReading } from '../lastReadingStore.js';
 import {
+  getActivePremiumUntilSync,
   getDayPushScheduleForUserSync,
+  getOrCreateUser,
   isDayPushEnabledSync,
   setDayPushLocalHhmmSync,
   tryRedeemPromoCodeSync,
@@ -34,20 +36,20 @@ import { dayPushHhmmArgFromMessageText } from './botHelpers.js';
 
 export function registerCommands(bot: Telegraf): void {
   bot.start(async (ctx) => {
-    const full = hasFullSpreadAccess(ctx.from?.id);
-    const text = full ? startTextFull() : startTextLimited();
-    await ctx.reply(text, { ...keyboardMainOrDayOnly(ctx.from?.id), ...TELEGRAM_HTML_PARSE });
+    const uid = ctx.from?.id;
+    if (uid !== undefined) getOrCreateUser(uid);
+    await ctx.reply(startTextHtml(), { ...keyboardMainOrDayOnly(uid), ...TELEGRAM_HTML_PARSE });
   });
 
   bot.command('menu', async (ctx) => {
-    const full = hasFullSpreadAccess(ctx.from?.id);
-    const text = full ? menuTextFull() : menuTextLimited();
-    await ctx.reply(text, { ...keyboardMainOrDayOnly(ctx.from?.id), ...TELEGRAM_HTML_PARSE });
+    const uid = ctx.from?.id;
+    if (uid !== undefined) getOrCreateUser(uid);
+    await ctx.reply(menuTextHtml(), { ...keyboardMainOrDayOnly(uid), ...TELEGRAM_HTML_PARSE });
   });
 
   bot.command('help', async (ctx) => {
-    const full = hasFullSpreadAccess(ctx.from?.id);
-    await ctx.reply(helpTextHtml({ fullAccess: full }), {
+    const tier = resolveAccessTier(ctx.from?.id);
+    await ctx.reply(helpTextHtml({ tier }), {
       ...keyboardMainOrDayOnly(ctx.from?.id),
       ...TELEGRAM_HTML_PARSE,
     });
@@ -145,15 +147,21 @@ export function registerCommands(bot: Telegraf): void {
       });
       return;
     }
+    getOrCreateUser(uid);
     const r = tryRedeemPromoCodeSync(uid, code);
-    const msg =
-      r === 'ok'
-        ? PROMO_MESSAGES.ok
-        : r === 'used'
-          ? PROMO_MESSAGES.used
-          : r === 'expired'
-            ? PROMO_MESSAGES.expired
-            : PROMO_MESSAGES.invalid;
+    if (r === 'ok') {
+      const until = getActivePremiumUntilSync(uid);
+      const msg = until ? promoOkMessageHtml(until) : PROMO_MESSAGES.rejected;
+      await ctx.reply(msg, { ...keyboardMainOrDayOnly(uid), ...TELEGRAM_HTML_PARSE });
+      return;
+    }
+    const msg = r === 'rate_limited' ? PROMO_MESSAGES.rateLimited : PROMO_MESSAGES.rejected;
     await ctx.reply(msg, { ...keyboardMainOrDayOnly(uid), ...TELEGRAM_HTML_PARSE });
+  });
+
+  bot.action('promo_help', async (ctx) => {
+    await ctx.answerCbQuery();
+    const uid = ctx.from?.id;
+    await ctx.reply(PROMO_HELP_HTML, { ...keyboardMainOrDayOnly(uid), ...TELEGRAM_HTML_PARSE });
   });
 }

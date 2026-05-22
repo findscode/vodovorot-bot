@@ -4,11 +4,10 @@
  * Названия раскладов в тексте — как на кнопках: «На день», «Прошлое — настоящее — будущее», глубинная диагностика.
  */
 
-import {
-  DAY_LIMIT_ONCE_PER_CALENDAR_DAY,
-  dayDrawPhrasesForServer,
-  formatHhmmForUser,
-} from './calendarDayUserPhrases.js';
+import type { AccessTier } from './accessTier.js';
+import { canUseFullDeepFinal } from './accessTier.js';
+import { dayDrawPhrasesForServer, formatHhmmForUser } from './calendarDayUserPhrases.js';
+import { basicTrackPrefix, premiumFeaturePrefix } from './tierDisplay.js';
 
 export const ETHOS =
   'любое толкование — не гарантия будущего, а повод присмотреться к себе и к картам.';
@@ -42,9 +41,6 @@ export const AI_TEXT_UNAVAILABLE_AFTER_CARD_MESSAGE = CARD_DAY_AI_UNAVAILABLE_ME
 export const DAY_PUSH_AI_UNAVAILABLE_MESSAGE =
   'Сегодня не удалось прислать карту дня. Завтра попробую снова, если подписка у тебя включена.';
 
-/** Callback «spread» при закрытом доступе. */
-export const WHITELIST_NO_SPREAD_ACCESS_CALLBACK = 'Сейчас этот расклад недоступен.';
-
 /** Текст под раскладом, если JPEG карт нет. */
 export const SPREAD_IMAGES_UNAVAILABLE_SUFFIX =
   'Картинки карт сейчас недоступны — ниже пришлю толкование текстом.';
@@ -65,11 +61,12 @@ export const SPREAD_DONE_HINT = 'Следующий расклад — кноп�
 /** После сбоя ИИ у расклада «три карты» (фото уже в чате). */
 export const SPREAD_AI_RETRY_SUFFIX = 'Нажми «Прошлое — настоящее — будущее» ещё раз.';
 
-/** Глубинная диагностика: вступление. */
+/** @deprecated Используй {@link deepIntroHtml} из `tierDisplay.ts`. */
 export const DEEP_INTRO_HTML = `<b>Глубинная диагностика</b>
 
 До семи вопросов подряд — на каждый три карты и короткое толкование. Нажми <b>Начать</b>, когда будешь готов.`;
 
+/** @deprecated Используй {@link deepIntroReadyHtml} из `tierDisplay.ts`. */
 export const DEEP_INTRO_READY_HTML = `<b>Глубинная диагностика</b>
 
 Напиши первый вопрос или утверждение <b>одним сообщением</b> в чат. Выйти можно кнопкой «Отмена».`;
@@ -115,9 +112,22 @@ export const DEEP_DONE_HINT =
 export const DEEP_MAX_TRIPLETS_MESSAGE =
   'Достигнут лимит семи вопросов за одно гадание. Сейчас соберу общий вывод.';
 
-export function accessDeniedMessage(): string {
-  return `Сейчас закрыт расклад «Прошлое — настоящее — будущее» — нужны приглашение, Premium или промокод. «На день» и <b>глубинная диагностика</b> — кнопками ниже; «На день» не чаще раза в сутки ${DAY_LIMIT_ONCE_PER_CALENDAR_DAY}. Если тестируешь закрытую версию — попроси владельца добавить тебя в список доступа.`;
+/** Tier `basic`: лимит трёх триплетов (модель C). */
+export const DEEP_BASIC_TRIPLET_CAP_MESSAGE =
+  'До трёх вопросов за гадание на базовом треке. Сейчас завершу сессию. Полный цикл (семь вопросов и общий вывод) — ⭐️ Premium.';
+
+export const DEEP_BASIC_END_WITHOUT_FINAL_MESSAGE =
+  'Гадание завершено. Общий вывод по всем шагам — с ⭐️ <b>Premium</b> (<code>/promo</code> или <code>/status</code>). Следующий расклад — кнопками ниже или <code>/menu</code>.';
+
+export function spreadPremiumRequiredMessage(): string {
+  return `Расклад «Прошлое — настоящее — будущее» — ⭐️ <b>Premium</b>. Промокод: <code>/promo КОД</code>. Базовый трек: 🌱 «На день» и 🌱 глубинная диагностика (до трёх вопросов). <code>/status</code>`;
 }
+
+export const PROMO_HELP_HTML = `Введи промокод одной командой в чат:
+
+<code>/promo ТВОЙ-КОД</code>
+
+Код одноразовый. После активации откроются расклад «Прошлое — настоящее — будущее» и полная глубинная диагностика. Текущий уровень — <code>/status</code>.`;
 
 export function dayLimitMessage(): string {
   return 'Сегодня карта дня уже была. Новая — после полуночи.';
@@ -153,45 +163,53 @@ export function pushtimeSavedMessageHtml(hhmm: string, _tzIana: string): string 
 }
 
 export const PROMO_MESSAGES = {
-  needCode: 'Укажи код после команды, например: <code>/promo ДЕМО-КОД</code>',
-  ok: 'Промокод принят: Premium продлён на число дней из этого кода.',
-  used: 'Ты уже активировал этот промокод.',
-  expired: 'Срок действия этого промокода истёк.',
-  invalid: 'Такого промокода нет или он ещё не действует.',
+  needCode:
+    'Укажи код после команды целиком, например: <code>/promo STAR-LANTERN-K7NP4X</code>. Подсказка — кнопка «Промокод» в меню.',
+  /** Единый ответ при любой неуспешной активации (без утечки «код есть в базе»). */
+  rejected: 'Не удалось активировать код. Проверь написание или запроси новый у организатора.',
+  rateLimited: 'Слишком много попыток за короткое время. Подожди около 15 минут и попробуй снова.',
 } as const;
 
-export function startTextFull(): string {
-  return `Привет, я <b>Водоворот</b>. Ниже список доступных раскладов — от простых к сложным.
+export function promoOkMessageHtml(until: Date): string {
+  let dateRu: string;
+  try {
+    dateRu = until.toLocaleDateString('ru-RU', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+      timeZone: 'UTC',
+    });
+  } catch {
+    dateRu = until.toISOString().slice(0, 10);
+  }
+  return `<b>Готово</b>, промокод принят. ⭐️ <b>Premium</b> на месяц (до ${dateRu}) — открыты расклад «Прошлое — настоящее — будущее» и полная глубинная диагностика. Подробности — <code>/status</code>. Обнови меню: <code>/menu</code>.`;
+}
+
+export function startTextHtml(): string {
+  const p = dayDrawPhrasesForServer();
+  return `Привет, я <b>Водоворот</b>. Ниже расклады — от простых к сложным.
+
+🌱 «На день» (раз в сутки ${p.dayLimitCalendar}) и 🌱 глубинная диагностика до трёх вопросов. ⭐️ Полный доступ — <code>/promo КОД</code>.
 
 ${START_ETHOS}`;
 }
 
-export function startTextLimited(): string {
-  const p = dayDrawPhrasesForServer();
-  return `Привет, я <b>Водоворот</b>. Ниже доступные расклады — от простых к сложным: «На день» (не чаще раза в сутки ${p.dayLimitCalendar}) и <b>глубинная диагностика</b>. «Прошлое — настоящее — будущее» — по приглашению.
-
-${START_ETHOS}`;
+export function menuTextHtml(): string {
+  return 'Расклады ниже — 🌱 базовый трек и ⭐️ Premium. Промокод — кнопка или <code>/promo</code>.';
 }
 
-export function menuTextFull(): string {
-  return 'Расклады ниже — от простого к сложному.';
-}
-
-export function menuTextLimited(): string {
+export function helpTextHtml(opts: { tier: AccessTier }): string {
   const p = dayDrawPhrasesForServer();
-  return `Кнопки ниже. «На день» — не чаще раза в сутки ${p.dayLimitCalendar}.`;
-}
+  const premiumDeep = canUseFullDeepFinal(opts.tier);
+  const dayLine = `• ${basicTrackPrefix()}<b>На день</b> — одна карта и толкование на сутки. Не чаще раза в сутки ${p.dayLimitCalendar}.\n`;
 
-export function helpTextHtml(opts: { fullAccess: boolean }): string {
-  const p = dayDrawPhrasesForServer();
-  const dayLine = `• <b>На день</b> — одна карта и толкование на сутки. Не чаще раза в сутки ${p.dayLimitCalendar}.\n`;
+  const spreadLine = premiumDeep
+    ? `• ${premiumFeaturePrefix()}<b>Прошлое — настоящее — будущее</b> — три карты и связное толкование.\n`
+    : `• ${premiumFeaturePrefix()}<b>Прошлое — настоящее — будущее</b> — с Premium; <code>/promo КОД</code>.\n`;
 
-  const spreadLine = opts.fullAccess
-    ? '• <b>Прошлое — настоящее — будущее</b> — три карты и связное толкование.\n'
-    : '• <b>Прошлое — настоящее — будущее</b> — по приглашению, с Premium или промокоду, если включён закрытый доступ.\n';
-
-  const deepLine =
-    '• <b>Глубинная диагностика</b> — до семи вопросов подряд; кнопка расклада → <b>Начать</b> → вопрос текстом → общий вывод. Пока сессия идёт, другие команды и расклады недоступны.';
+  const deepLine = premiumDeep
+    ? `• ${premiumFeaturePrefix()}<b>Глубинная диагностика</b> — до семи вопросов и общий финал; <b>Начать</b> → вопросы текстом.\n`
+    : `• ${basicTrackPrefix()}<b>Глубинная диагностика</b> — до трёх вопросов; полный цикл — ${premiumFeaturePrefix()}Premium (<code>/promo</code>).\n`;
 
   return `<b>Водоворот</b> — толкование карт Таро в личке. Работает <b>только в личных сообщениях</b>.
 
@@ -199,7 +217,7 @@ export function helpTextHtml(opts: { fullAccess: boolean }): string {
 /start — приветствие и кнопки
 /menu — снова показать кнопки раскладов
 /help — эта справка
-/status — доступ, подписка и Premium
+/status — уровень доступа, Premium, рассылка
 /last — повторить последний разбор (хранится в базе)
 /pushtime — время ежедневной рассылки (когда подписка включена); можно <code>/pushtime 09:15</code>
 /promo КОД — активировать одноразовый промокод Premium

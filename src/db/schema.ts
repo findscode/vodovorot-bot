@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS users (
   telegram_user_id INTEGER PRIMARY KEY NOT NULL,
   premium_until TEXT,
   is_admin INTEGER NOT NULL DEFAULT 0,
+  cohort TEXT,
   day_push_enabled INTEGER NOT NULL DEFAULT 0,
   day_push_timezone TEXT NOT NULL DEFAULT 'Europe/Moscow',
   day_push_local_hhmm TEXT NOT NULL DEFAULT '09:00',

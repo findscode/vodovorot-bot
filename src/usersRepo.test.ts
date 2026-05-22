@@ -2,11 +2,17 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { PROMO_REDEEM_MAX_ATTEMPTS } from './promoConfig.js';
+import { resetPromoRedeemLimitsForTests } from './promoRedeemLimit.js';
 import { closeDatabase, getDb, initDatabase } from './db/database.js';
 import {
+  createPromoCodeAutoSync,
+  createPromoCodeSync,
   extendPremiumByDaysSync,
+  listPromoCodesSync,
   getActivePremiumUntilSync,
   getDayPushScheduleForUserSync,
+  normalizePromoCode,
   setDayPushEnabled,
   setDayPushLocalHhmmSync,
   tryRedeemPromoCodeSync,
@@ -29,6 +35,7 @@ describe('usersRepo / promo', () => {
   });
 
   afterEach(async () => {
+    resetPromoRedeemLimitsForTests();
     closeDatabase();
     await rm(dir, { recursive: true, force: true });
   });
@@ -37,6 +44,47 @@ describe('usersRepo / promo', () => {
     expect(tryRedeemPromoCodeSync(1001, 'TEST-ONCE')).toBe('ok');
     expect(userHasPremiumOrAdminSync(1001)).toBe(true);
     expect(tryRedeemPromoCodeSync(1002, 'TEST-ONCE')).toBe('used');
+  });
+
+  it('createPromoCodeSync normalizes case, fixed 31 days, rejects duplicate', () => {
+    expect(normalizePromoCode('  ab-c1  ')).toBe('AB-C1');
+    expect(createPromoCodeSync('new-code')).toBe('ok');
+    expect(createPromoCodeSync('NEW-CODE')).toBe('exists');
+    expect(tryRedeemPromoCodeSync(1003, 'new-code')).toBe('ok');
+    const row = getDb()
+      .prepare('SELECT premium_days FROM promo_codes WHERE code = ?')
+      .get('NEW-CODE') as { premium_days: number };
+    expect(row.premium_days).toBe(31);
+  });
+
+  it('createPromoCodeAutoSync generates unique tarot-style code with secret suffix', () => {
+    const a = createPromoCodeAutoSync();
+    const b = createPromoCodeAutoSync();
+    expect(a.ok).toBe(true);
+    expect(b.ok).toBe(true);
+    if (a.ok && b.ok) {
+      expect(a.code.split('-').length).toBeGreaterThanOrEqual(3);
+      expect(a.code).not.toBe(b.code);
+    }
+  });
+
+  it('tryRedeemPromoCodeSync rate limits brute force', () => {
+    createPromoCodeSync('RATE-TEST');
+    for (let i = 0; i < PROMO_REDEEM_MAX_ATTEMPTS; i++) {
+      tryRedeemPromoCodeSync(8000, 'WRONG-CODE');
+    }
+    expect(tryRedeemPromoCodeSync(8000, 'RATE-TEST')).toBe('rate_limited');
+  });
+
+  it('listPromoCodesSync shows redemption owner', () => {
+    createPromoCodeSync('LIST-FREE');
+    createPromoCodeSync('LIST-USED');
+    tryRedeemPromoCodeSync(9001, 'LIST-USED');
+    const rows = listPromoCodesSync(10);
+    const used = rows.find((r) => r.code === 'LIST-USED');
+    const free = rows.find((r) => r.code === 'LIST-FREE');
+    expect(used?.redeemed_by_user_id).toBe(9001);
+    expect(free?.redeemed_at).toBeNull();
   });
 
   it('getDayPushScheduleForUserSync после включения подписки', () => {

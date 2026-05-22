@@ -14,11 +14,12 @@
 
 ## Оператор и деплой
 
-| Документ                       | Зачем                                            |
-| ------------------------------ | ------------------------------------------------ |
-| [DEPLOY.md](./DEPLOY.md)       | Env, Docker, DigitalOcean, whitelist, push, логи |
-| [BOTFATHER.md](./BOTFATHER.md) | About / Description / Commands для @BotFather    |
-| [PRIVACY.md](./PRIVACY.md)     | Политика конфиденциальности (URL в BotFather)    |
+| Документ                           | Зачем                                         |
+| ---------------------------------- | --------------------------------------------- |
+| [DEPLOY.md](./DEPLOY.md)           | Env, Docker, tiers, промокоды, push, логи     |
+| [FOCUS-GROUP.md](./FOCUS-GROUP.md) | Чеклист запуска фокус-группы, smoke, бриф     |
+| [BOTFATHER.md](./BOTFATHER.md)     | About / Description / Commands для @BotFather |
+| [PRIVACY.md](./PRIVACY.md)         | Политика конфиденциальности (URL в BotFather) |
 
 ## Продукт и контент
 
@@ -43,7 +44,9 @@
 | ------------------------ | -------------------------------------------- |
 | `src/bot.ts`             | Telegraf, `registerHandlers`, `bot.catch`    |
 | `src/botCopy.ts`         | Все системные тексты пользователю            |
+| `src/tierDisplay.ts`     | Emoji и подписи уровней в UI                 |
 | `src/statusCopy.ts`      | `/status`                                    |
+| `src/promoConfig.ts`     | Срок Premium по промокоду, лимиты `/promo`   |
 | `src/handlers/`          | Команды, day, spread, deep, push, middleware |
 | `src/deepReading/`       | Сессия, коллаж, промпты deep                 |
 | `src/spreadComposite.ts` | Полоса трёх карт (spread + 1-й триплет deep) |

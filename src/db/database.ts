@@ -18,8 +18,17 @@ export function initDatabase(customPath?: string): Database.Database {
   const instance = new Database(path);
   instance.pragma('journal_mode = WAL');
   instance.exec(SCHEMA_SQL);
+  applyUserSchemaMigrations(instance);
   db = instance;
   return instance;
+}
+
+/** Добавление колонок в `users` на существующих БД. */
+function applyUserSchemaMigrations(instance: Database.Database): void {
+  const cols = instance.prepare('PRAGMA table_info(users)').all() as { name: string }[];
+  if (!cols.some((c) => c.name === 'cohort')) {
+    instance.exec('ALTER TABLE users ADD COLUMN cohort TEXT');
+  }
 }
 
 /** Для тестов: закрыть и сбросить singleton. */

@@ -2,16 +2,26 @@ import { Markup } from 'telegraf';
 import { formatHhmmForUser } from './calendarDayUserPhrases.js';
 import { DAY_PUSH_HHMM_PRESETS } from './dayPushPresets.js';
 import { hasFullSpreadAccess } from './accessResolve.js';
+import { canUseFullDeepFinal, resolveAccessTier } from './accessTier.js';
 import { isDayPushEnabledSync } from './db/usersRepo.js';
+import { labelBasicTrackButton, labelPremiumButton } from './tierDisplay.js';
 
 function mainSpreadRows(userId: number | undefined) {
+  const tier = resolveAccessTier(userId);
   const rows: ReturnType<typeof Markup.button.callback>[][] = [
-    [Markup.button.callback('На день', 'day')],
+    [Markup.button.callback(labelBasicTrackButton('На день'), 'day')],
   ];
   if (hasFullSpreadAccess(userId)) {
-    rows.push([Markup.button.callback('Прошлое — настоящее — будущее', 'spread')]);
+    rows.push([
+      Markup.button.callback(labelPremiumButton('Прошлое — настоящее — будущее'), 'spread'),
+    ]);
+  } else {
+    rows.push([Markup.button.callback(labelPremiumButton('Промокод (Premium)'), 'promo_help')]);
   }
-  rows.push([Markup.button.callback('Глубинная диагностика', 'deep')]);
+  const deepLabel = canUseFullDeepFinal(tier)
+    ? labelPremiumButton('Глубинная диагностика')
+    : labelBasicTrackButton('Глубинная диагностика');
+  rows.push([Markup.button.callback(deepLabel, 'deep')]);
   return rows;
 }
 

@@ -1,5 +1,11 @@
-/** Максимум триплетов за одну сессию глубинной диагностики. */
-export const DEEP_MAX_TRIPLETS = 7;
+/** Максимум триплетов за сессию (Premium / админ). */
+export const DEEP_MAX_TRIPLETS_PREMIUM = 7;
+
+/** Максимум триплетов за сессию (tier `basic`, модель C). */
+export const DEEP_MAX_TRIPLETS_BASIC = 3;
+
+/** @deprecated Используй {@link DEEP_MAX_TRIPLETS_PREMIUM} или лимит по tier. */
+export const DEEP_MAX_TRIPLETS = DEEP_MAX_TRIPLETS_PREMIUM;
 
 /** TTL сессии без активности (24 ч). */
 export const DEEP_SESSION_TTL_MS = 24 * 60 * 60 * 1000;

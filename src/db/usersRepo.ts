@@ -1,5 +1,10 @@
 import { normalizeDayPushHhmm } from '../dayPushPresets.js';
+import { generateTarotPromoCode } from '../promoCodeGenerator.js';
+import { PROMO_PREMIUM_DAYS } from '../promoConfig.js';
+import { checkPromoRedeemAttempt } from '../promoRedeemLimit.js';
 import { getDb } from './database.js';
+
+const PROMO_CREATE_MAX_ATTEMPTS = 32;
 
 function isoNow(): string {
   return new Date().toISOString();
@@ -22,14 +27,75 @@ export function setUserAdminSync(userId: number, isAdmin: boolean): void {
     .run(isAdmin ? 1 : 0, isoNow(), userId);
 }
 
-export function userHasPremiumOrAdminSync(userId: number): boolean {
+export function userIsAdminSync(userId: number): boolean {
   const row = getDb()
-    .prepare('SELECT is_admin, premium_until FROM users WHERE telegram_user_id = ?')
-    .get(userId) as { is_admin: number; premium_until: string | null } | undefined;
-  if (!row) return false;
-  if (row.is_admin === 1) return true;
-  if (!row.premium_until) return false;
-  return new Date(row.premium_until) > new Date();
+    .prepare('SELECT is_admin FROM users WHERE telegram_user_id = ?')
+    .get(userId) as { is_admin: number } | undefined;
+  return row?.is_admin === 1;
+}
+
+export function userHasActivePremiumSync(userId: number): boolean {
+  return getActivePremiumUntilSync(userId) !== null;
+}
+
+export function userHasPremiumOrAdminSync(userId: number): boolean {
+  return userIsAdminSync(userId) || userHasActivePremiumSync(userId);
+}
+
+export function clearPremiumSync(userId: number): void {
+  getOrCreateUser(userId);
+  getDb()
+    .prepare('UPDATE users SET premium_until = NULL, updated_at = ? WHERE telegram_user_id = ?')
+    .run(isoNow(), userId);
+}
+
+export function setUserCohortSync(userId: number, cohort: string | null): void {
+  getOrCreateUser(userId);
+  getDb()
+    .prepare('UPDATE users SET cohort = ?, updated_at = ? WHERE telegram_user_id = ?')
+    .run(cohort, isoNow(), userId);
+}
+
+export function getUserCohortSync(userId: number): string | null {
+  const row = getDb().prepare('SELECT cohort FROM users WHERE telegram_user_id = ?').get(userId) as
+    | { cohort: string | null }
+    | undefined;
+  return row?.cohort ?? null;
+}
+
+export type UserAdminInfoRow = {
+  telegram_user_id: number;
+  is_admin: number;
+  premium_until: string | null;
+  cohort: string | null;
+  day_push_enabled: number;
+  created_at: string;
+};
+
+export function getUserAdminInfoSync(userId: number): UserAdminInfoRow | null {
+  getOrCreateUser(userId);
+  const row = getDb()
+    .prepare(
+      `SELECT telegram_user_id, is_admin, premium_until, cohort, day_push_enabled, created_at
+       FROM users WHERE telegram_user_id = ?`,
+    )
+    .get(userId) as UserAdminInfoRow | undefined;
+  return row ?? null;
+}
+
+export function countUsersSync(): number {
+  const row = getDb().prepare('SELECT COUNT(*) AS c FROM users').get() as { c: number };
+  return row.c;
+}
+
+export function countActivePremiumSync(): number {
+  const row = getDb()
+    .prepare(
+      `SELECT COUNT(*) AS c FROM users
+       WHERE premium_until IS NOT NULL AND premium_until > datetime('now')`,
+    )
+    .get() as { c: number };
+  return row.c;
 }
 
 export function setDayPushEnabled(
@@ -145,11 +211,73 @@ export function extendPremiumByDaysSync(userId: number, days: number): void {
     .run(base.toISOString(), isoNow(), userId);
 }
 
-export type PromoRedeemResult = 'ok' | 'used' | 'invalid' | 'expired';
+export type PromoRedeemResult = 'ok' | 'used' | 'invalid' | 'expired' | 'rate_limited';
+
+export type PromoCreateResult = 'ok' | 'exists' | 'invalid';
+
+/** Нормализация кода для хранения и поиска (верхний регистр). */
+export function normalizePromoCode(raw: string): string | null {
+  const code = raw.trim().toUpperCase();
+  if (!code || code.length > 64) return null;
+  if (!/^[A-Z0-9][A-Z0-9_-]*$/.test(code)) return null;
+  return code;
+}
+
+function insertPromoCodeSync(code: string): PromoCreateResult {
+  const db = getDb();
+  const exists = db.prepare('SELECT 1 FROM promo_codes WHERE code = ?').get(code);
+  if (exists) return 'exists';
+  db.prepare(
+    `INSERT INTO promo_codes (code, premium_days, valid_from, valid_until)
+     VALUES (?, ?, NULL, NULL)`,
+  ).run(code, PROMO_PREMIUM_DAYS);
+  return 'ok';
+}
+
+/** Одноразовый промокод с заданным кодом (тесты, редкие ручные случаи). */
+export function createPromoCodeSync(rawCode: string): PromoCreateResult {
+  const code = normalizePromoCode(rawCode);
+  if (!code) return 'invalid';
+  return insertPromoCodeSync(code);
+}
+
+export type PromoCodeListRow = {
+  code: string;
+  premium_days: number;
+  redeemed_at: string | null;
+  redeemed_by_user_id: number | null;
+};
+
+/** Список промокодов: сначала свободные, затем активированные. */
+export function listPromoCodesSync(limit = 25): PromoCodeListRow[] {
+  return getDb()
+    .prepare(
+      `SELECT code, premium_days, redeemed_at, redeemed_by_user_id
+       FROM promo_codes
+       ORDER BY (redeemed_at IS NULL) DESC, code ASC
+       LIMIT ?`,
+    )
+    .all(limit) as PromoCodeListRow[];
+}
+
+/** Случайный таро-код + запись в БД. */
+export function createPromoCodeAutoSync(): { ok: true; code: string } | { ok: false } {
+  for (let i = 0; i < PROMO_CREATE_MAX_ATTEMPTS; i++) {
+    const code = generateTarotPromoCode();
+    if (insertPromoCodeSync(code) === 'ok') {
+      return { ok: true, code };
+    }
+  }
+  return { ok: false };
+}
 
 export function tryRedeemPromoCodeSync(userId: number, rawCode: string): PromoRedeemResult {
-  const code = rawCode.trim();
-  if (!code || code.length > 64) return 'invalid';
+  if (checkPromoRedeemAttempt(userId) === 'rate_limited') {
+    return 'rate_limited';
+  }
+
+  const code = normalizePromoCode(rawCode);
+  if (!code) return 'invalid';
 
   const db = getDb();
   const nowIso = isoNow();

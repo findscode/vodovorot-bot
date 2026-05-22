@@ -1,7 +1,8 @@
 import { hasFullSpreadAccess } from './accessResolve.js';
+import { canUseFullDeepFinal, deepMaxTripletsForTier, resolveAccessTier } from './accessTier.js';
 import { dayDrawPhrasesForServer, formatHhmmForUser } from './calendarDayUserPhrases.js';
 import { getActivePremiumUntilSync, getDayPushScheduleForUserSync } from './db/usersRepo.js';
-import { getAccessWhitelist } from './runtimeConfig.js';
+import { activeTierStatusLineHtml, basicTrackPrefix, premiumFeaturePrefix } from './tierDisplay.js';
 
 function formatPremiumUntilRu(d: Date): string {
   try {
@@ -20,37 +21,31 @@ function formatPremiumUntilRu(d: Date): string {
  * Справка по доступу и подписке для команды /status (HTML).
  */
 export function statusTextHtml(userId: number): string {
-  const wl = getAccessWhitelist();
   const full = hasFullSpreadAccess(userId);
+  const tier = resolveAccessTier(userId);
+  const maxDeep = deepMaxTripletsForTier(tier);
   const phrases = dayDrawPhrasesForServer();
   const lines: string[] = [];
 
-  if (wl === null) {
-    lines.push('<b>Доступ</b>: открытый режим — все расклады доступны.');
-  } else if (full) {
-    lines.push('<b>Доступ</b>: полный — «На день» и «Прошлое — настоящее — будущее».');
-  } else {
-    lines.push(
-      '<b>Доступ</b>: «На день», подписка и глубинная диагностика. «Прошлое — настоящее — будущее» — по приглашению, Premium или промокоду (<code>/promo</code>).',
-    );
-  }
+  lines.push(activeTierStatusLineHtml(tier));
 
-  const spreadStatus =
-    wl === null || full
-      ? '• <b>Прошлое — настоящее — будущее</b> — доступен'
-      : '• <b>Прошлое — настоящее — будущее</b> — Premium, промокод или список доступа';
+  const spreadStatus = full
+    ? `• ${premiumFeaturePrefix()}<b>Прошлое — настоящее — будущее</b> — доступен`
+    : `• ${premiumFeaturePrefix()}<b>Прошлое — настоящее — будущее</b> — <code>/promo</code>`;
+  const deepPrefix = canUseFullDeepFinal(tier) ? premiumFeaturePrefix() : basicTrackPrefix();
+  const deepFinalNote = canUseFullDeepFinal(tier) ? ', с общим финалом' : ', без общего финала';
   lines.push(
     '<b>Расклады</b>',
-    '• <b>На день</b> — доступен',
-    '• <b>Глубинная диагностика</b> — доступна (до 7 вопросов за гадание)',
+    `• ${basicTrackPrefix()}<b>На день</b> — доступен`,
+    `• ${deepPrefix}<b>Глубинная диагностика</b> — до ${maxDeep} вопросов за гадание${deepFinalNote}`,
     spreadStatus,
   );
 
   lines.push(`Лимит «На день»: не чаще раза в сутки ${phrases.dayLimitCalendar}.`);
 
   const prem = getActivePremiumUntilSync(userId);
-  if (prem) {
-    lines.push(`<b>Premium</b> активен до <b>${formatPremiumUntilRu(prem)}</b>.`);
+  if (prem && tier !== 'admin') {
+    lines.push(`${premiumFeaturePrefix()}<b>Premium</b> до <b>${formatPremiumUntilRu(prem)}</b>.`);
   }
 
   const push = getDayPushScheduleForUserSync(userId);
@@ -64,7 +59,7 @@ export function statusTextHtml(userId: number): string {
   }
 
   lines.push(
-    'Команды: <code>/menu</code>, <code>/help</code>, <code>/last</code>, <code>/pushtime</code> (если рассылка включена), <code>/promo</code>.',
+    'Команды: <code>/menu</code>, <code>/help</code>, <code>/promo КОД</code>, <code>/last</code>, <code>/pushtime</code> (если рассылка включена).',
   );
 
   return lines.join('\n\n');
