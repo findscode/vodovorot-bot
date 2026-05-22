@@ -8,4 +8,11 @@ describe('splitTripletModelOutput', () => {
     expect(userText).toBe('Первый абзац.\n\nВторой.');
     expect(summary).toBe('кратко для модели.');
   });
+
+  it('uses full text when РЕЗЮМЕ marker missing', () => {
+    const raw = 'Только ответ без служебной строки.';
+    const { userText, summary } = splitTripletModelOutput(raw);
+    expect(userText).toBe(raw);
+    expect(summary).toBe(raw);
+  });
 });

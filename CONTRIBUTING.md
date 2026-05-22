@@ -87,9 +87,16 @@ git -c core.hooksPath=/path/to/empty-dir commit …
 1. Ветка от `main`: `feature/…`, `fix/…` или `chore/…`.
 2. **Прямой push в `main` отключён** (branch protection): изменения только через **Pull Request** и merge после зелёного CI.
 3. В описании PR — **что сделано** и **`Closes #номер`** при привязке к issue.
-4. CI (lint, тесты, сборка, проверка форматирования) должны быть зелёными.
+4. CI (lint, **test:coverage**, сборка, проверка форматирования) должны быть зелёными.
 
 Подробнее о защите ветки и настройках репозитория: [docs/DEV-PROCESS.md](docs/DEV-PROCESS.md).
+
+## TDD и покрытие
+
+- **Красный → зелёный:** для багов в `src/` (кроме `handlers/`, `bot.ts`) сначала тест, потом правка.
+- **CI** гоняет `npm run test:coverage` с порогами из `vitest.config.ts`. Из coverage исключены хендлеры, `bot.ts`, доставка в Telegram и сырой OpenRouter — см. `COVERAGE_EXCLUDE` в `vitest.config.ts`.
+- **Приоритет тестов:** колода и сессии deep, композит фото (чёрный фон + альфа карт), парсинг `РЕЗЮМЕ:`, тексты `botCopy` / caption, репозиторий SQLite.
+- **Не обязательно:** полный mock Telegraf; при новом сценарии в хендлере — вынеси решение в функцию под `src/` и покрой её.
 
 ## Локальные проверки
 
@@ -102,7 +109,7 @@ npm run lint:fix
 npm run format
 npm run lint
 npm run format:check
-npm test
+npm run test:coverage
 npm run build
 ```
 

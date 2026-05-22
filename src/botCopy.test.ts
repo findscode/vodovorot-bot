@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   deepSessionBlockedMessageHtml,
   isPublicEntryCommand,
+  menuTextFull,
   startTextFull,
   startTextLimited,
 } from './botCopy.js';
@@ -19,6 +20,10 @@ describe('botCopy', () => {
     expect(startTextFull()).toContain('не гарантия будущего');
     expect(startTextLimited()).toContain('по приглашению');
     expect(startTextLimited()).toContain('Запомни:');
+  });
+
+  it('menuText matches simple-to-complex framing', () => {
+    expect(menuTextFull()).toContain('от простого к сложному');
   });
 
   it('isPublicEntryCommand recognizes start, menu, help', () => {

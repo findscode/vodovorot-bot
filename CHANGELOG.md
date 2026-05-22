@@ -4,6 +4,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- TDD: `npm run test:coverage`, пороги в `vitest.config.ts`, CI вместо голого `test`; правило `testing.mdc`; тесты deck/sessionStore/фото/копирайт.
+
 ### Changed
 
 - `/start` и `/menu`: приветствие с отсылкой к кнопкам «от простых к сложным»; дисклеймер «Запомни: любое толкование…».

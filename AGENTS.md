@@ -6,7 +6,7 @@
 
 ## Правила Cursor (`.cursor/rules/`)
 
-Краткие guardrails; полная карта — в этом файле и `docs/`. **alwaysApply:** `core.mdc`, `documentation.mdc`, `scripts-cleanup.mdc`. **По открытым файлам:** `bot-copy.mdc`, `deep-reading.mdc`, `card-flows.mdc`, `ai-prompts.mdc`.
+Краткие guardrails; полная карта — в этом файле и `docs/`. **alwaysApply:** `core.mdc`, `documentation.mdc`, `scripts-cleanup.mdc`. **По открытым файлам:** `bot-copy.mdc`, `deep-reading.mdc`, `card-flows.mdc`, `ai-prompts.mdc`, `testing.mdc`.
 
 ---
 
@@ -60,8 +60,10 @@
 ## Перед завершением задачи
 
 ```bash
-npm run lint:fix && npm run format && npm run build && npm test && npm run lint && npm run format:check
+npm run lint:fix && npm run format && npm run build && npm run test:coverage && npm run lint && npm run format:check
 ```
+
+**TDD:** баг в логике → сначала `*.test.ts`, потом фикс ([CONTRIBUTING.md](CONTRIBUTING.md) § TDD). CI = `test:coverage` с порогами (`vitest.config.ts`).
 
 При коммите **pre-commit** (Husky + lint-staged) сам чинит staged-файлы и гоняет `lint` + `format:check` как в CI — не полагайся только на ручной прогон.
 

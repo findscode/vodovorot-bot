@@ -1,6 +1,8 @@
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import sharp from 'sharp';
-import { compositeLayersOnBlack } from './compositeBackground.js';
+import { CARDS_ASSETS_DIR } from './cardAssets.js';
+import { compositeLayersOnBlack, flattenCardPngOnBlack } from './compositeBackground.js';
 
 describe('compositeLayersOnBlack', () => {
   it('uses opaque black where overlays do not cover', async () => {
@@ -21,6 +23,13 @@ describe('compositeLayersOnBlack', () => {
     expect(data[0]).toBe(0);
     expect(data[1]).toBe(0);
     expect(data[2]).toBe(0);
+  });
+
+  it('flattenCardPngOnBlack uses real deck asset', async () => {
+    const buf = await flattenCardPngOnBlack(join(CARDS_ASSETS_DIR, '31.png'));
+    const meta = await sharp(buf).metadata();
+    expect(meta.channels).toBe(3);
+    expect((meta.width ?? 0) > 0).toBe(true);
   });
 
   it('shows black through transparent corners of overlay', async () => {

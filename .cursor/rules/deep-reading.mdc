@@ -11,4 +11,4 @@ alwaysApply: false
 - 1-й триплет = `tripletStripFrame`; 2+ = `compositeStack.ts` (наслоение `k × 12.5%` высоты карты).
 - **Не менять** `prompts.ts` / `compositeStack.ts` без явной задачи на промпты или визуал.
 - UX/поток/ограничения — [docs/ROADMAP.md](../../docs/ROADMAP.md) §3.0 при смене поведения.
-- Правки `compositeStack.ts` — прогон `compositeStack.test.ts`.
+- Правки `compositeStack.ts` / `sessionStore.ts` — сначала тест, затем код; прогон `npm run test:coverage`.

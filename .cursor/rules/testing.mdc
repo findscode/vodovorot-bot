@@ -1,0 +1,13 @@
+---
+description: TDD, coverage, что тестировать до хендлеров
+globs: src/**/*.ts,src/**/*.test.ts
+alwaysApply: false
+---
+
+# Тесты и TDD
+
+- Баг или регрессия в **чистой логике** → сначала падающий тест в `*.test.ts`, потом фикс.
+- Перед завершением: `npm run test:coverage` (пороги в `vitest.config.ts`; хендлеры и `bot.ts` вне coverage).
+- **Фото карт:** `compositeBackground`, `spreadComposite`, `cardAssets` — smoke на реальном `assets/cards/00.png`.
+- **Deep:** `sessionStore`, `modelOutput`, `compositeStack` — без мока Telegraf.
+- **Не гонять** 90% на `handlers/` — тонкие обёртки; контракты выноси в тестируемые функции.
