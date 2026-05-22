@@ -4,10 +4,10 @@ import { deliverCardOfDayReading } from './cardOfDayDelivery.js';
 import { hasDayDrawSlotUsedSync } from './db/dayDrawSlotsRepo.js';
 import {
   listDayPushSubscribersSync,
+  markDayPushClosedForTodaySync,
   setDayPushEnabled,
   type DayPushSubscriberRow,
 } from './db/usersRepo.js';
-import { DAY_PUSH_ALREADY_HAVE_CARD_MESSAGE } from './botCopy.js';
 import { applyDayPushDeliveryResult } from './dayPushApplyResult.js';
 import { clearPushFailuresForDay } from './dayPushRetry.js';
 import { dayDrawCalendarDate, getDayDrawTimezone } from './dayDrawState.js';
@@ -18,7 +18,6 @@ import { withTelegramTypingWhile } from './typingIndicator.js';
 let tickBusy = false;
 
 const configWarned = new Set<string>();
-const manualSkipNotified = new Set<string>();
 
 function isForbiddenError(e: unknown): boolean {
   if (e === null || typeof e !== 'object') return false;
@@ -58,17 +57,10 @@ async function processSubscriber(
   }
 
   if (decision.action === 'skip_slot_already_used') {
-    const notifyKey = `${uid}:${todayKey}`;
-    if (!manualSkipNotified.has(notifyKey)) {
-      manualSkipNotified.add(notifyKey);
-      try {
-        await bot.telegram.sendMessage(uid, DAY_PUSH_ALREADY_HAVE_CARD_MESSAGE);
-      } catch (e) {
-        console.error('[day_push] не удалось уведомить о пропуске (слот занят) user', uid, e);
-      }
-    }
+    markDayPushClosedForTodaySync(uid, todayKey);
+    clearPushFailuresForDay(uid, todayKey);
     console.log(
-      `[day_push] user ${uid}: слот ${todayKey} занят (ручная «на день»), авторассылка пропущена`,
+      `[day_push] user ${uid}: слот ${todayKey} занят (ручная «на день»), рассылка закрыта без сообщения в чат`,
     );
     return;
   }

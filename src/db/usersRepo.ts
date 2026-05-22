@@ -184,8 +184,11 @@ export function listDayPushSubscribersSync(): DayPushSubscriberRow[] {
     .all() as DayPushSubscriberRow[];
 }
 
-/** Успешная авторассылка «карта дня» за календарные сутки (не путать со слотом ручного «на день»). */
-export function markDayPushSentSync(userId: number, calendarDateKey: string): void {
+/**
+ * Рассылка за календарный день закрыта: успешная доставка или пропуск (слот «на день» уже занят).
+ * Планировщик не шлёт повторные попытки и не пишет в чат без запроса.
+ */
+export function markDayPushClosedForTodaySync(userId: number, calendarDateKey: string): void {
   getOrCreateUser(userId);
   getDb()
     .prepare(
@@ -193,6 +196,9 @@ export function markDayPushSentSync(userId: number, calendarDateKey: string): vo
     )
     .run(calendarDateKey, isoNow(), userId);
 }
+
+/** @deprecated Используйте {@link markDayPushClosedForTodaySync}. */
+export const markDayPushSentSync = markDayPushClosedForTodaySync;
 
 export function extendPremiumByDaysSync(userId: number, days: number): void {
   getOrCreateUser(userId);

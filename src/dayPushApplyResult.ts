@@ -1,7 +1,7 @@
 import type { Telegraf } from 'telegraf';
 import type { CardOfDayDeliveryResult } from './cardOfDayDelivery.js';
 import { CARD_DAY_DELIVERY_ERROR_MESSAGE, DAY_PUSH_AI_UNAVAILABLE_MESSAGE } from './botCopy.js';
-import { markDayPushSentSync } from './db/usersRepo.js';
+import { markDayPushClosedForTodaySync } from './db/usersRepo.js';
 import {
   clearPushFailuresForDay,
   clearPushFailure,
@@ -22,7 +22,7 @@ export async function applyDayPushDeliveryResult(params: ApplyDayPushResultParam
   const deliveryKey = pushFailureKey(userId, todayKey, 'delivery');
 
   if (result === 'ok') {
-    markDayPushSentSync(userId, todayKey);
+    markDayPushClosedForTodaySync(userId, todayKey);
     clearPushFailuresForDay(userId, todayKey);
     console.log(`[day_push] user ${userId}: доставлено ok`);
     return;

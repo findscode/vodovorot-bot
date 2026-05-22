@@ -2,6 +2,7 @@ import { hasFullSpreadAccess } from './accessResolve.js';
 import { canUseFullDeepFinal, deepMaxTripletsForTier, resolveAccessTier } from './accessTier.js';
 import { dayDrawPhrasesForServer, formatHhmmForUser } from './calendarDayUserPhrases.js';
 import { getActivePremiumUntilSync, getDayPushScheduleForUserSync } from './db/usersRepo.js';
+import { quotedSpreadLabel, SPREAD_BUTTON_LABEL, spreadTitleLineHtml } from './spreadLabels.js';
 import { activeTierStatusLineHtml, basicTrackPrefix, premiumFeaturePrefix } from './tierDisplay.js';
 
 function formatPremiumUntilRu(d: Date): string {
@@ -29,19 +30,21 @@ export function statusTextHtml(userId: number): string {
 
   lines.push(activeTierStatusLineHtml(tier));
 
+  const spreadQ = quotedSpreadLabel(SPREAD_BUTTON_LABEL.spread);
   const spreadStatus = full
-    ? `• ${premiumFeaturePrefix()}<b>Прошлое — настоящее — будущее</b> — доступен`
-    : `• ${premiumFeaturePrefix()}<b>Прошлое — настоящее — будущее</b> — <code>/promo</code>`;
-  const deepPrefix = canUseFullDeepFinal(tier) ? premiumFeaturePrefix() : basicTrackPrefix();
+    ? `• ${premiumFeaturePrefix()}${spreadQ} — доступен`
+    : `• ${premiumFeaturePrefix()}${spreadQ} — <code>/promo</code>`;
   const deepFinalNote = canUseFullDeepFinal(tier) ? ', с общим финалом' : ', без общего финала';
   lines.push(
     '<b>Расклады</b>',
-    `• ${basicTrackPrefix()}<b>На день</b> — доступен`,
-    `• ${deepPrefix}<b>Глубинная диагностика</b> — до ${maxDeep} вопросов за гадание${deepFinalNote}`,
+    `• ${basicTrackPrefix()}${quotedSpreadLabel(SPREAD_BUTTON_LABEL.day)} — доступен`,
+    `• ${spreadTitleLineHtml(tier, 'deep')} — до ${maxDeep} вопросов за гадание${deepFinalNote}`,
     spreadStatus,
   );
 
-  lines.push(`Лимит «На день»: не чаще раза в ${phrases.dayLimitCalendar}.`);
+  lines.push(
+    `Лимит ${quotedSpreadLabel(SPREAD_BUTTON_LABEL.day)}: не чаще раза в ${phrases.dayLimitCalendar}.`,
+  );
 
   const prem = getActivePremiumUntilSync(userId);
   if (prem && tier !== 'admin') {
@@ -51,10 +54,10 @@ export function statusTextHtml(userId: number): string {
   const push = getDayPushScheduleForUserSync(userId);
   if (push) {
     const t = formatHhmmForUser(push.hhmm);
-    lines.push(`<b>Рассылка карты дня</b>: включена. Ориентир по времени — около ${t}.`);
+    lines.push(`<b>Рассылка</b>: включена, ориентир по времени — около ${t}.`);
   } else {
     lines.push(
-      '<b>Рассылка карты дня</b>: выключена. Включить — кнопкой «Присылать каждый день» под толкованием «На день».',
+      `<b>Рассылка</b>: выключена. Включить — кнопкой «Присылать каждый день» под толкованием ${quotedSpreadLabel(SPREAD_BUTTON_LABEL.day)}.`,
     );
   }
 

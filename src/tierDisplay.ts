@@ -1,6 +1,6 @@
 import type { AccessTier } from './accessTier.js';
 import { canUseFullDeepFinal } from './accessTier.js';
-import { quotedSpreadLabel, SPREAD_BUTTON_LABEL } from './spreadLabels.js';
+import { quotedSpreadLabel, SPREAD_BUTTON_LABEL, spreadTitleLineHtml } from './spreadLabels.js';
 
 /**
  * Emoji-метки уровней (UI).
@@ -51,9 +51,9 @@ export function activeTierStatusLineHtml(tier: AccessTier): string {
     return `${TIER_EMOJI.admin} <b>Админ</b> — полный доступ ко всем раскладам.`;
   }
   if (tier === 'premium') {
-    return `${TIER_EMOJI.premium} <b>Premium</b> активен — все расклады и полная глубинная диагностика.`;
+    return `${TIER_EMOJI.premium} <b>Premium</b> активен — доступны все расклады.`;
   }
-  return 'Доступны карта дня и глубинная диагностика до трёх вопросов. Полный доступ — <code>/promo КОД</code>.';
+  return `Доступны ${spreadTitleLineHtml('basic', 'day')} и ${spreadTitleLineHtml('basic', 'deep')} (до трёх вопросов). Premium — <code>/promo КОД</code>.`;
 }
 
 /** Подпись tier в админке: `🍀 admin`. */

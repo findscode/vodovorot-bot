@@ -35,22 +35,18 @@ export const AI_TEXT_UNAVAILABLE_MESSAGE =
 
 /** Сбой ИИ при «На день» (фото ещё не отправлено — порядок ИИ → фото). */
 export const CARD_DAY_AI_UNAVAILABLE_MESSAGE =
-  'Не удалось получить текст толкования. Попробуй «На день» чуть позже — лимит за сутки не тратится.';
+  'Не удалось получить толкование. Попробуй «На день» ещё раз — лимит за сутки не тратится.';
 
 /** Сбой Telegram после успешного ИИ (фото/текст не дошли). */
 export const CARD_DAY_DELIVERY_ERROR_MESSAGE =
-  'Текст готов, но отправить сообщение в Telegram не вышло. Попробуй «На день» позже — лимит за сутки не тратится.';
+  'Толкование готово, но отправить сообщение в Telegram не вышло. Попробуй «На день» позже — лимит за сутки не тратится.';
 
 /** @deprecated Используйте CARD_DAY_AI_UNAVAILABLE_MESSAGE или CARD_DAY_DELIVERY_ERROR_MESSAGE. */
 export const AI_TEXT_UNAVAILABLE_AFTER_CARD_MESSAGE = CARD_DAY_AI_UNAVAILABLE_MESSAGE;
 
 /** Подписчикам: сбой ИИ в день рассылки. */
 export const DAY_PUSH_AI_UNAVAILABLE_MESSAGE =
-  'Сегодня не удалось прислать карту дня. Завтра попробую снова, если подписка у тебя включена.';
-
-/** Подписчикам: слот «на день» уже занят (ручной запрос), авторассылка в этот день не дублирует карту. */
-export const DAY_PUSH_ALREADY_HAVE_CARD_MESSAGE =
-  'Карту дня ты уже получил сегодня — повторная авторассылка не нужна. Завтра пришлю новую, если подписка включена.';
+  'Сегодня не удалось прислать карту дня по подписке. Завтра попробую снова, если она включена.';
 
 /** Текст под раскладом, если JPEG карт нет. */
 export const SPREAD_IMAGES_UNAVAILABLE_SUFFIX =
@@ -125,36 +121,39 @@ export const DEEP_MAX_TRIPLETS_MESSAGE =
 
 /** Tier `basic`: лимит трёх триплетов (модель C). */
 export const DEEP_BASIC_TRIPLET_CAP_MESSAGE =
-  'До трёх вопросов за гадание на базовом треке. Сейчас завершу сессию. Полный цикл (семь вопросов и общий вывод) — ⭐️ Premium.';
+  'На базовом треке — до трёх вопросов за гадание. Сейчас завершу сессию. Полный цикл (семь вопросов и общий вывод) — ⭐️ Premium.';
 
 export const DEEP_BASIC_END_WITHOUT_FINAL_MESSAGE =
   'Гадание завершено. Общий вывод по всем шагам — с ⭐️ <b>Premium</b> (<code>/promo</code> или <code>/status</code>). Следующий расклад — кнопками ниже или <code>/menu</code>.';
 
 export function spreadPremiumRequiredMessage(): string {
-  return `Расклад «Прошлое — настоящее — будущее» — ⭐️ <b>Premium</b>. Промокод: <code>/promo КОД</code>. Базовый трек: 🌱 «На день» и 🌱 глубинная диагностика (до трёх вопросов). <code>/status</code>`;
+  const spreadQ = quotedSpreadLabel(SPREAD_BUTTON_LABEL.spread);
+  const dayQ = quotedSpreadLabel(SPREAD_BUTTON_LABEL.day);
+  const deepQ = quotedSpreadLabel(SPREAD_BUTTON_LABEL.deep);
+  return `Расклад ${spreadQ} — ⭐️ <b>Premium</b>. Промокод: <code>/promo КОД</code>. Базовый трек: 🌱 ${dayQ} и 🌱 ${deepQ} (до трёх вопросов). <code>/status</code>`;
 }
 
 export const PROMO_HELP_HTML = `Введи промокод одной командой в чат:
 
 <code>/promo ТВОЙ-КОД</code>
 
-Код одноразовый. После активации откроются расклад «Прошлое — настоящее — будущее» и полная глубинная диагностика. Текущий уровень — <code>/status</code>.`;
+Код одноразовый. После активации откроются «Прошлое — настоящее — будущее» и полная «Глубинная диагностика». Текущий уровень — <code>/status</code>.`;
 
 export function dayLimitMessage(): string {
-  return 'Сегодня карта дня уже была. Новая — после полуночи.';
+  return 'На сегодня карта дня уже получена. Следующая — после полуночи.';
 }
 
 export const LAST_EMPTY_MESSAGE =
   'Пока нечего повторить: сначала сделай любой расклад. Последний разбор хранится в базе и переживает перезапуск; свою копию можно переслать себе из чата.';
 
 export const SUBSCRIBE_MESSAGES = {
-  off: 'Ежедневная карта дня выключена. Новую — кнопкой «На день», когда захочешь.',
+  off: 'Ежедневная рассылка выключена. Карту дня в любой момент — кнопкой «На день».',
 } as const;
 
 /** После включения подписки (время и пояс — как сохранили при нажатии). */
 export function subscribeEnabledMessageHtml(hhmm: string, _tzIana: string): string {
   const t = formatHhmmForUser(hhmm);
-  return `<b>Готово</b>: подписка включена, карта дня — около ${t}. Отписаться или сменить время — кнопками ниже; иначе <code>/pushtime 14:30</code>.`;
+  return `<b>Готово</b>: подписка включена. Карта дня будет приходить около ${t}. Отписаться или сменить время — кнопками ниже или <code>/pushtime 14:30</code>.`;
 }
 
 /** Выбор времени рассылки (после <code>/pushtime</code> без аргумента или кнопки «Время рассылки»). */
@@ -170,7 +169,7 @@ export const PUSHTIME_INVALID_FORMAT_HTML =
 
 export function pushtimeSavedMessageHtml(hhmm: string, _tzIana: string): string {
   const t = formatHhmmForUser(hhmm);
-  return `<b>Запомнил</b>: рассылка карты дня — около ${t}.`;
+  return `<b>Запомнил</b>: рассылка — около ${t}.`;
 }
 
 export const PROMO_MESSAGES = {
@@ -193,7 +192,9 @@ export function promoOkMessageHtml(until: Date): string {
   } catch {
     dateRu = until.toISOString().slice(0, 10);
   }
-  return `<b>Готово</b>, промокод принят. ⭐️ <b>Premium</b> на месяц (до ${dateRu}) — открыты расклад «Прошлое — настоящее — будущее» и полная глубинная диагностика. Подробности — <code>/status</code>. Обнови меню: <code>/menu</code>.`;
+  const spreadQ = quotedSpreadLabel(SPREAD_BUTTON_LABEL.spread);
+  const deepQ = quotedSpreadLabel(SPREAD_BUTTON_LABEL.deep);
+  return `<b>Готово</b>, промокод принят. ⭐️ <b>Premium</b> на месяц (до ${dateRu}) — доступны ${spreadQ} и полная ${deepQ}. Подробности — <code>/status</code>. Обнови меню: <code>/menu</code>.`;
 }
 
 export function startTextHtml(opts: SpreadAccessOverviewOpts): string {
@@ -237,7 +238,7 @@ ${premiumFeaturePrefix()}${spreadQ} — один связный расклад �
 ${spreadTitleLineHtml(opts.tier, 'deep')} — кнопка <b>Начать</b>, затем вопросы текстом${canUseFullDeepFinal(opts.tier) ? ' и общий финал' : ''}.
 
 <b>Подписка на карту дня</b>
-После ${dayQ} можно включить ежедневную отправку кнопкой «Присылать каждый день». Один раз в сутки — и на ручной запрос, и на рассылку. Время по умолчанию из настроек бота; смена — кнопка <b>«Время рассылки»</b> или <code>/pushtime 14:30</code>. Отписка — в том же сообщении после включения или под следующим толкованием ${dayQ}.
+После ${dayQ} можно включить автоматическую рассылку кнопкой «Присылать каждый день». Раз в календарные сутки — и при ручном запросе, и при рассылке. Время по умолчанию из настроек бота; смена — кнопка <b>«Время рассылки»</b> или <code>/pushtime 14:30</code>. Отписка — в том же сообщении после включения или под следующим толкованием ${dayQ}.
 
 <b>Важно</b>
 ${DISCLAIMER_HELP}`;
