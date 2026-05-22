@@ -23,9 +23,10 @@ describe('statusCopy', () => {
     await rm(dir, { recursive: true, force: true });
   });
 
-  it('в открытом режиме упоминает оба расклада', () => {
+  it('в открытом режиме упоминает все расклады', () => {
     const html = statusTextHtml(1);
     expect(html).toContain('открытый');
+    expect(html).toContain('все расклады');
     expect(html).toContain('Рассылка');
   });
 

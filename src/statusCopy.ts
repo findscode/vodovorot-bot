@@ -26,12 +26,12 @@ export function statusTextHtml(userId: number): string {
   const lines: string[] = [];
 
   if (wl === null) {
-    lines.push('<b>Доступ</b>: открытый режим — оба расклада доступны.');
+    lines.push('<b>Доступ</b>: открытый режим — все расклады доступны.');
   } else if (full) {
-    lines.push('<b>Доступ</b>: полный — «на день» и расклад в три карты.');
+    lines.push('<b>Доступ</b>: полный — «На день» и «Прошлое — настоящее — будущее».');
   } else {
     lines.push(
-      '<b>Доступ</b>: сейчас только «карта на день» и подписка. Расклад в три карты — по приглашению, Premium или промокоду (<code>/promo</code>).',
+      '<b>Доступ</b>: «На день», подписка и глубинная диагностика. «Прошлое — настоящее — будущее» — по приглашению, Premium или промокоду (<code>/promo</code>).',
     );
   }
 
@@ -46,7 +46,7 @@ export function statusTextHtml(userId: number): string {
     spreadStatus,
   );
 
-  lines.push(`Лимит «на день»: не чаще раза в сутки ${phrases.dayLimitCalendar}.`);
+  lines.push(`Лимит «На день»: не чаще раза в сутки ${phrases.dayLimitCalendar}.`);
 
   const prem = getActivePremiumUntilSync(userId);
   if (prem) {
@@ -56,10 +56,10 @@ export function statusTextHtml(userId: number): string {
   const push = getDayPushScheduleForUserSync(userId);
   if (push) {
     const t = formatHhmmForUser(push.hhmm);
-    lines.push(`<b>Рассылка «карта дня»</b>: включена. Ориентир по времени — около ${t}.`);
+    lines.push(`<b>Рассылка карты дня</b>: включена. Ориентир по времени — около ${t}.`);
   } else {
     lines.push(
-      '<b>Рассылка «карта дня»</b>: выключена. Включить — кнопкой под разбором «на день».',
+      '<b>Рассылка карты дня</b>: выключена. Включить — кнопкой «Присылать каждый день» под толкованием «На день».',
     );
   }
 
