@@ -8,3 +8,4 @@ alwaysApply: false
 
 - **«На день»:** порядок **ИИ → фото → текст** — не менять без явного запроса.
 - Spread и 1-й триплет deep — общая сборка `tripletStripFrame()` в `spreadComposite.ts`.
+- Фон всех фото с картами — **чёрный** (`compositeBackground.ts`); ассеты PNG с прозрачными углами накладываются поверх.

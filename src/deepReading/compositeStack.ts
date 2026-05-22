@@ -1,4 +1,5 @@
 import sharp from 'sharp';
+import { compositeLayersOnBlack } from '../compositeBackground.js';
 import type { DrawnCard } from '../deck.js';
 import { STRIP_CARD_HEIGHT, tripletStripFrame } from '../spreadComposite.js';
 import { DEEP_COMPOSITE_MAX_SIDE_PX, DEEP_STRIP_STACK_OFFSET_FRACTION } from './constants.js';
@@ -41,7 +42,7 @@ async function stripWithStackShadow(buf: Buffer, width: number, height: number):
 
 /**
  * Накопительный коллаж: триплет k накладывается поверх предыдущего стола,
- * смещение от верха = k × 12.5% высоты карты на полосе. Фон прозрачный (RGBA).
+ * смещение от верха = k × 12.5% высоты карты на полосе. Фон чёрный; карты с альфой поверх.
  */
 export async function stackTripletOnPrevious(
   previous: CompositeFrame,
@@ -61,20 +62,10 @@ export async function stackTripletOnPrevious(
   const offsetY = stackOffsetPx(tripletIndex);
   const newBuf = tripletIndex > 0 ? await stripWithStackShadow(newBufRaw, newW, newH) : newBufRaw;
   const canvasH = Math.max(prevH, offsetY + newH);
-  const png = await sharp({
-    create: {
-      width: targetW,
-      height: canvasH,
-      channels: 4,
-      background: { r: 0, g: 0, b: 0, alpha: 0 },
-    },
-  })
-    .composite([
-      { input: prevBuf, left: 0, top: 0 },
-      { input: newBuf, left: 0, top: offsetY },
-    ])
-    .png()
-    .toBuffer();
+  const png = await compositeLayersOnBlack(targetW, canvasH, [
+    { input: prevBuf, left: 0, top: 0 },
+    { input: newBuf, left: 0, top: offsetY },
+  ]);
   return { png, width: targetW, height: canvasH };
 }
 

@@ -4,7 +4,7 @@ import type { DrawnCard } from './deck.js';
 
 export type RasterCard = { buffer: Buffer; width: number; height: number };
 
-/** PNG карты для композита (прозрачный фон, единый исходный холст). */
+/** PNG карты для композита (альфа углов; холст полосы — чёрный в `compositeBackground`). */
 export async function rasterCardForStrip(
   drawn: DrawnCard,
   stripCardHeight: number,

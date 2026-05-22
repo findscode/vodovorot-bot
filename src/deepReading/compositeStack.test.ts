@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import sharp from 'sharp';
+import { compositeLayersOnBlack } from '../compositeBackground.js';
 import { STRIP_CARD_HEIGHT } from '../spreadComposite.js';
 import { DEEP_STRIP_STACK_OFFSET_FRACTION } from './constants.js';
 import { stackTripletOnPrevious, type CompositeFrame } from './compositeStack.js';
@@ -39,16 +40,21 @@ describe('stackTripletOnPrevious', () => {
     expect(meta.height).toBe(Math.max(120, 2 * step + 80));
   });
 
-  it('preserves transparent background between layers', async () => {
-    const prev = await solidFrame(100, 30, 255, 0, 0);
+  it('fills vertical gap between strips with black', async () => {
+    const redTop = await sharp({
+      create: { width: 100, height: 30, channels: 3, background: '#ff0000' },
+    })
+      .png()
+      .toBuffer();
+    const prevPng = await compositeLayersOnBlack(100, 50, [{ input: redTop, left: 0, top: 0 }]);
+    const prev: CompositeFrame = { png: prevPng, width: 100, height: 50 };
     const next = await solidFrame(100, 30, 0, 0, 255);
     const stacked = await stackTripletOnPrevious(prev, next, 1);
-    const gapY = 30;
-    const { data, info } = await sharp(stacked.png)
-      .ensureAlpha()
-      .raw()
-      .toBuffer({ resolveWithObject: true });
-    const alphaIdx = (gapY * (info.width ?? 100) + 50) * 4 + 3;
-    expect(data[alphaIdx]).toBeLessThan(16);
+    const gapY = 35;
+    const { data } = await sharp(stacked.png).raw().toBuffer({ resolveWithObject: true });
+    const i = (gapY * 100 + 50) * 3;
+    expect(data[i]).toBe(0);
+    expect(data[i + 1]).toBe(0);
+    expect(data[i + 2]).toBe(0);
   });
 });

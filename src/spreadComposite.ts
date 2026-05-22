@@ -1,5 +1,6 @@
 import sharp from 'sharp';
 import { Input } from 'telegraf';
+import { compositeLayersOnBlack } from './compositeBackground.js';
 import { rasterCardForStrip } from './cardImageRaster.js';
 import type { DrawnCard } from './deck.js';
 
@@ -9,26 +10,8 @@ export const STRIP_CARD_HEIGHT = 320;
 
 type PhotoInput = ReturnType<typeof Input.fromBuffer>;
 
-/** Полоса или кадр коллажа: PNG с альфой (прозрачный фон между картами). */
+/** Полоса или кадр коллажа: PNG на чёрном фоне (карты с альфой поверх). */
 export type TripletStripFrame = { png: Buffer; width: number; height: number };
-
-async function renderStripTransparent(
-  canvasW: number,
-  canvasH: number,
-  overlays: sharp.OverlayOptions[],
-): Promise<Buffer> {
-  return sharp({
-    create: {
-      width: canvasW,
-      height: canvasH,
-      channels: 4,
-      background: { r: 0, g: 0, b: 0, alpha: 0 },
-    },
-  })
-    .composite(overlays)
-    .png()
-    .toBuffer();
-}
 
 /** Размер полосы как у расклада «три карты», если все слоты одной ширины `slotWidth`. */
 export function tripleStripCanvasDimensions(
@@ -48,7 +31,7 @@ export function middleStripSlotLeft(slotWidth: number): number {
 }
 
 /**
- * «Карта дня»: та же геометрия полосы, что у трёх карт — прозрачный фон,
+ * «Карта дня»: та же геометрия полосы, что у трёх карт — чёрный фон,
  * одна вертикальная карта в среднем слоте.
  */
 export async function dayCardStripPhotoInput(drawn: DrawnCard): Promise<PhotoInput> {
@@ -56,7 +39,7 @@ export async function dayCardStripPhotoInput(drawn: DrawnCard): Promise<PhotoInp
   const { width: canvasW, height: canvasH } = tripleStripCanvasDimensions(card.width, card.height);
   const left = middleStripSlotLeft(card.width);
   const top = Math.round((canvasH - card.height) / 2);
-  const out = await renderStripTransparent(canvasW, canvasH, [{ input: card.buffer, left, top }]);
+  const out = await compositeLayersOnBlack(canvasW, canvasH, [{ input: card.buffer, left, top }]);
   return Input.fromBuffer(out, 'spread-day-card.png');
 }
 
@@ -76,7 +59,7 @@ export async function tripletStripFrame(
     x += slotW + STRIP_GAP_PX;
   }
   const canvasW = slotW * 3 + STRIP_GAP_PX * 2;
-  const png = await renderStripTransparent(canvasW, canvasH, composites);
+  const png = await compositeLayersOnBlack(canvasW, canvasH, composites);
   return { png, width: canvasW, height: canvasH };
 }
 

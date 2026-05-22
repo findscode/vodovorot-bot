@@ -2,7 +2,7 @@
 
 Краткий ориентир для **Cursor-агентов** и разработчиков. Человекочитаемые детали — в `docs/`; здесь только «куда смотреть» и «куда писать».
 
-**Версия:** `package.json` → сейчас **3.5.0**. История — [CHANGELOG.md](CHANGELOG.md).
+**Версия:** `package.json` → сейчас **3.5.1**. История — [CHANGELOG.md](CHANGELOG.md).
 
 ## Правила Cursor (`.cursor/rules/`)
 
@@ -36,6 +36,7 @@
 | Команды, /help, /status                | `src/handlers/registerCommands.ts`                                               |
 | «На день»                              | `src/handlers/registerDayHandlers.ts`, `src/cardOfDayDelivery.ts`                |
 | Spread «Прошлое — настоящее — будущее» | `src/handlers/registerSpreadHandlers.ts`, `src/spreadComposite.ts`               |
+| Чёрный фон фото карт                   | `src/compositeBackground.ts` (полосы, коллаж, `cardPhotoInput`)                  |
 | Глубинная диагностика                  | `src/deepReading/*`, `src/handlers/registerDeepReadingHandlers.ts`               |
 | Блокировка во время deep               | `src/handlers/middleware.ts` (`registerDeepSessionMiddleware`)                   |
 | Клавиатуры                             | `src/botKeyboards.ts`                                                            |
