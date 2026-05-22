@@ -4,16 +4,21 @@ import { deliverCardOfDayReading } from './cardOfDayDelivery.js';
 import { hasDayDrawSlotUsedSync } from './db/dayDrawSlotsRepo.js';
 import {
   listDayPushSubscribersSync,
-  markDayPushHandledSync,
   setDayPushEnabled,
+  type DayPushSubscriberRow,
 } from './db/usersRepo.js';
-import { DAY_PUSH_AI_UNAVAILABLE_MESSAGE } from './botCopy.js';
-import { clearPushAiFailure, pushAiFailKey, recordPushAiFailure } from './dayPushAiRetry.js';
+import { DAY_PUSH_ALREADY_HAVE_CARD_MESSAGE } from './botCopy.js';
+import { applyDayPushDeliveryResult } from './dayPushApplyResult.js';
+import { clearPushFailuresForDay } from './dayPushRetry.js';
 import { dayDrawCalendarDate, getDayDrawTimezone } from './dayDrawState.js';
+import { decideDayPushTick, type DayPushTickDecision } from './dayPushTickLogic.js';
 import { isAtOrPastLocalHm } from './pushSchedule.js';
 import { withTelegramTypingWhile } from './typingIndicator.js';
 
 let tickBusy = false;
+
+const configWarned = new Set<string>();
+const manualSkipNotified = new Set<string>();
 
 function isForbiddenError(e: unknown): boolean {
   if (e === null || typeof e !== 'object') return false;
@@ -21,83 +26,122 @@ function isForbiddenError(e: unknown): boolean {
   return o.response?.error_code === 403 || o.code === 403;
 }
 
-async function runDueDayPushes(bot: Telegraf): Promise<void> {
-  const now = new Date();
-  const todayKey = dayDrawCalendarDate(now);
-  const subs = listDayPushSubscribersSync();
+function warnConfigOnce(userId: number, reason: string): void {
+  const k = `${userId}:${reason}`;
+  if (configWarned.has(k)) return;
+  configWarned.add(k);
+  console.error(
+    `[day_push] user ${userId}: некорректная подписка (${reason}), рассылка отключена логически`,
+  );
+}
 
-  for (const s of subs) {
-    const uid = s.telegram_user_id;
-    if (s.day_push_last_calendar_date === todayKey) continue;
-    if (!isAtOrPastLocalHm(now, s.day_push_timezone, s.day_push_local_hhmm)) continue;
+type SubscriberWork = {
+  sub: DayPushSubscriberRow;
+  decision: DayPushTickDecision;
+};
 
-    if (hasDayDrawSlotUsedSync(uid, todayKey)) {
-      markDayPushHandledSync(uid, todayKey);
-      clearPushAiFailure(pushAiFailKey(uid, todayKey));
-      continue;
+async function processSubscriber(
+  bot: Telegraf,
+  work: SubscriberWork,
+  todayKey: string,
+  now: Date,
+): Promise<void> {
+  const s = work.sub;
+  const uid = s.telegram_user_id;
+  const decision = work.decision;
+
+  if (decision.action === 'skip') {
+    if (decision.reason === 'invalid_local_hhmm' || decision.reason === 'invalid_timezone') {
+      warnConfigOnce(uid, decision.reason);
     }
+    return;
+  }
 
-    const failKey = pushAiFailKey(uid, todayKey);
+  if (decision.action === 'skip_slot_already_used') {
+    const notifyKey = `${uid}:${todayKey}`;
+    if (!manualSkipNotified.has(notifyKey)) {
+      manualSkipNotified.add(notifyKey);
+      try {
+        await bot.telegram.sendMessage(uid, DAY_PUSH_ALREADY_HAVE_CARD_MESSAGE);
+      } catch (e) {
+        console.error('[day_push] не удалось уведомить о пропуске (слот занят) user', uid, e);
+      }
+    }
+    console.log(
+      `[day_push] user ${uid}: слот ${todayKey} занят (ручная «на день»), авторассылка пропущена`,
+    );
+    return;
+  }
 
-    try {
-      const result = await deliverCardOfDayReading(
-        bot.telegram,
-        uid,
-        (task) => withTelegramTypingWhile(bot.telegram, uid, task),
-        { at: now },
-      );
-      if (result === 'ok') {
-        markDayPushHandledSync(uid, todayKey);
-        clearPushAiFailure(failKey);
-      } else if (result === 'slot_race') {
-        markDayPushHandledSync(uid, todayKey);
-        clearPushAiFailure(failKey);
-      } else if (result === 'ai_error') {
-        const { count, shouldGiveUp } = recordPushAiFailure(failKey);
-        if (count === 1) {
-          try {
-            await bot.telegram.sendMessage(uid, DAY_PUSH_AI_UNAVAILABLE_MESSAGE);
-          } catch (sendErr) {
-            console.error(
-              '[day_push] не удалось отправить сообщение об ошибке ИИ user',
-              uid,
-              sendErr,
-            );
-          }
-        }
-        if (shouldGiveUp) {
-          markDayPushHandledSync(uid, todayKey);
-          clearPushAiFailure(failKey);
-          console.warn(
-            `[day_push] user ${uid}: сбой ИИ ${count} раз за ${todayKey}, рассылка отложена до завтра`,
-          );
-        }
-      } else if (result === 'delivery_error') {
-        console.error(`[day_push] delivery_error user ${uid} (повтор на следующих тиках)`);
-      }
-    } catch (e) {
-      if (isForbiddenError(e)) {
-        setDayPushEnabled(uid, false, s.day_push_timezone);
-        clearPushAiFailure(failKey);
-        console.log(`[day_push] подписка отключена для user ${uid} (403)`);
-      } else {
-        console.error('[day_push] user', uid, e);
-      }
+  try {
+    console.log(
+      `[day_push] user ${uid}: отправка (${todayKey}, ${s.day_push_local_hhmm} ${s.day_push_timezone})`,
+    );
+    const result = await deliverCardOfDayReading(
+      bot.telegram,
+      uid,
+      (task) => withTelegramTypingWhile(bot.telegram, uid, task),
+      { at: now },
+    );
+    await applyDayPushDeliveryResult({ bot, userId: uid, todayKey, result });
+  } catch (e) {
+    if (isForbiddenError(e)) {
+      setDayPushEnabled(uid, false, s.day_push_timezone);
+      clearPushFailuresForDay(uid, todayKey);
+      console.log(`[day_push] подписка отключена для user ${uid} (403)`);
+    } else {
+      console.error('[day_push] user', uid, e);
     }
   }
 }
 
+async function runDueDayPushes(bot: Telegraf): Promise<void> {
+  const now = new Date();
+  const todayKey = dayDrawCalendarDate(now);
+  const subs = listDayPushSubscribersSync();
+  if (subs.length === 0) return;
+
+  const work: SubscriberWork[] = [];
+  let due = 0;
+
+  for (const sub of subs) {
+    const slotUsedToday = hasDayDrawSlotUsedSync(sub.telegram_user_id, todayKey);
+    const decision = decideDayPushTick(sub, {
+      todayKey,
+      slotUsedToday,
+      isAtOrPastLocalHm,
+      now,
+    });
+    work.push({ sub, decision });
+    if (decision.action === 'deliver') {
+      due += 1;
+    }
+  }
+
+  if (due > 0) {
+    console.log(`[day_push] тик ${todayKey}: подписчиков=${subs.length}, к отправке=${due}`);
+  }
+
+  await Promise.all(work.map((w) => processSubscriber(bot, w, todayKey, now)));
+}
+
+function scheduleTick(bot: Telegraf): void {
+  if (tickBusy) {
+    console.warn('[day_push] предыдущий тик ещё выполняется, пропуск минуты');
+    return;
+  }
+  tickBusy = true;
+  void runDueDayPushes(bot)
+    .catch((e) => console.error('[day_push]', e))
+    .finally(() => {
+      tickBusy = false;
+    });
+}
+
 export function startDayPushScheduler(bot: Telegraf): void {
-  cron.schedule('* * * * *', () => {
-    if (tickBusy) return;
-    tickBusy = true;
-    void runDueDayPushes(bot)
-      .catch((e) => console.error('[day_push]', e))
-      .finally(() => {
-        tickBusy = false;
-      });
-  });
+  cron.schedule('* * * * *', () => scheduleTick(bot));
   console.log(
-    `[day_push] Планировщик: раз в минуту; слот календарного дня — по ${getDayDrawTimezone()}.`,
+    `[day_push] Планировщик: раз в минуту + catch-up при старте; слот суток — ${getDayDrawTimezone()}.`,
   );
+  scheduleTick(bot);
 }

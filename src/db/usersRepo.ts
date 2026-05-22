@@ -109,7 +109,8 @@ export function setDayPushEnabled(
   const t = isoNow();
   if (enabled) {
     db.prepare(
-      `UPDATE users SET day_push_enabled = 1, day_push_timezone = ?, day_push_local_hhmm = ?, updated_at = ?
+      `UPDATE users SET day_push_enabled = 1, day_push_timezone = ?, day_push_local_hhmm = ?,
+        day_push_last_sent_date = NULL, updated_at = ?
        WHERE telegram_user_id = ?`,
     ).run(timezoneIana, localHhmmWhenEnabling, t, userId);
   } else {
@@ -171,23 +172,24 @@ export type DayPushSubscriberRow = {
   telegram_user_id: number;
   day_push_timezone: string;
   day_push_local_hhmm: string;
-  day_push_last_calendar_date: string | null;
+  day_push_last_sent_date: string | null;
 };
 
 export function listDayPushSubscribersSync(): DayPushSubscriberRow[] {
   return getDb()
     .prepare(
-      `SELECT telegram_user_id, day_push_timezone, day_push_local_hhmm, day_push_last_calendar_date
+      `SELECT telegram_user_id, day_push_timezone, day_push_local_hhmm, day_push_last_sent_date
        FROM users WHERE day_push_enabled = 1`,
     )
     .all() as DayPushSubscriberRow[];
 }
 
-export function markDayPushHandledSync(userId: number, calendarDateKey: string): void {
+/** Успешная авторассылка «карта дня» за календарные сутки (не путать со слотом ручного «на день»). */
+export function markDayPushSentSync(userId: number, calendarDateKey: string): void {
   getOrCreateUser(userId);
   getDb()
     .prepare(
-      'UPDATE users SET day_push_last_calendar_date = ?, updated_at = ? WHERE telegram_user_id = ?',
+      'UPDATE users SET day_push_last_sent_date = ?, updated_at = ? WHERE telegram_user_id = ?',
     )
     .run(calendarDateKey, isoNow(), userId);
 }

@@ -4,6 +4,22 @@
 
 ## [Unreleased]
 
+## [3.6.1] — 2026-05-22
+
+Патч: надёжная авторассылка «карта дня» и актуализация runbook.
+
+### Fixed
+
+- Авторассылка: `day_push_last_sent_date` (только успешный push); слот `day_draw_slots` — общий лимит «на день»; catch-up при старте; до 3 попыток для `ai` и `delivery`; параллельные подписчики; сброс даты отправки при повторной подписке; валидация IANA/`ЧЧ:ММ`; уведомление, если слот уже занят вручную.
+
+### Added
+
+- Модули `dayPushTickLogic`, `dayPushApplyResult`, `dayPushRetry`; миграция SQLite `day_push_last_sent_date`.
+
+### Changed
+
+- [DEPLOY.md](docs/DEPLOY.md), [FOCUS-GROUP.md](docs/FOCUS-GROUP.md), [PRIVACY.md](docs/PRIVACY.md), [ROADMAP.md](docs/ROADMAP.md), [GLOSSARY.md](docs/GLOSSARY.md), [BRAND-GUIDE.md](docs/BRAND-GUIDE.md).
+
 ## [3.6.0] — 2026-05-21
 
 Минорный релиз: публичный бот, модель доступа C (basic / Premium / админ), промокоды для фокус-группы, emoji в UI.

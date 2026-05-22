@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS users (
   day_push_timezone TEXT NOT NULL DEFAULT 'Europe/Moscow',
   day_push_local_hhmm TEXT NOT NULL DEFAULT '09:00',
   day_push_last_calendar_date TEXT,
+  day_push_last_sent_date TEXT,
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
 );

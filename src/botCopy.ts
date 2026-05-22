@@ -41,6 +41,10 @@ export const AI_TEXT_UNAVAILABLE_AFTER_CARD_MESSAGE = CARD_DAY_AI_UNAVAILABLE_ME
 export const DAY_PUSH_AI_UNAVAILABLE_MESSAGE =
   'Сегодня не удалось прислать карту дня. Завтра попробую снова, если подписка у тебя включена.';
 
+/** Подписчикам: слот «на день» уже занят (ручной запрос), авторассылка в этот день не дублирует карту. */
+export const DAY_PUSH_ALREADY_HAVE_CARD_MESSAGE =
+  'Карту дня ты уже получил сегодня — повторная авторассылка не нужна. Завтра пришлю новую, если подписка включена.';
+
 /** Текст под раскладом, если JPEG карт нет. */
 export const SPREAD_IMAGES_UNAVAILABLE_SUFFIX =
   'Картинки карт сейчас недоступны — ниже пришлю толкование текстом.';

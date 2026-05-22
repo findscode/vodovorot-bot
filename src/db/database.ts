@@ -29,6 +29,9 @@ function applyUserSchemaMigrations(instance: Database.Database): void {
   if (!cols.some((c) => c.name === 'cohort')) {
     instance.exec('ALTER TABLE users ADD COLUMN cohort TEXT');
   }
+  if (!cols.some((c) => c.name === 'day_push_last_sent_date')) {
+    instance.exec('ALTER TABLE users ADD COLUMN day_push_last_sent_date TEXT');
+  }
 }
 
 /** Для тестов: закрыть и сбросить singleton. */

@@ -1,3 +1,13 @@
+/** IANA-идентификатор поддерживается рантаймом (`Intl`). */
+export function isValidIanaTimeZone(timeZone: string): boolean {
+  try {
+    Intl.DateTimeFormat(undefined, { timeZone });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 /** Текущие часы и минуты на стене часов в указанном IANA-часовом поясе. */
 export function localWallHm(now: Date, timeZone: string): { h: number; m: number } {
   const parts = new Intl.DateTimeFormat('en-GB', {
@@ -6,8 +16,9 @@ export function localWallHm(now: Date, timeZone: string): { h: number; m: number
     minute: '2-digit',
     hour12: false,
   }).formatToParts(now);
-  const hour = Number(parts.find((p) => p.type === 'hour')?.value ?? 'NaN');
+  let hour = Number(parts.find((p) => p.type === 'hour')?.value ?? 'NaN');
   const minute = Number(parts.find((p) => p.type === 'minute')?.value ?? 'NaN');
+  if (hour === 24) hour = 0;
   return { h: hour, m: minute };
 }
 

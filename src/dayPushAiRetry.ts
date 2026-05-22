@@ -1,24 +1,18 @@
-/** In-memory счётчик неудач push-ИИ за календарный день (один процесс бота). */
+/** @deprecated Импортируйте `dayPushRetry.ts`. */
+import {
+  clearPushFailure,
+  MAX_PUSH_FAILURE_RETRIES_PER_DAY,
+  pushFailureKey,
+  recordPushFailure,
+  resetPushFailuresForTests,
+} from './dayPushRetry.js';
 
-export const MAX_PUSH_AI_RETRIES_PER_DAY = 3;
-
-const failCounts = new Map<string, number>();
+export const MAX_PUSH_AI_RETRIES_PER_DAY = MAX_PUSH_FAILURE_RETRIES_PER_DAY;
 
 export function pushAiFailKey(userId: number, todayKey: string): string {
-  return `${userId}:${todayKey}`;
+  return pushFailureKey(userId, todayKey, 'ai');
 }
 
-export function recordPushAiFailure(key: string): { count: number; shouldGiveUp: boolean } {
-  const count = (failCounts.get(key) ?? 0) + 1;
-  failCounts.set(key, count);
-  return { count, shouldGiveUp: count >= MAX_PUSH_AI_RETRIES_PER_DAY };
-}
-
-export function clearPushAiFailure(key: string): void {
-  failCounts.delete(key);
-}
-
-/** Только для тестов. */
-export function resetPushAiFailuresForTests(): void {
-  failCounts.clear();
-}
+export const recordPushAiFailure = recordPushFailure;
+export const clearPushAiFailure = clearPushFailure;
+export const resetPushAiFailuresForTests = resetPushFailuresForTests;

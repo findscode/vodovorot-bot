@@ -4,7 +4,7 @@
 
 **Навигация по репозиторию (агенты и люди):** [AGENTS.md](../AGENTS.md). Индекс доков — [docs/README.md](README.md).
 
-Реализация формата ответов модели: `src/brandFormat.ts` → `prompts.ts`; общий тон и язык: `src/ai.ts` (`SYSTEM_PROMPT`). Сообщения бота (приветствие, ошибки): `src/botCopy.ts`; хендлеры — `src/handlers/`. Emoji уровней в кнопках и справках: `src/tierDisplay.ts`. Подписи к фото: `src/readingTelegramHtml.ts` → `cardOfDayDelivery.ts` («на день»), `handlers/registerSpreadHandlers.ts` (три карты). Нарезка толкования в чат: `readingChunksDelivery.ts`. Фразы про **сутки** и рассылку (без IANA в чате): `calendarDayUserPhrases.ts`; **`/status`**: `statusCopy.ts`. Пресеты push: `dayPushPresets.ts`, клавиатура — `botKeyboards.ts`.
+Реализация формата ответов модели: `src/brandFormat.ts` → `prompts.ts`; общий тон и язык: `src/ai.ts` (`SYSTEM_PROMPT`). Сообщения бота (приветствие, ошибки): `src/botCopy.ts`; хендлеры — `src/handlers/`. Emoji уровней в кнопках и справках: `src/tierDisplay.ts`. Подписи к фото: `src/readingTelegramHtml.ts` → `cardOfDayDelivery.ts` («на день»), `handlers/registerSpreadHandlers.ts` (три карты). Нарезка толкования в чат: `readingChunksDelivery.ts`. Фразы про **сутки** и рассылку (без IANA в чате): `calendarDayUserPhrases.ts`; **`/status`**: `statusCopy.ts`. Пресеты push: `dayPushPresets.ts`, клавиатура — `botKeyboards.ts`. Авторассылка «карта дня»: `dayPushScheduler.ts`, `dayPushTickLogic.ts`, `dayPushApplyResult.ts`, `pushSchedule.ts`.
 
 **Профиль бота в Telegram:** поля About, Description, Privacy Policy URL и команды — в [docs/BOTFATHER.md](BOTFATHER.md) (формулировки **деловые, без рекламного тона**); политика для URL — [docs/PRIVACY.md](PRIVACY.md).
 
