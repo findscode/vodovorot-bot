@@ -10,7 +10,10 @@ import {
   formatHhmmForUser,
 } from './calendarDayUserPhrases.js';
 
-export const ETHOS = 'Это не гарантия будущего, а повод присмотреться к себе и к картам.';
+export const ETHOS =
+  'любое толкование — не гарантия будущего, а повод присмотреться к себе и к картам.';
+
+const START_ETHOS = `Запомни: ${ETHOS}`;
 
 /** Короткий дисклеймер для справки и при необходимости в других местах. */
 export const DISCLAIMER_HELP =
@@ -158,16 +161,20 @@ export const PROMO_MESSAGES = {
 } as const;
 
 export function startTextFull(): string {
-  return `Привет, я <b>Водоворот</b>. Ниже — «На день», «Прошлое — настоящее — будущее» или <b>глубинная диагностика</b> (до семи вопросов подряд). ${ETHOS}`;
+  return `Привет, я <b>Водоворот</b>. Ниже список доступных раскладов — от простых к сложным.
+
+${START_ETHOS}`;
 }
 
 export function startTextLimited(): string {
   const p = dayDrawPhrasesForServer();
-  return `Привет, я <b>Водоворот</b>. Сейчас доступны «На день» — не чаще раза в сутки ${p.dayLimitCalendar} — и <b>глубинная диагностика</b>. Расклад «Прошлое — настоящее — будущее» — по приглашению. ${ETHOS}`;
+  return `Привет, я <b>Водоворот</b>. Ниже доступные расклады — от простых к сложным: «На день» (не чаще раза в сутки ${p.dayLimitCalendar}) и <b>глубинная диагностика</b>. «Прошлое — настоящее — будущее» — по приглашению.
+
+${START_ETHOS}`;
 }
 
 export function menuTextFull(): string {
-  return 'Выбери расклад — кнопки ниже.';
+  return 'Расклады ниже — от простого к сложному.';
 }
 
 export function menuTextLimited(): string {

@@ -1,11 +1,24 @@
 import { describe, expect, it } from 'vitest';
-import { deepSessionBlockedMessageHtml, isPublicEntryCommand } from './botCopy.js';
+import {
+  deepSessionBlockedMessageHtml,
+  isPublicEntryCommand,
+  startTextFull,
+  startTextLimited,
+} from './botCopy.js';
 
 describe('botCopy', () => {
   it('deepSessionBlockedMessageHtml explains blocked state without counters', () => {
     const html = deepSessionBlockedMessageHtml();
     expect(html).toContain('глубинная диагностика');
     expect(html).not.toMatch(/осталось|сделано \d/i);
+  });
+
+  it('startText points to buttons and states ethos', () => {
+    expect(startTextFull()).toContain('от простых к сложным');
+    expect(startTextFull()).toContain('Запомни:');
+    expect(startTextFull()).toContain('не гарантия будущего');
+    expect(startTextLimited()).toContain('по приглашению');
+    expect(startTextLimited()).toContain('Запомни:');
   });
 
   it('isPublicEntryCommand recognizes start, menu, help', () => {
