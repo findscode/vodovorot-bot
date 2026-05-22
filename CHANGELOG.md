@@ -4,6 +4,10 @@
 
 ## [Unreleased]
 
+### Changed
+
+- Документация: [AGENTS.md](AGENTS.md) как навигация для агентов; правило `.cursor/rules/documentation.mdc`; ROADMAP §3.0 сверен с кодом (фазы deep, ответ на `/menu` в сессии); [UX-POLISH-PLAN.md](docs/UX-POLISH-PLAN.md) — архив.
+
 ## [3.4.0] — 2026-05-20
 
 Минорный релиз: редакторская вычитка всех пользовательских строк (`botCopy.ts`, `statusCopy.ts`) — орфография, пунктуация, единые названия раскладов и «ты» по [BRAND-GUIDE.md](docs/BRAND-GUIDE.md).

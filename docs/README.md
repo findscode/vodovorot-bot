@@ -2,22 +2,32 @@
 
 **Текущая версия:** `package.json` и [CHANGELOG.md](../CHANGELOG.md).
 
+## Для агентов и быстрый старт
+
+| Документ                           | Зачем                                                                               |
+| ---------------------------------- | ----------------------------------------------------------------------------------- |
+| [AGENTS.md](../AGENTS.md)          | **Главная навигация:** куда писать задачи, карта кода, инварианты, чеклист перед PR |
+| [ROADMAP.md](./ROADMAP.md) §3.0    | Глубинная диагностика: поток, визуал, ограничения                                   |
+| [BRAND-GUIDE.md](./BRAND-GUIDE.md) | Тон «ты», тексты UI, формат толкований                                              |
+
+Не создавать новые `*-PLAN.md` без явной просьбы — см. [.cursor/rules/documentation.mdc](../.cursor/rules/documentation.mdc).
+
 ## Оператор и деплой
 
-| Документ                       | Зачем                                                                                          |
-| ------------------------------ | ---------------------------------------------------------------------------------------------- |
-| [DEPLOY.md](./DEPLOY.md)       | Переменные окружения, Docker, DigitalOcean, whitelist, лимит «карта дня», push, логи и runbook |
-| [BOTFATHER.md](./BOTFATHER.md) | Тексты About / Description / Commands для @BotFather                                           |
-| [PRIVACY.md](./PRIVACY.md)     | Политика конфиденциальности (URL в BotFather)                                                  |
+| Документ                       | Зачем                                            |
+| ------------------------------ | ------------------------------------------------ |
+| [DEPLOY.md](./DEPLOY.md)       | Env, Docker, DigitalOcean, whitelist, push, логи |
+| [BOTFATHER.md](./BOTFATHER.md) | About / Description / Commands для @BotFather    |
+| [PRIVACY.md](./PRIVACY.md)     | Политика конфиденциальности (URL в BotFather)    |
 
 ## Продукт и контент
 
-| Документ                                 | Зачем                                                     |
-| ---------------------------------------- | --------------------------------------------------------- |
-| [BRAND-GUIDE.md](./BRAND-GUIDE.md)       | Тон бота и правила формата толкований                     |
-| [GLOSSARY.md](./GLOSSARY.md)             | Термины для копирайта и промптов                          |
-| [ROADMAP.md](./ROADMAP.md)               | Минорные релизы, v3.0 «Глубинная диагностика», milestones |
-| [UX-POLISH-PLAN.md](./UX-POLISH-PLAN.md) | План UI/UX 3.2.0 для агента (напильник)                   |
+| Документ                                 | Зачем                                                             |
+| ---------------------------------------- | ----------------------------------------------------------------- |
+| [BRAND-GUIDE.md](./BRAND-GUIDE.md)       | Тон бота и правила формата толкований                             |
+| [GLOSSARY.md](./GLOSSARY.md)             | Термины для копирайта и промптов                                  |
+| [ROADMAP.md](./ROADMAP.md)               | Релизы 2.x–3.x, эпики, milestones                                 |
+| [UX-POLISH-PLAN.md](./UX-POLISH-PLAN.md) | **Архив** плана 3.2.0 (история; актуальное — ROADMAP + CHANGELOG) |
 
 ## Разработка
 
@@ -27,14 +37,16 @@
 | [DEV-PROCESS.md](./DEV-PROCESS.md)    | Branch protection, CI, секреты Actions |
 | [BRANCHING.md](./BRANCHING.md)        | `main`, `feature/*`, `fix/*`           |
 
-## Код (ориентир после 2.14)
+## Код (ориентир)
 
-| Путь                                   | Роль                                             |
-| -------------------------------------- | ------------------------------------------------ |
-| `src/bot.ts`                           | Запуск Telegraf, `registerHandlers`, `bot.catch` |
-| `src/handlers/`                        | Команды, «На день», расклад, push, middleware    |
-| `src/cardOfDayDelivery.ts`             | Выдача «карта дня» (ИИ → фото → чанки)           |
-| `src/dayPushScheduler.ts`              | Cron рассылки                                    |
-| `src/ai.ts`, `src/openRouterModels.ts` | OpenRouter и промпты                             |
-| `src/deepReading/`                     | Глубинная диагностика (сессия, коллаж)           |
-| `assets/cards/`                        | PNG карт колоды (`512×896`, скругление 16px)     |
+| Путь                     | Роль                                         |
+| ------------------------ | -------------------------------------------- |
+| `src/bot.ts`             | Telegraf, `registerHandlers`, `bot.catch`    |
+| `src/botCopy.ts`         | Все системные тексты пользователю            |
+| `src/statusCopy.ts`      | `/status`                                    |
+| `src/handlers/`          | Команды, day, spread, deep, push, middleware |
+| `src/deepReading/`       | Сессия, коллаж, промпты deep                 |
+| `src/spreadComposite.ts` | Полоса трёх карт (spread + 1-й триплет deep) |
+| `assets/cards/`          | PNG колоды (`512×896`)                       |
+
+Подробная таблица — в [AGENTS.md](../AGENTS.md).
