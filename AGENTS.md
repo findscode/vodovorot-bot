@@ -2,11 +2,11 @@
 
 Краткий ориентир для **Cursor-агентов** и разработчиков. Человекочитаемые детали — в `docs/`; здесь только «куда смотреть» и «куда писать».
 
-**Версия:** `package.json` → сейчас **3.4.0**. История — [CHANGELOG.md](CHANGELOG.md).
+**Версия:** `package.json` → сейчас **3.5.0**. История — [CHANGELOG.md](CHANGELOG.md).
 
 ## Правила Cursor (`.cursor/rules/`)
 
-Краткие guardrails; полная карта — в этом файле и `docs/`. **alwaysApply:** `core.mdc`, `documentation.mdc`. **По открытым файлам:** `bot-copy.mdc`, `deep-reading.mdc`, `card-flows.mdc`, `ai-prompts.mdc`.
+Краткие guardrails; полная карта — в этом файле и `docs/`. **alwaysApply:** `core.mdc`, `documentation.mdc`, `scripts-cleanup.mdc`. **По открытым файлам:** `bot-copy.mdc`, `deep-reading.mdc`, `card-flows.mdc`, `ai-prompts.mdc`.
 
 ---
 
