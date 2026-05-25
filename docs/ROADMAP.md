@@ -8,12 +8,20 @@
 
 ## В работе (4.x)
 
-| ID   | Issue                                                       | Эпик                                  |
-| ---- | ----------------------------------------------------------- | ------------------------------------- |
-| v4-1 | [#53](https://github.com/findscode/vodovorot-bot/issues/53) | P1 — промпты: safety и тон            |
-| v4-2 | [#54](https://github.com/findscode/vodovorot-bot/issues/54) | P1 — уточнение вопроса (модель)       |
-| v4-3 | [#55](https://github.com/findscode/vodovorot-bot/issues/55) | P2 — Mini App «Настройки»             |
-| v4-4 | [#56](https://github.com/findscode/vodovorot-bot/issues/56) | P2 — UX при потере deep/spread-сессии |
+| ID    | Issue                                                       | Эпик                                   | Волна  |
+| ----- | ----------------------------------------------------------- | -------------------------------------- | ------ |
+| v4-1  | [#53](https://github.com/findscode/vodovorot-bot/issues/53) | P1 — промпты: safety и тон             | 4.1 P1 |
+| v4-2  | [#54](https://github.com/findscode/vodovorot-bot/issues/54) | P1 — уточнение вопроса (модель)        | 4.1 P1 |
+| v4-6  | [#58](https://github.com/findscode/vodovorot-bot/issues/58) | P1 — fail-open при сбое clarity        | 4.1 P1 |
+| v4-7  | [#59](https://github.com/findscode/vodovorot-bot/issues/59) | P1 — регрессия safety/disclaimer       | 4.1 P1 |
+| v4-3  | [#55](https://github.com/findscode/vodovorot-bot/issues/55) | P2 — Mini App «Настройки» v1           | 4.2 P2 |
+| v4-4  | [#56](https://github.com/findscode/vodovorot-bot/issues/56) | P2 — UX при потере deep/spread-сессии  | 4.2 P2 |
+| v4-5  | [#57](https://github.com/findscode/vodovorot-bot/issues/57) | P2 — Mini App v2, один источник правды | 4.3+   |
+| v4-8  | [#60](https://github.com/findscode/vodovorot-bot/issues/60) | P2 — deep: укороченный финал на basic  | 4.3+   |
+| v4-9  | [#61](https://github.com/findscode/vodovorot-bot/issues/61) | P2 ops — логи и счётчики               | 4.3+   |
+| v4-10 | [#62](https://github.com/findscode/vodovorot-bot/issues/62) | P2 ops — `/admin stats`                | 4.3+   |
+
+**Tier A «один фокус»** в intro — в scope [#53](https://github.com/findscode/vodovorot-bot/issues/53) (`tierDisplay.ts`), отдельный issue не нужен.
 
 Milestone: [v4.x](https://github.com/findscode/vodovorot-bot/milestone/14). Backlog push: [v2.16.0](https://github.com/findscode/vodovorot-bot/milestone/12) — [DEPLOY](./DEPLOY.md).
 
@@ -21,13 +29,15 @@ Milestone: [v4.x](https://github.com/findscode/vodovorot-bot/milestone/14). Back
 
 ## Ветка 4.x — решения (зафиксировано)
 
-| Тема                           | Решение                                                                                                                                                                                                                            |
-| ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Уточнение вопроса**          | Один **служебный** вызов модели до карт; при необходимости — одно сообщение + «Уточнить» / «Оставить так» / «Отмена». Не чат с ИИ. Только первый вопрос spread/deep. → [#54](https://github.com/findscode/vodovorot-bot/issues/54) |
-| **Промпты**                    | Без дат и «да/нет»; agency; «вероятности, не абсолют». Дисклеймер в `/help` ✅. → [#53](https://github.com/findscode/vodovorot-bot/issues/53)                                                                                      |
-| **Mini App**                   | **Гибрид:** гадание — кнопки в чате; настройки и справка — WebApp. Команды в чате пока дублируют App. → [#55](https://github.com/findscode/vodovorot-bot/issues/55)                                                                |
-| **Deep / spread после обрыва** | **Без** SQLite для сессий. Явные тексты в intro и при «висящем» вводе. → [#56](https://github.com/findscode/vodovorot-bot/issues/56)                                                                                               |
-| **Рост и оплата**              | **Вне плана** (рефералы, Stars — только «на будущее»).                                                                                                                                                                             |
+| Тема                           | Решение                                                                                                                                                                                                                                                                                                                                                  |
+| ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Уточнение вопроса**          | Один **служебный** вызов модели до карт; при необходимости — одно сообщение + «Уточнить» / «Оставить так» / «Отмена». Не чат с ИИ. Только первый вопрос spread/deep. **Fail-open** при ошибке ИИ — к раскладу без блокировки. → [#54](https://github.com/findscode/vodovorot-bot/issues/54), [#58](https://github.com/findscode/vodovorot-bot/issues/58) |
+| **Промпты**                    | Без дат и «да/нет»; agency; «вероятности, не абсолют». Дисклеймер в `/help` ✅. Intro: «одна тема / один фокус». → [#53](https://github.com/findscode/vodovorot-bot/issues/53), [#59](https://github.com/findscode/vodovorot-bot/issues/59)                                                                                                              |
+| **Mini App**                   | **Гибрид:** гадание — кнопки в чате; настройки и справка — WebApp. v1 → [#55](https://github.com/findscode/vodovorot-bot/issues/55); v2 — один источник правды, кнопка «Настройки» → [#57](https://github.com/findscode/vodovorot-bot/issues/57)                                                                                                         |
+| **Deep / spread после обрыва** | **Без** SQLite для сессий. Явные тексты в intro и при «висящем» вводе. → [#56](https://github.com/findscode/vodovorot-bot/issues/56)                                                                                                                                                                                                                     |
+| **Deep на basic**              | До **3** триплетов; **укороченный** общий финал (2–3 абзаца). Premium — 7 + полный финал. → [#60](https://github.com/findscode/vodovorot-bot/issues/60)                                                                                                                                                                                                  |
+| **Ops / аналитика**            | Структурированные логи (`question_clarity_skip`, `spread_limit_hit`, latency ИИ) → [#61](https://github.com/findscode/vodovorot-bot/issues/61); агрегаты в `/admin stats` → [#62](https://github.com/findscode/vodovorot-bot/issues/62)                                                                                                                  |
+| **Рост и оплата**              | **Вне плана** (рефералы, Stars — только «на будущее»).                                                                                                                                                                                                                                                                                                   |
 
 **Сверка P1:** [FOCUS-GROUP §2.1](./FOCUS-GUIDE.md#21-сложные-карты-и-баланс-тона).
 
@@ -37,20 +47,20 @@ Milestone: [v4.x](https://github.com/findscode/vodovorot-bot/milestone/14). Back
 
 Сессия до **7** триплетов + финал; вход — «Глубинная диагностика» (`deep`), **нет** `/deep`. Тон — [BRAND-GUIDE §5.1](./BRAND-GUIDE.md); данные — [PRIVACY §6](./PRIVACY.md).
 
-|                     |                                                                        |
-| ------------------- | ---------------------------------------------------------------------- |
-| **Фазы**            | `intro` → `awaiting_first_question` → `in_chain`                       |
-| **Basic / Premium** | 3 триплета без финала / 7 + финал                                      |
-| **Spread basic**    | до **3**/сутки («Начать» + вопрос) — **3.7.0**                         |
-| **Код**             | `src/deepReading/*`, `registerDeepReadingHandlers.ts`, `middleware.ts` |
+|                     |                                                                                                                                                          |
+| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Фазы**            | `intro` → `awaiting_first_question` → `in_chain`                                                                                                         |
+| **Basic / Premium** | 3 триплета + **укороченный финал** / 7 + полный финал _(план 4.x: [#60](https://github.com/findscode/vodovorot-bot/issues/60); сейчас basic без финала)_ |
+| **Spread basic**    | до **3**/сутки («Начать» + вопрос) — **3.7.0**                                                                                                           |
+| **Код**             | `src/deepReading/*`, `registerDeepReadingHandlers.ts`, `middleware.ts`                                                                                   |
 
 ### Модель C — уровни доступа
 
-| Уровень     | «На день» | Spread  | Deep        |
-| ----------- | --------- | ------- | ----------- |
-| **basic**   | да        | 3/сутки | 3 триплета  |
-| **premium** | да        | ∞       | 7 + финал   |
-| **admin**   | да        | ∞       | как premium |
+| Уровень     | «На день» | Spread  | Deep                       |
+| ----------- | --------- | ------- | -------------------------- |
+| **basic**   | да        | 3/сутки | 3 триплета + финал _(#60)_ |
+| **premium** | да        | ∞       | 7 + финал                  |
+| **admin**   | да        | ∞       | как premium                |
 
 `accessTier.ts`, `tierDisplay.ts`; промо — `/promo`, `/admin promo`.
 

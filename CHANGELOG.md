@@ -8,6 +8,10 @@
 
 - `/help`: дисклеймер — «ориентир, не приговор» (`DISCLAIMER_HELP`).
 
+### Docs
+
+- ROADMAP 4.x: issues [#57–#62](https://github.com/findscode/vodovorot-bot/milestone/14) — Tier A (Mini App v2, fail-open, smoke P1), deep финал на basic, ops-аналитика.
+
 ## [3.7.1] — 2026-05-25
 
 ### Fixed
