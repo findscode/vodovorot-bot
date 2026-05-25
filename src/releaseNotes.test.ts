@@ -11,10 +11,10 @@ describe('releaseNotes', () => {
   it('whatsNewHtml is short user-facing HTML', () => {
     const html = whatsNewHtml();
     expect(html).toContain('<b>Что нового</b>');
-    expect(html).toContain('Прошлое — настоящее — будущее');
+    expect(html).toContain('Настройки');
     expect(html).toContain('Понятно');
     expect(html).not.toContain('трек');
-    expect(html).toContain('одна тема за раз');
+    expect(html).toContain('Начать');
     expect(html.match(/^• /gm)).toHaveLength(3);
   });
 });

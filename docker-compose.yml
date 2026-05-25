@@ -10,6 +10,8 @@ services:
       - .env
     volumes:
       - vodovorot-data:/app/data
+    ports:
+      - '${WEBAPP_PORT:-8080}:8080'
 
 volumes:
   vodovorot-data:

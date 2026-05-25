@@ -19,6 +19,10 @@ const COVERAGE_EXCLUDE = [
   'src/deepReading/prompts.ts',
   'src/db/migrateLegacyDayDraw.ts',
   'src/db/seedAdmins.ts',
+  'src/webapp/webappServer.ts',
+  'src/webapp/webappConfig.ts',
+  'src/webapp/settingsSnapshot.ts',
+  'src/sessionRecoveryCopy.ts',
 ];
 
 export default defineConfig({

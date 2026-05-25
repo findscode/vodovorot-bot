@@ -24,6 +24,7 @@ COPY package.json package-lock.json ./
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
 COPY assets ./assets
+COPY webapp ./webapp
 
 RUN mkdir -p /app/data
 

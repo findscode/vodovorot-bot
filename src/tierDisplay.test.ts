@@ -3,6 +3,7 @@ import {
   activeTierStatusLineHtml,
   deepIntroHtml,
   deepIntroReadyHtml,
+  spreadIntroHtml,
   labelPremiumButton,
   premiumFeaturePrefix,
   spreadIntroReadyHtml,
@@ -42,5 +43,10 @@ describe('tierDisplay', () => {
   it('ready intros mention one focus', () => {
     expect(spreadIntroReadyHtml('basic')).toContain('одна тема за раз');
     expect(deepIntroReadyHtml('premium')).toContain('одна тема за раз');
+  });
+
+  it('intro blocks mention session recovery (#56)', () => {
+    expect(spreadIntroHtml('basic')).toContain('оборвалось');
+    expect(deepIntroHtml('premium')).toContain('оборвалось');
   });
 });

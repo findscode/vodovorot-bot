@@ -127,6 +127,23 @@ sqlite3 /path/to/vodovorot.db "INSERT INTO promo_codes (code, premium_days, vali
 
 **Просроченные callback** у inline-кнопок: Telegram иногда отклоняет `answerCallbackQuery` — бот отвечает на callback без лишнего шума в логах.
 
+## Mini App «Настройки» (4.1+)
+
+**Гибрид:** гадание — кнопки в чате; tier, рассылка «На день», справка и ссылка на [PRIVACY.md](./PRIVACY.md) — в **WebApp**.
+
+| Переменная           | Назначение                                                                                 |
+| -------------------- | ------------------------------------------------------------------------------------------ |
+| `WEBAPP_PUBLIC_URL`  | Публичный **HTTPS**-URL Mini App (без `/` в конце), напр. `https://bot.example.com/webapp` |
+| `WEBAPP_PORT`        | Порт HTTP внутри контейнера (по умолчанию **8080**)                                        |
+| `WEBAPP_PRIVACY_URL` | Ссылка на политику в App (опционально)                                                     |
+
+1. Прокси (nginx/Caddy) с TLS: `https://…/webapp/` → `http://127.0.0.1:8080/` (или `bot:8080` в compose).
+2. В `.env` задайте `WEBAPP_PUBLIC_URL`; перезапустите бот.
+3. При старте бот выставляет **Menu Button** «Настройки»; в клавиатуре — кнопка **⚙️ Настройки** (если URL задан).
+4. API: `GET/PATCH /api/webapp/settings` с заголовком `Authorization: tma <initData>` — проверка подписи Telegram (`src/webapp/telegramInitData.ts`).
+
+Команды `/help`, `/status`, `/pushtime` и кнопки подписки в чате **остаются** (запасной путь). Статика: `webapp/public/`.
+
 ## Картинки карт
 
 В репозитории — **`assets/cards/00.png` … `77.png`**: холст **512×896**, cover, скругление **16px**, прозрачные углы. Docker-образ копирует их из репозитория без отдельного тома.

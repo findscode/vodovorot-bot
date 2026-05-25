@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Настройки — Водоворот</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="wrap">
+      <h1>Настройки</h1>
+      <p id="status" class="status">Загрузка…</p>
+
+      <section class="card" id="tier-card" hidden>
+        <h2>Уровень доступа</h2>
+        <p id="tier-line"></p>
+        <p id="premium-line" class="muted"></p>
+      </section>
+
+      <section class="card" id="push-card" hidden>
+        <h2>Карта дня</h2>
+        <label class="row">
+          <span>Присылать каждый день</span>
+          <input type="checkbox" id="push-enabled" />
+        </label>
+        <p class="muted" id="push-tz"></p>
+        <fieldset id="push-times" class="times">
+          <legend>Время рассылки</legend>
+          <div id="preset-buttons"></div>
+        </fieldset>
+      </section>
+
+      <section class="card" id="help-card" hidden>
+        <h2>Справка</h2>
+        <ul id="help-list"></ul>
+        <p class="disclaimer" id="disclaimer"></p>
+        <p>
+          <a id="privacy-link" href="#" target="_blank" rel="noopener"
+            >Политика конфиденциальности</a
+          >
+        </p>
+      </section>
+    </main>
+    <script src="app.js"></script>
+  </body>
+</html>

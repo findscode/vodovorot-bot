@@ -4,6 +4,17 @@
 
 ## [Unreleased]
 
+## [4.1.0] — 2026-05-25
+
+### Added
+
+- **Mini App «Настройки» (#55):** WebApp tier, рассылка «На день», справка, privacy; `initData` auth; Menu Button + кнопка ⚙️ при `WEBAPP_PUBLIC_URL`.
+- **UX обрыва сессии (#56):** подсказка в intro spread/deep; сообщение при «осиротевшем» вопросе после TTL spread.
+
+### Docs
+
+- [DEPLOY.md](docs/DEPLOY.md) — секция Mini App; `.env.example` — `WEBAPP_*`.
+
 ## [4.0.0] — 2026-05-25
 
 ### Added

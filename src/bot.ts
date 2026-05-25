@@ -7,6 +7,8 @@ import { getDayDrawTimezone, getDayDrawStatePath } from './dayDrawState.js';
 import { getDatabasePath } from './db/database.js';
 import { registerHandlers } from './handlers/registerHandlers.js';
 import { startDayPushScheduler } from './dayPushScheduler.js';
+import { startWebappServer } from './webapp/webappServer.js';
+import { webappSettingsUrl } from './webapp/webappConfig.js';
 
 initDatabase();
 migrateLegacyDayDrawJsonIfNeeded();
@@ -28,9 +30,25 @@ console.log(
 );
 
 startDayPushScheduler(bot);
+startWebappServer(token);
 
-bot.launch().then(() => {
+bot.launch().then(async () => {
   console.log('Бот запущен (Ctrl+C для остановки)');
+  const webappUrl = webappSettingsUrl();
+  if (webappUrl) {
+    try {
+      await bot.telegram.setChatMenuButton({
+        menuButton: {
+          type: 'web_app',
+          text: 'Настройки',
+          web_app: { url: webappUrl },
+        },
+      });
+      console.log(`Mini App menu: ${webappUrl}`);
+    } catch (e) {
+      console.warn('[webapp_menu]', e instanceof Error ? e.message : e);
+    }
+  }
 });
 
 process.once('SIGINT', () => bot.stop('SIGINT'));

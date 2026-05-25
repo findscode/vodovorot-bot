@@ -1,5 +1,8 @@
 import { SPREAD_SESSION_TTL_MS } from './spreadConstants.js';
 
+/** Сколько после TTL spread ждём «осиротевший» вопрос пользователя (#56). */
+export const SPREAD_ORPHAN_HINT_TTL_MS = 30 * 60 * 1000;
+
 export type SpreadSessionPhase = 'intro' | 'awaiting_question' | 'awaiting_clarification';
 
 export type SpreadSession = {
@@ -13,6 +16,35 @@ export type SpreadSession = {
 };
 
 const sessions = new Map<number, SpreadSession>();
+const spreadOrphanHints = new Map<number, number>();
+
+function maybeMarkSpreadOrphan(userId: number, phase: SpreadSessionPhase): void {
+  if (phase === 'awaiting_question' || phase === 'awaiting_clarification') {
+    spreadOrphanHints.set(userId, Date.now());
+  }
+}
+
+function purgeExpiredOrphanHints(): void {
+  const t = now();
+  for (const [uid, markedAt] of spreadOrphanHints) {
+    if (t - markedAt > SPREAD_ORPHAN_HINT_TTL_MS) {
+      spreadOrphanHints.delete(uid);
+    }
+  }
+}
+
+/** Следующий текст пользователя трактуем как «вопрос без сессии» (#56). */
+export function consumeSpreadOrphanHint(userId: number): boolean {
+  purgeExpiredOrphanHints();
+  const markedAt = spreadOrphanHints.get(userId);
+  if (markedAt === undefined) return false;
+  spreadOrphanHints.delete(userId);
+  return now() - markedAt <= SPREAD_ORPHAN_HINT_TTL_MS;
+}
+
+export function clearSpreadOrphanHint(userId: number): void {
+  spreadOrphanHints.delete(userId);
+}
 
 function now(): number {
   return Date.now();
@@ -22,6 +54,7 @@ export function purgeExpiredSpreadSessions(): void {
   const t = now();
   for (const [uid, s] of sessions) {
     if (t - s.updatedAt > SPREAD_SESSION_TTL_MS) {
+      maybeMarkSpreadOrphan(uid, s.phase);
       sessions.delete(uid);
     }
   }
@@ -43,6 +76,7 @@ export function hasSpreadAwaitingQuestion(userId: number): boolean {
 
 export function beginSpreadSession(userId: number, chatId: number): void {
   purgeExpiredSpreadSessions();
+  clearSpreadOrphanHint(userId);
   sessions.set(userId, {
     chatId,
     phase: 'intro',
@@ -79,10 +113,12 @@ export function touchSpreadSession(userId: number): void {
 }
 
 export function endSpreadSession(userId: number): void {
+  clearSpreadOrphanHint(userId);
   sessions.delete(userId);
 }
 
 /** Только для тестов. */
 export function clearSpreadSessionsForTests(): void {
   sessions.clear();
+  spreadOrphanHints.clear();
 }

@@ -1,4 +1,5 @@
 import { Markup } from 'telegraf';
+import type { InlineKeyboardButton } from 'telegraf/types';
 import { formatHhmmForUser } from './calendarDayUserPhrases.js';
 import { DAY_PUSH_HHMM_PRESETS } from './dayPushPresets.js';
 import { hasUnlimitedSpreadAccess } from './accessResolve.js';
@@ -9,10 +10,11 @@ import { SPREAD_BUTTON_LABEL } from './spreadLabels.js';
 import { CLARITY_KEEP_CALLBACK, CLARITY_REFINE_CALLBACK } from './questionClarityConstants.js';
 import { DEEP_CANCEL_CALLBACK } from './deepReading/constants.js';
 import { SPREAD_CANCEL_CALLBACK } from './spreadConstants.js';
+import { webappSettingsUrl } from './webapp/webappConfig.js';
 
 function mainSpreadRows(userId: number | undefined) {
   const tier = resolveAccessTier(userId);
-  const rows: ReturnType<typeof Markup.button.callback>[][] = [
+  const rows: InlineKeyboardButton[][] = [
     [Markup.button.callback(labelBasicLevelButton('На день'), 'day')],
   ];
   const spreadLabel = hasUnlimitedSpreadAccess(userId)
@@ -26,6 +28,10 @@ function mainSpreadRows(userId: number | undefined) {
     ? labelPremiumButton('Глубинная диагностика')
     : labelBasicLevelButton('Глубинная диагностика');
   rows.push([Markup.button.callback(deepLabel, 'deep')]);
+  const settingsUrl = webappSettingsUrl();
+  if (settingsUrl) {
+    rows.push([Markup.button.webApp('⚙️ Настройки', settingsUrl)]);
+  }
   return rows;
 }
 
