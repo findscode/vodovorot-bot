@@ -1,0 +1,24 @@
+# TLS + reverse proxy для Mini App (см. docs/DEPLOY.md).
+# Переменные из .env контейнера caddy: WEBAPP_DOMAIN, ACME_EMAIL.
+
+{
+	email {$ACME_EMAIL}
+}
+
+{$WEBAPP_DOMAIN} {
+	encode gzip
+
+	handle /health {
+		reverse_proxy bot:8080
+	}
+
+	handle /api/webapp/* {
+		reverse_proxy bot:8080
+	}
+
+	handle_path /webapp/* {
+		reverse_proxy bot:8080
+	}
+
+	respond "Vodovorot bot" 404
+}

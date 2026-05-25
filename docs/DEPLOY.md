@@ -131,18 +131,48 @@ sqlite3 /path/to/vodovorot.db "INSERT INTO promo_codes (code, premium_days, vali
 
 **Гибрид:** гадание — кнопки в чате; tier, рассылка «На день», справка и ссылка на [PRIVACY.md](./PRIVACY.md) — в **WebApp**.
 
-| Переменная           | Назначение                                                                                 |
-| -------------------- | ------------------------------------------------------------------------------------------ |
-| `WEBAPP_PUBLIC_URL`  | Публичный **HTTPS**-URL Mini App (без `/` в конце), напр. `https://bot.example.com/webapp` |
-| `WEBAPP_PORT`        | Порт HTTP внутри контейнера (по умолчанию **8080**)                                        |
-| `WEBAPP_PRIVACY_URL` | Ссылка на политику в App (опционально)                                                     |
+| Переменная           | Назначение                                                                                                             |
+| -------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `WEBAPP_DOMAIN`      | Домен для TLS (A-запись на IP дроплета). Без своего домена: `134-122-69-116.sslip.io` (подставьте свой IP через дефис) |
+| `ACME_EMAIL`         | Email для Let's Encrypt (обязателен с `WEBAPP_DOMAIN`)                                                                 |
+| `WEBAPP_PUBLIC_URL`  | Явный HTTPS-URL Mini App (без `/` в конце); если пусто — `https://WEBAPP_DOMAIN/webapp`                                |
+| `WEBAPP_PATH`        | Путь Mini App (по умолчанию `/webapp`)                                                                                 |
+| `WEBAPP_PORT`        | Порт HTTP бота внутри compose (по умолчанию **8080**, только localhost на хосте)                                       |
+| `WEBAPP_PRIVACY_URL` | Ссылка на политику в App (опционально)                                                                                 |
 
-1. Прокси (nginx/Caddy) с TLS: `https://…/webapp/` → `http://127.0.0.1:8080/` (или `bot:8080` в compose).
-2. В `.env` задайте `WEBAPP_PUBLIC_URL`; перезапустите бот.
-3. При старте бот выставляет **Menu Button** «Настройки»; в клавиатуре — кнопка **⚙️ Настройки** (если URL задан).
-4. API: `GET/PATCH /api/webapp/settings` с заголовком `Authorization: tma <initData>` — проверка подписи Telegram (`src/webapp/telegramInitData.ts`).
+### Вариант A — Caddy в compose (рекомендуется на дроплете)
 
-Команды `/help`, `/status`, `/pushtime` и кнопки подписки в чате **остаются** (запасной путь). Статика: `webapp/public/`.
+В `.env` на сервере:
+
+```env
+WEBAPP_DOMAIN=134-122-69-116.sslip.io
+ACME_EMAIL=you@example.com
+```
+
+(`sslip.io` резолвит `134-122-69-116.sslip.io` → `134.122.69.116`; позже можно заменить на свой домен.)
+
+```bash
+cd /opt/vodovorot-bot
+ufw allow 80/tcp
+ufw allow 443/tcp
+COMPOSE_PROFILES=webapp docker compose up -d --build
+```
+
+Или скрипт: `bash scripts/compose-up.sh`.
+
+Caddy (`deploy/Caddyfile`) проксирует:
+
+- `/webapp/*` → бот (статика Mini App)
+- `/api/webapp/*` → бот (API с `initData`)
+- `/health` → проверка
+
+Бот выставит `WEBAPP_PUBLIC_URL` и Menu Button «Настройки» при старте.
+
+### Вариант B — свой nginx/Caddy на хосте
+
+Прокси `https://…/webapp/` → `http://127.0.0.1:8080/` и `/api/webapp/` → `:8080`; в `.env` задайте `WEBAPP_PUBLIC_URL`.
+
+Команды `/help`, `/status`, `/pushtime` в чате **остаются** (запасной путь). Статика: `webapp/public/`.
 
 ## Картинки карт
 

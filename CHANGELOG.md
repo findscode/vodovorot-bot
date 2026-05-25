@@ -4,6 +4,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- **Deploy:** Caddy в `docker-compose` (profile `webapp`), `deploy/Caddyfile`, `scripts/compose-up.sh`; `WEBAPP_DOMAIN` + авто-`WEBAPP_PUBLIC_URL`.
+
 ## [4.1.0] — 2026-05-25
 
 ### Added

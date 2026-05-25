@@ -1,8 +1,13 @@
 /** Публичный HTTPS-URL Mini App (без trailing slash), напр. https://bot.example.com/webapp */
 export function webappPublicBaseUrl(): string | null {
-  const raw = process.env.WEBAPP_PUBLIC_URL?.trim();
-  if (!raw) return null;
-  return raw.replace(/\/$/, '');
+  const explicit = process.env.WEBAPP_PUBLIC_URL?.trim();
+  if (explicit) return explicit.replace(/\/$/, '');
+
+  const domain = process.env.WEBAPP_DOMAIN?.trim();
+  if (!domain) return null;
+
+  const pathSuffix = (process.env.WEBAPP_PATH ?? '/webapp').replace(/\/$/, '') || '/webapp';
+  return `https://${domain}${pathSuffix}`;
 }
 
 /** Полный URL страницы настроек для кнопки WebApp. */

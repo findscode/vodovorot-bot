@@ -84,5 +84,10 @@ jobs:
               swapon /swapfile
               grep -q swapfile /etc/fstab || echo '/swapfile none swap sw 0 0' >> /etc/fstab
             fi
+            if grep -qE '^WEBAPP_DOMAIN=.+' .env 2>/dev/null; then
+              ufw allow 80/tcp 2>/dev/null || true
+              ufw allow 443/tcp 2>/dev/null || true
+              export COMPOSE_PROFILES=webapp
+            fi
             docker compose up -d --build
             docker compose ps
