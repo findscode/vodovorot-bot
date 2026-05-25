@@ -1,42 +1,23 @@
 import { Markup } from 'telegraf';
-import type { InlineKeyboardButton } from 'telegraf/types';
 import { formatHhmmForUser } from './calendarDayUserPhrases.js';
 import { DAY_PUSH_HHMM_PRESETS } from './dayPushPresets.js';
-import { hasUnlimitedSpreadAccess } from './accessResolve.js';
-import { canUseFullDeepFinal, resolveAccessTier } from './accessTier.js';
 import { isDayPushEnabledSync } from './db/usersRepo.js';
-import { labelBasicLevelButton, labelPremiumButton } from './tierDisplay.js';
-import { SPREAD_BUTTON_LABEL } from './spreadLabels.js';
 import { CLARITY_KEEP_CALLBACK, CLARITY_REFINE_CALLBACK } from './questionClarityConstants.js';
 import { DEEP_CANCEL_CALLBACK } from './deepReading/constants.js';
 import { SPREAD_CANCEL_CALLBACK } from './spreadConstants.js';
 import { webappSettingsUrl } from './webapp/webappConfig.js';
 
-function mainSpreadRows(userId: number | undefined) {
-  const tier = resolveAccessTier(userId);
-  const rows: InlineKeyboardButton[][] = [
-    [Markup.button.callback(labelBasicLevelButton('На день'), 'day')],
-  ];
-  const spreadLabel = hasUnlimitedSpreadAccess(userId)
-    ? labelPremiumButton(SPREAD_BUTTON_LABEL.spread)
-    : labelBasicLevelButton(SPREAD_BUTTON_LABEL.spread);
-  rows.push([Markup.button.callback(spreadLabel, 'spread')]);
-  if (!hasUnlimitedSpreadAccess(userId)) {
-    rows.push([Markup.button.callback(labelPremiumButton('Промокод (Premium)'), 'promo_help')]);
-  }
-  const deepLabel = canUseFullDeepFinal(tier)
-    ? labelPremiumButton('Глубинная диагностика')
-    : labelBasicLevelButton('Глубинная диагностика');
-  rows.push([Markup.button.callback(deepLabel, 'deep')]);
-  const settingsUrl = webappSettingsUrl();
-  if (settingsUrl) {
-    rows.push([Markup.button.webApp('⚙️ Настройки', settingsUrl)]);
-  }
-  return rows;
+/** Пустая клавиатура — главная сетка раскладов в Mini App (#4.4). */
+export function keyboardMainOrDayOnly(_userId: number | undefined) {
+  return Markup.inlineKeyboard([]);
 }
 
-export function keyboardMainOrDayOnly(userId: number | undefined) {
-  return Markup.inlineKeyboard(mainSpreadRows(userId));
+export function keyboardOpenMenuWebApp() {
+  const url = webappSettingsUrl();
+  if (!url) {
+    return Markup.inlineKeyboard([]);
+  }
+  return Markup.inlineKeyboard([[Markup.button.webApp('Открыть меню', url)]]);
 }
 
 export function keyboardDeepIntro() {
@@ -93,29 +74,25 @@ export function keyboardDeepInChain() {
 }
 
 /**
- * После толкования «карта дня»: основные кнопки + подписка / отписка от ежедневной рассылки.
+ * После толкования «карта дня»: только подписка / отписка от ежедневной рассылки.
  */
 export function keyboardAfterDayReading(userId: number) {
-  const rows = mainSpreadRows(userId);
-
   const subRow = isDayPushEnabledSync(userId)
     ? [Markup.button.callback('Отписаться от ежедневной карты', 'day_sub_off')]
     : [Markup.button.callback('Присылать каждый день', 'day_sub_on')];
 
-  return Markup.inlineKeyboard([...rows, subRow]);
+  return Markup.inlineKeyboard([subRow]);
 }
 
 /** Callback: открыть выбор времени рассылки (как <code>/pushtime</code> без аргумента). */
 export const DAY_PUSH_TIME_MENU_CALLBACK = 'dp:time';
 
-/**
- * После включения подписки: расклады + смена времени + отписка (без ожидания следующего «на день»).
- */
-export function keyboardMainOrDayPlusDayPushShortcut(userId: number | undefined) {
-  const rows = mainSpreadRows(userId);
-  rows.push([Markup.button.callback('Время рассылки', DAY_PUSH_TIME_MENU_CALLBACK)]);
-  rows.push([Markup.button.callback('Отписаться от ежедневной карты', 'day_sub_off')]);
-  return Markup.inlineKeyboard(rows);
+/** После включения подписки: смена времени + отписка. */
+export function keyboardMainOrDayPlusDayPushShortcut(_userId: number | undefined) {
+  return Markup.inlineKeyboard([
+    [Markup.button.callback('Время рассылки', DAY_PUSH_TIME_MENU_CALLBACK)],
+    [Markup.button.callback('Отписаться от ежедневной карты', 'day_sub_off')],
+  ]);
 }
 
 /** Частые варианты времени рассылки (callback <code>pt:HH:MM</code>); любое другое — <code>/pushtime ЧЧ:ММ</code>. */

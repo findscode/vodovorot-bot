@@ -19,6 +19,7 @@ import {
   threeCardSpreadCaptionWithQuestionHtmlBounded,
 } from './readingTelegramHtml.js';
 import { endSpreadSession } from './spreadSessionStore.js';
+import { opsAiError, opsEvent } from './opsLog.js';
 
 const TG_CAPTION_MAX = 1024;
 const POSITIONS = ['Прошлое', 'Настоящее', 'Будущее'] as const;
@@ -41,7 +42,10 @@ export async function deliverSpreadReading(
   if (tier === 'basic') {
     const dayKey = dayDrawCalendarDate();
     slotId = tryConsumeSpreadDrawSlotSync(userId, dayKey);
-    if (slotId === null) return 'limit_reached';
+    if (slotId === null) {
+      opsEvent('spread_limit_hit');
+      return 'limit_reached';
+    }
   }
 
   const cards = drawThreeUnique();
@@ -78,10 +82,11 @@ export async function deliverSpreadReading(
     }
 
     const rawText = await withTypingLoop(() =>
-      completeChat(pastPresentFuturePrompt(cards, voice, question)),
+      completeChat(pastPresentFuturePrompt(cards, voice, question), { opsContext: 'spread' }),
     );
     await sendReadingChunksToChat(telegram, chatId, rawText, faceMessageId, chunkOpts);
     endSpreadSession(userId);
+    opsEvent('spread_completed');
     return 'ok';
   } catch (e) {
     if (slotId !== null) {
@@ -89,6 +94,7 @@ export async function deliverSpreadReading(
     }
     endSpreadSession(userId);
     if (isAiFailure(e)) {
+      opsAiError('spread', e instanceof Error ? e.message : String(e));
       console.error('[spread_delivery] ai_error', e instanceof Error ? e.message : e);
       return 'ai_error';
     }

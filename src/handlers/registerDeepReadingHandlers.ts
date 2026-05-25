@@ -1,6 +1,5 @@
 import type { Telegraf } from 'telegraf';
 import {
-  DEEP_ALREADY_ACTIVE_MESSAGE,
   DEEP_CANCELLED_MESSAGE,
   DEEP_EMPTY_QUESTION_MESSAGE,
   DEEP_INTRO_PRESS_START_MESSAGE,
@@ -16,12 +15,12 @@ import {
 } from '../botKeyboards.js';
 import { TELEGRAM_HTML_PARSE } from '../readingTelegramHtml.js';
 import {
-  beginDeepSession,
   deliverDeepTriplet,
   normalizeDeepQuestion,
   runDeepFinal,
   sessionReadyForQuestion,
 } from '../deepReading/deepReadingDelivery.js';
+import { launchDeepIntro } from '../readingLaunch.js';
 import { maybeClarifyDeepFirstQuestion } from './registerQuestionClarityHandlers.js';
 import {
   DEEP_CALLBACK,
@@ -29,14 +28,9 @@ import {
   DEEP_END_CALLBACK,
   DEEP_START_CALLBACK,
 } from '../deepReading/constants.js';
-import {
-  endDeepSession,
-  getDeepSession,
-  hasActiveDeepSession,
-  setDeepPhase,
-} from '../deepReading/sessionStore.js';
+import { endDeepSession, getDeepSession, setDeepPhase } from '../deepReading/sessionStore.js';
 import { resolveAccessTier } from '../accessTier.js';
-import { deepIntroHtml, deepIntroReadyHtml } from '../tierDisplay.js';
+import { deepIntroReadyHtml } from '../tierDisplay.js';
 import { answerCbQuerySafe, logHandlerError } from './botHelpers.js';
 
 export function registerDeepReadingHandlers(bot: Telegraf): void {
@@ -44,20 +38,7 @@ export function registerDeepReadingHandlers(bot: Telegraf): void {
     await answerCbQuerySafe(ctx);
     const uid = ctx.from?.id;
     if (uid === undefined) return;
-    if (hasActiveDeepSession(uid)) {
-      await ctx.reply(DEEP_ALREADY_ACTIVE_MESSAGE, {
-        ...keyboardDeepInChain(),
-        ...TELEGRAM_HTML_PARSE,
-      });
-      return;
-    }
-
-    beginDeepSession(uid, uid);
-    const tier = resolveAccessTier(uid);
-    await ctx.reply(deepIntroHtml(tier), {
-      ...keyboardDeepIntro(),
-      ...TELEGRAM_HTML_PARSE,
-    });
+    await launchDeepIntro(ctx, uid);
   });
 
   bot.action(DEEP_START_CALLBACK, async (ctx) => {

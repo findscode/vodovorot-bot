@@ -1,4 +1,7 @@
-import { brandFormatDeepFinalPromptBlock } from '../brandFormat.js';
+import {
+  brandFormatDeepBasicFinalPromptBlock,
+  brandFormatDeepFinalPromptBlock,
+} from '../brandFormat.js';
 import type { DrawnCard, TarotCard } from '../deck.js';
 import { formatDrawnLine } from '../deck.js';
 import { promptVoiceArchetypeBlock } from '../readingVoice.js';
@@ -45,17 +48,33 @@ ${LANGUAGE_HINT}
 ${TRIPLET_FORMAT}`;
 }
 
-export function deepFinalPrompt(questions: string[], summaries: string[]): string {
-  const steps = questions
+function deepFinalStepsBlock(questions: string[], summaries: string[]): string {
+  return questions
     .map((q, i) => `Шаг ${i + 1}. Вопрос: «${q.replace(/"/g, "'")}»\nРезюме: ${summaries[i] ?? ''}`)
     .join('\n\n');
+}
+
+export function deepFinalPrompt(questions: string[], summaries: string[]): string {
   return `Глубинная диагностика — общий финальный вывод по всей сессии (новых карт нет).
 
-${steps}
+${deepFinalStepsBlock(questions, summaries)}
 
 ${LANGUAGE_HINT}
 
 ${SAFETY_HINT}
 
 ${brandFormatDeepFinalPromptBlock()}`;
+}
+
+/** Укороченный финал для basic (#60). */
+export function deepBasicFinalPrompt(questions: string[], summaries: string[]): string {
+  return `Глубинная диагностика — короткий общий вывод по сессии (до трёх шагов, новых карт нет).
+
+${deepFinalStepsBlock(questions, summaries)}
+
+${LANGUAGE_HINT}
+
+${SAFETY_HINT}
+
+${brandFormatDeepBasicFinalPromptBlock()}`;
 }

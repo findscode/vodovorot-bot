@@ -1,4 +1,5 @@
 import type { Telegraf } from 'telegraf';
+import { canUseSpread } from '../accessResolve.js';
 import {
   AI_TEXT_UNAVAILABLE_MESSAGE,
   DEEP_EMPTY_QUESTION_MESSAGE,
@@ -10,7 +11,7 @@ import {
   SPREAD_INTRO_PRESS_START_MESSAGE,
   spreadLimitMessage,
 } from '../botCopy.js';
-import { canUseSpread } from '../accessResolve.js';
+import { launchSpreadIntro } from '../readingLaunch.js';
 import {
   keyboardMainOrDayOnly,
   keyboardSpreadAwaitingQuestion,
@@ -25,7 +26,6 @@ import {
   runSpreadReadingForUser,
 } from './registerQuestionClarityHandlers.js';
 import {
-  beginSpreadSession,
   endSpreadSession,
   getSpreadSession,
   hasActiveSpreadSession,
@@ -37,8 +37,9 @@ import {
   SPREAD_START_CALLBACK,
 } from '../spreadConstants.js';
 import { resolveAccessTier } from '../accessTier.js';
-import { spreadIntroHtml, spreadIntroReadyHtml } from '../tierDisplay.js';
+import { spreadIntroReadyHtml } from '../tierDisplay.js';
 import { answerCbQuerySafe, logHandlerError } from './botHelpers.js';
+import { opsEvent } from '../opsLog.js';
 import { clearSpreadInFlight, isSpreadInFlight, tryMarkSpreadInFlight } from '../spreadInFlight.js';
 
 export function registerSpreadHandlers(bot: Telegraf): void {
@@ -46,48 +47,7 @@ export function registerSpreadHandlers(bot: Telegraf): void {
     await answerCbQuerySafe(ctx);
     const uid = ctx.from?.id;
     if (uid === undefined) return;
-
-    if (!canUseSpread(uid)) {
-      await ctx.reply(spreadLimitMessage(), {
-        ...keyboardMainOrDayOnly(uid),
-        ...TELEGRAM_HTML_PARSE,
-      });
-      return;
-    }
-
-    if (hasActiveDeepSession(uid)) {
-      return;
-    }
-
-    if (isSpreadInFlight(uid)) {
-      await ctx.reply(SPREAD_IN_FLIGHT_MESSAGE, {
-        ...keyboardMainOrDayOnly(uid),
-        ...TELEGRAM_HTML_PARSE,
-      });
-      return;
-    }
-
-    if (hasActiveSpreadSession(uid)) {
-      const session = getSpreadSession(uid)!;
-      const keyboard =
-        session.phase === 'intro'
-          ? keyboardSpreadIntro()
-          : session.phase === 'awaiting_clarification'
-            ? keyboardSpreadClarification()
-            : keyboardSpreadAwaitingQuestion();
-      await ctx.reply(SPREAD_ALREADY_AWAITING_MESSAGE, {
-        ...keyboard,
-        ...TELEGRAM_HTML_PARSE,
-      });
-      return;
-    }
-
-    beginSpreadSession(uid, uid);
-    const tier = resolveAccessTier(uid);
-    await ctx.reply(spreadIntroHtml(tier), {
-      ...keyboardSpreadIntro(),
-      ...TELEGRAM_HTML_PARSE,
-    });
+    await launchSpreadIntro(ctx, uid);
   });
 
   bot.action(SPREAD_START_CALLBACK, async (ctx) => {
@@ -98,6 +58,7 @@ export function registerSpreadHandlers(bot: Telegraf): void {
     if (!session || session.phase !== 'intro') return;
 
     if (!canUseSpread(uid)) {
+      opsEvent('spread_limit_hit');
       endSpreadSession(uid);
       await ctx.reply(spreadLimitMessage(), {
         ...keyboardMainOrDayOnly(uid),

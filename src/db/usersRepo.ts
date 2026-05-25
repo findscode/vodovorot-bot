@@ -116,6 +116,13 @@ export function countActivePremiumSync(): number {
   return row.c;
 }
 
+export function countDayPushSubscribersSync(): number {
+  const row = getDb()
+    .prepare('SELECT COUNT(*) AS c FROM users WHERE day_push_enabled = 1')
+    .get() as { c: number };
+  return row.c;
+}
+
 export function setDayPushEnabled(
   userId: number,
   enabled: boolean,

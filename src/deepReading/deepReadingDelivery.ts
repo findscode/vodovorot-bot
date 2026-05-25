@@ -1,6 +1,6 @@
 import { Input } from 'telegraf';
 import type { Context } from 'telegraf';
-import { canUseFullDeepFinal, deepMaxTripletsForTier, resolveAccessTier } from '../accessTier.js';
+import { isFullDeepFinal, deepMaxTripletsForTier, resolveAccessTier } from '../accessTier.js';
 import {
   AI_TEXT_UNAVAILABLE_MESSAGE,
   DEEP_AI_RETRY_MESSAGE,
@@ -8,9 +8,10 @@ import {
   DEEP_CONTINUE_HINT_MESSAGE,
   DEEP_DONE_HINT,
   DEEP_FINAL_INTRO_MESSAGE,
+  DEEP_BASIC_FINAL_INTRO_MESSAGE,
+  DEEP_BASIC_FINAL_UPSELL,
   DEEP_IMAGES_UNAVAILABLE_SUFFIX,
   DEEP_MAX_TRIPLETS_MESSAGE,
-  DEEP_BASIC_END_WITHOUT_FINAL_MESSAGE,
   DEEP_BASIC_TRIPLET_CAP_MESSAGE,
 } from '../botCopy.js';
 import { keyboardDeepInChain, keyboardMainOrDayOnly } from '../botKeyboards.js';
@@ -21,7 +22,7 @@ import { deepReadingCaptionHtmlBounded } from './deepReadingCaption.js';
 import { tripletStripFrame } from '../spreadComposite.js';
 import { fitCompositeForTelegram, stackTripletOnPrevious } from './compositeStack.js';
 import { splitTripletModelOutput } from './modelOutput.js';
-import { deepFinalPrompt, deepTripletPrompt } from './prompts.js';
+import { deepBasicFinalPrompt, deepFinalPrompt, deepTripletPrompt } from './prompts.js';
 import {
   appendTriplet,
   canAddTriplet,
@@ -36,6 +37,7 @@ import { TELEGRAM_HTML_PARSE } from '../readingTelegramHtml.js';
 import { sendPlainReadingChunksToChat, sendReadingChunksToChat } from '../readingChunksDelivery.js';
 import { withTypingWhile } from '../typingIndicator.js';
 import { logHandlerError } from '../handlers/botHelpers.js';
+import { opsAiError, opsEvent } from '../opsLog.js';
 
 const TG_CAPTION_MAX = 1024;
 const DEEP_MAX_QUESTION_CHARS = 900;
@@ -104,7 +106,9 @@ export async function deliverDeepTriplet(
 
   try {
     const raw = await withTypingWhile(ctx, () =>
-      completeChat(deepTripletPrompt(question, drawn, priorSummaries, voice)),
+      completeChat(deepTripletPrompt(question, drawn, priorSummaries, voice), {
+        opsContext: 'deep_triplet',
+      }),
     );
     const { userText, summary } = splitTripletModelOutput(raw);
     appendTriplet(userId, { question, cards: drawn, summary }, remaining, {
@@ -117,16 +121,13 @@ export async function deliverDeepTriplet(
 
     const updated = getDeepSession(userId);
     if (updated && updated.triplets.length >= maxTriplets) {
-      if (canUseFullDeepFinal(tier)) {
+      if (isFullDeepFinal(tier)) {
         await ctx.reply(DEEP_MAX_TRIPLETS_MESSAGE, TELEGRAM_HTML_PARSE);
-        await runDeepFinal(ctx, userId);
       } else {
-        await ctx.reply(DEEP_BASIC_TRIPLET_CAP_MESSAGE, {
-          ...keyboardMainOrDayOnly(userId),
-          ...TELEGRAM_HTML_PARSE,
-        });
-        endDeepSession(userId);
+        opsEvent('deep_triplet_limit_hit');
+        await ctx.reply(DEEP_BASIC_TRIPLET_CAP_MESSAGE, TELEGRAM_HTML_PARSE);
       }
+      await runDeepFinal(ctx, userId);
       return 'ok';
     }
 
@@ -137,6 +138,7 @@ export async function deliverDeepTriplet(
     return 'ok';
   } catch (e) {
     logHandlerError('deep_triplet', e);
+    opsAiError('deep_triplet', e instanceof Error ? e.message : String(e));
     setPendingQuestion(userId, question);
     await ctx.reply(DEEP_AI_RETRY_MESSAGE, {
       ...keyboardDeepInChain(),
@@ -154,29 +156,33 @@ export async function runDeepFinal(ctx: Context, userId: number): Promise<void> 
   }
 
   const tier = resolveAccessTier(userId);
-  if (!canUseFullDeepFinal(tier)) {
-    await ctx.reply(DEEP_BASIC_END_WITHOUT_FINAL_MESSAGE, {
-      ...keyboardMainOrDayOnly(userId),
-      ...TELEGRAM_HTML_PARSE,
-    });
-    endDeepSession(userId);
-    return;
-  }
-
-  const intro = await ctx.reply(DEEP_FINAL_INTRO_MESSAGE, TELEGRAM_HTML_PARSE);
+  const fullFinal = isFullDeepFinal(tier);
+  const introText = fullFinal ? DEEP_FINAL_INTRO_MESSAGE : DEEP_BASIC_FINAL_INTRO_MESSAGE;
+  const intro = await ctx.reply(introText, TELEGRAM_HTML_PARSE);
   const questions = session.triplets.map((t) => t.question);
   const summaries = session.triplets.map((t) => t.summary);
+  const prompt = fullFinal
+    ? deepFinalPrompt(questions, summaries)
+    : deepBasicFinalPrompt(questions, summaries);
 
   try {
     const raw = await withTypingWhile(ctx, () =>
-      completeChat(deepFinalPrompt(questions, summaries)),
+      completeChat(prompt, {
+        max_tokens: fullFinal ? 1200 : 550,
+        opsContext: fullFinal ? 'deep_final' : 'deep_final_basic',
+      }),
     );
     await sendReadingChunksToChat(ctx.telegram, userId, raw, intro.message_id, {
-      lastChunkSuffix: DEEP_DONE_HINT,
+      lastChunkSuffix: fullFinal ? DEEP_DONE_HINT : DEEP_BASIC_FINAL_UPSELL,
       lastChunkExtra: keyboardMainOrDayOnly(userId),
     });
+    opsEvent(fullFinal ? 'deep_final_full' : 'deep_final_basic');
   } catch (e) {
     logHandlerError('deep_final', e);
+    opsAiError(
+      fullFinal ? 'deep_final' : 'deep_final_basic',
+      e instanceof Error ? e.message : String(e),
+    );
     await ctx.reply(AI_TEXT_UNAVAILABLE_MESSAGE, {
       ...keyboardMainOrDayOnly(userId),
       ...TELEGRAM_HTML_PARSE,

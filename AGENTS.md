@@ -2,7 +2,7 @@
 
 Краткий ориентир для **Cursor-агентов** и разработчиков. Человекочитаемые детали — в `docs/`; здесь только «куда смотреть» и «куда писать».
 
-**Версия:** `package.json` → сейчас **4.1.0**. История — [CHANGELOG.md](CHANGELOG.md). Запуск фокус-группы — [docs/FOCUS-GROUP.md](docs/FOCUS-GROUP.md).
+**Версия:** `package.json` → сейчас **4.4.0**. История — [CHANGELOG.md](CHANGELOG.md). Запуск фокус-группы — [docs/FOCUS-GROUP.md](docs/FOCUS-GROUP.md).
 
 ## Правила Cursor (`.cursor/rules/`)
 
@@ -37,7 +37,8 @@
 | -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
 | Запуск бота                            | `src/bot.ts` → `registerHandlers()`                                                                                                            |
 | In-bot «Что нового»                    | `src/releaseNotes.ts`, `registerReleaseNotesHandlers.ts`, `users.last_seen_release`                                                            |
-| Команды, /help (вкл. бывший /status)   | `src/handlers/registerCommands.ts`, `src/statusCopy.ts`                                                                                        |
+| Команды, /help, /status                | `src/handlers/registerCommands.ts`, `src/statusCopy.ts`, `src/userHelpContent.ts`                                                              |
+| Ops / `/admin stats`                   | `src/opsLog.ts`, `src/adminStatsCopy.ts`, `registerAdminHandlers.ts`                                                                           |
 | «На день» + push                       | `registerDayHandlers.ts`, `cardOfDayDelivery.ts`, `dayPushScheduler.ts`, `dayPushTickLogic.ts`                                                 |
 | Названия раскладов в текстах           | `src/spreadLabels.ts` (`SPREAD_BUTTON_LABEL`)                                                                                                  |
 | Spread «Прошлое — настоящее — будущее» | `src/handlers/registerSpreadHandlers.ts`, `src/spreadComposite.ts`, `src/spreadSessionStore.ts` (фазы `intro` \| `awaiting_question`)          |

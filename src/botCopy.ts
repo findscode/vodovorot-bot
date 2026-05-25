@@ -25,7 +25,7 @@ export const DISCLAIMER_HELP =
 
 /** Необработанная ошибка в хендлере (bot.catch). */
 export const UNHANDLED_BOT_ERROR_HTML =
-  'Что-то пошло не так. Попробуй ещё раз или выбери расклад кнопками ниже.';
+  'Что-то пошло не так. Открой <b>Меню</b> или попробуй ещё раз.';
 
 /** Не удалось получить текст от ИИ (сеть, таймаут, отказ API). */
 export const AI_TEXT_UNAVAILABLE_MESSAGE =
@@ -61,13 +61,13 @@ export const DAY_DEBOUNCE_MESSAGE = 'Ещё секунду — предыдущ�
 export const DAY_IN_FLIGHT_MESSAGE = 'Уже собираю карту дня — дождись окончания.';
 
 /** После успешного расклада в три карты. */
-export const SPREAD_DONE_HINT = 'Следующий расклад — кнопками ниже.';
+export const SPREAD_DONE_HINT = 'Следующий расклад — в <b>Меню</b>.';
 
 /** После сбоя ИИ у расклада «три карты» (фото уже в чате). */
 export const SPREAD_AI_RETRY_SUFFIX =
-  'Нажми «Прошлое — настоящее — будущее» ещё раз и напиши вопрос заново.';
+  'Открой «Прошлое — настоящее — будущее» в <b>Меню</b> и напиши вопрос заново.';
 
-export const SPREAD_CANCELLED_MESSAGE = 'Расклад отменён — выбери другой кнопками ниже.';
+export const SPREAD_CANCELLED_MESSAGE = 'Расклад отменён — следующий выбери в <b>Меню</b>.';
 
 export const SPREAD_ALREADY_AWAITING_MESSAGE =
   'Расклад уже начат — нажми «Начать» или «Отмена», либо напиши вопрос, если уже нажал «Начать».';
@@ -87,7 +87,7 @@ export const QUESTION_CLARITY_REFINE_MESSAGE =
 
 export function spreadLimitMessage(): string {
   const p = dayDrawPhrasesForServer();
-  return `На сегодня три расклада «Прошлое — настоящее — будущее» уже использованы. Следующие — ${p.midnight} (как у «На день»). Без лимита — ⭐️ Premium (кнопка «Промокод»).`;
+  return `На сегодня три расклада «Прошлое — настоящее — будущее» уже использованы. Следующие — ${p.midnight} (как у «На день»). Без лимита — ⭐️ Premium (<code>/promo</code>).`;
 }
 
 /** Сообщение при блокировке команд и других раскладов во время сессии «три карты». */
@@ -118,7 +118,7 @@ export const DEEP_INTRO_READY_HTML = `<b>Глубинная диагностик
 export const DEEP_INTRO_PRESS_START_MESSAGE =
   'Сначала нажми «Начать», потом напиши вопрос текстом в чат.';
 
-export const DEEP_CANCELLED_MESSAGE = 'Гадание отменено — выбери расклад кнопками ниже.';
+export const DEEP_CANCELLED_MESSAGE = 'Гадание отменено — следующий расклад в <b>Меню</b>.';
 
 export const DEEP_EMPTY_QUESTION_MESSAGE =
   'Напиши вопрос или утверждение текстом — без пустого сообщения.';
@@ -148,23 +148,48 @@ export const DEEP_IMAGES_UNAVAILABLE_SUFFIX =
 
 export const DEEP_FINAL_INTRO_MESSAGE = 'Собираю общий вывод по всему гаданию…';
 
-export const DEEP_DONE_HINT = 'Гадание завершено. Следующий расклад — кнопками ниже.';
+export const DEEP_DONE_HINT = 'Гадание завершено. Следующий расклад — в <b>Меню</b>.';
 
 export const DEEP_MAX_TRIPLETS_MESSAGE =
   'Достигнут лимит семи вопросов за одно гадание. Сейчас соберу общий вывод.';
 
 /** Tier `basic`: лимит трёх триплетов (модель C). */
 export const DEEP_BASIC_TRIPLET_CAP_MESSAGE =
-  'На базовом уровне — до трёх вопросов за гадание. Сейчас завершу сессию. Полный цикл (семь вопросов и общий вывод) — ⭐️ Premium.';
+  'На базовом уровне — до трёх вопросов за гадание. Сейчас соберу короткий общий вывод.';
 
-export const DEEP_BASIC_END_WITHOUT_FINAL_MESSAGE =
-  'Гадание завершено. Общий вывод по всем шагам — с ⭐️ <b>Premium</b> (кнопка «Промокод»). Следующий расклад — кнопками ниже.';
+export const DEEP_BASIC_FINAL_INTRO_MESSAGE = 'Собираю короткий общий вывод по гаданию…';
+
+export const DEEP_BASIC_FINAL_UPSELL =
+  'На ⭐️ Premium — до семи вопросов и полный общий финал по всей сессии. Следующий расклад — в <b>Меню</b>.';
+
+/** Прерванная сессия при новом запуске из Mini App (#4.4). */
+export type ReadingAbortKind = 'spread' | 'deep_with_triplets' | 'deep_intro';
+
+export function readingAbortedNoticeHtml(kind: ReadingAbortKind): string {
+  switch (kind) {
+    case 'deep_with_triplets':
+      return 'Текущее гадание прервано <b>без общего вывода</b>.';
+    case 'spread':
+      return 'Текущий расклад прерван.';
+    case 'deep_intro':
+      return 'Глубинная диагностика отменена — можно начать другой расклад.';
+  }
+}
+
+/** Указатель на Mini App вместо длинной справки в чате (#57). */
+export const HELP_WEBAPP_POINTER_HTML = `<b>Справка и настройки</b>
+
+Открой <b>Меню</b> у поля ввода — там расклады, уровень доступа, лимиты, рассылка «На день» и полная справка.
+
+<b>Запасной путь в чате:</b>
+• <code>/help full</code> — полная справка текстом
+• <code>/pushtime</code> — смена времени рассылки без App`;
 
 export function spreadPremiumRequiredMessage(): string {
   const spreadQ = quotedSpreadLabel(SPREAD_BUTTON_LABEL.spread);
   const dayQ = quotedSpreadLabel(SPREAD_BUTTON_LABEL.day);
   const deepQ = quotedSpreadLabel(SPREAD_BUTTON_LABEL.deep);
-  return `Расклад ${spreadQ} — ⭐️ <b>Premium</b>. Код приходит от администратора — кнопка «Промокод» ниже. Базовый уровень: 🌱 ${dayQ} и 🌱 ${deepQ}.`;
+  return `Расклад ${spreadQ} — ⭐️ <b>Premium</b>. Код приходит от администратора — <code>/promo</code>. Базовый уровень: 🌱 ${dayQ} и 🌱 ${deepQ}.`;
 }
 
 export const PROMO_HELP_HTML = `<b>Промокод</b>
@@ -176,7 +201,7 @@ export function dayLimitMessage(): string {
 }
 
 export const SUBSCRIBE_MESSAGES = {
-  off: 'Ежедневная рассылка выключена. Карту дня в любой момент — кнопкой «На день».',
+  off: 'Ежедневная рассылка выключена. Карту дня в любой момент — в <b>Меню</b>.',
 } as const;
 
 /** После включения подписки (время и пояс — как сохранили при нажатии). */
@@ -225,7 +250,7 @@ export function promoOkMessageHtml(until: Date): string {
 }
 
 export function startTextHtml(opts: SpreadAccessOverviewOpts): string {
-  return `Привет, я <b>Водоворот</b>. Ниже — расклады от простых к сложным.
+  return `Привет, я <b>Водоворот</b>. Расклады — в <b>Меню</b> у поля ввода.
 
 ${spreadAccessOverviewHtml(opts)}
 
@@ -243,7 +268,6 @@ export function isPublicEntryCommand(text: string | undefined): boolean {
   const t = text.trim();
   return (
     /^\/start(?:@\S+)?(?:\s|$)/i.test(t) ||
-    /^\/menu(?:@\S+)?(?:\s|$)/i.test(t) ||
     /^\/help(?:@\S+)?(?:\s|$)/i.test(t) ||
     /^\/status(?:@\S+)?(?:\s|$)/i.test(t) ||
     /^\/promo(?:@\S+)?(?:\s|$)/i.test(t) ||

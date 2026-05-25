@@ -172,7 +172,24 @@ Caddy (`deploy/Caddyfile`) проксирует:
 
 Прокси `https://…/webapp/` → `http://127.0.0.1:8080/` и `/api/webapp/` → `:8080`; в `.env` задайте `WEBAPP_PUBLIC_URL`.
 
-Команды `/help`, `/status`, `/pushtime` в чате **остаются** (запасной путь). Статика: `webapp/public/`.
+Команды `/help full`, `/status`, `/pushtime` в чате **остаются** (запасной путь; `/help` без `full` — указатель на Mini App). Статика: `webapp/public/`.
+
+### Метрики в логах (4.2+)
+
+Структурированные события с префиксом **`[ops]`** (stdout контейнера, `docker compose logs -f bot`):
+
+| Событие                                                     | Смысл                                |
+| ----------------------------------------------------------- | ------------------------------------ | --- | -------- | --------- |
+| `event=spread_limit_hit`                                    | basic упёрся в лимит spread за сутки |
+| `event=spread_completed`                                    | успешный расклад «три карты»         |
+| `event=deep_session_start`                                  | старт глубинной диагностики          |
+| `event=deep_final_basic` / `deep_final_full`                | финал deep                           |
+| `event=day_draw_delivered`                                  | выдана «карта дня»                   |
+| `event=question_clarity_skip` / `question_clarity_prompted` | фильтр вопроса (#54)                 |
+| `event=ai_request_ms`                                       | latency OpenRouter (`context=spread  | day | deep\_\* | clarity`) |
+| `event=ai_error`                                            | сбой ИИ по контексту                 |
+
+Счётчики за **календарные сутки** (`DAY_DRAW_TIMEZONE`) — in-memory; агрегаты в **`/admin stats`** (только админ). Тексты вопросов пользователей **не** логируются.
 
 ## Картинки карт
 

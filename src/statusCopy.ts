@@ -1,34 +1,23 @@
 import { hasUnlimitedSpreadAccess, remainingSpreadDrawsForUser } from './accessResolve.js';
-import {
-  canUseFullDeepFinal,
-  deepMaxTripletsForTier,
-  resolveAccessTier,
-  spreadUnlimitedForTier,
-} from './accessTier.js';
+import { deepMaxTripletsForTier, spreadUnlimitedForTier } from './accessTier.js';
 import { DISCLAIMER_HELP } from './botCopy.js';
 import { dayDrawPhrasesForServer, formatHhmmForUser } from './calendarDayUserPhrases.js';
-import { getActivePremiumUntilSync, getDayPushScheduleForUserSync } from './db/usersRepo.js';
+import { getDayPushScheduleForUserSync } from './db/usersRepo.js';
 import { quotedSpreadLabel, SPREAD_BUTTON_LABEL, spreadTitleLineHtml } from './spreadLabels.js';
 import { SPREAD_MAX_FOR_BASIC } from './spreadConstants.js';
 import { activeTierStatusLineHtml, basicLevelPrefix, premiumFeaturePrefix } from './tierDisplay.js';
+import {
+  buildHelpSummaryLines,
+  collectUserHelpFacts,
+  deepFinalPhraseForTier,
+  formatPremiumUntilRu,
+} from './userHelpContent.js';
 
-function formatPremiumUntilRu(d: Date): string {
-  try {
-    return d.toLocaleDateString('ru-RU', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-      timeZone: 'UTC',
-    });
-  } catch {
-    return d.toISOString().slice(0, 10);
-  }
-}
-
-/** Справка: уровень доступа, расклады, рассылка (`/help`; `/status` — то же). */
+/** Справка: уровень доступа, расклады, рассылка (`/help full`; `/status` — то же). */
 export function helpTextHtml(userId: number): string {
+  const facts = collectUserHelpFacts(userId);
+  const tier = facts.tier;
   const unlimitedSpread = hasUnlimitedSpreadAccess(userId);
-  const tier = resolveAccessTier(userId);
   const maxDeep = deepMaxTripletsForTier(tier);
   const phrases = dayDrawPhrasesForServer();
   const lines: string[] = [];
@@ -40,7 +29,7 @@ export function helpTextHtml(userId: number): string {
   const spreadStatus = unlimitedSpread
     ? `• ${spreadTitleLineHtml(tier, 'spread')} — доступен, без лимита`
     : `• ${spreadTitleLineHtml(tier, 'spread')} — доступен, осталось ${remaining ?? 0} из ${SPREAD_MAX_FOR_BASIC}`;
-  const deepFinalNote = canUseFullDeepFinal(tier) ? ', с общим финалом' : ', без общего финала';
+  const deepFinalNote = `, ${deepFinalPhraseForTier(tier)}`;
   lines.push(
     '',
     '<b>Расклады</b>',
@@ -56,11 +45,10 @@ export function helpTextHtml(userId: number): string {
     );
   }
 
-  const prem = getActivePremiumUntilSync(userId);
-  if (prem && tier !== 'admin') {
+  if (facts.premiumUntil && tier !== 'admin') {
     lines.push(
       '',
-      `${premiumFeaturePrefix()}<b>Premium</b> до <b>${formatPremiumUntilRu(prem)}</b>.`,
+      `${premiumFeaturePrefix()}<b>Premium</b> до <b>${formatPremiumUntilRu(facts.premiumUntil)}</b>.`,
     );
   }
 
@@ -71,13 +59,18 @@ export function helpTextHtml(userId: number): string {
   } else {
     lines.push(
       '',
-      `<b>Рассылка</b>: выключена. Включить — кнопкой «Присылать каждый день» под толкованием ${quotedSpreadLabel(SPREAD_BUTTON_LABEL.day)}.`,
+      `<b>Рассылка</b>: выключена. Включить — в <b>Меню</b> у поля ввода или кнопкой «Присылать каждый день» под толкованием ${quotedSpreadLabel(SPREAD_BUTTON_LABEL.day)}.`,
     );
   }
 
   lines.push('', DISCLAIMER_HELP);
 
   return lines.join('\n');
+}
+
+/** Краткая справка plain-text (Mini App parity check). */
+export function helpSummaryPlain(userId: number): string[] {
+  return buildHelpSummaryLines(collectUserHelpFacts(userId));
 }
 
 /** @deprecated Используй {@link helpTextHtml}. */

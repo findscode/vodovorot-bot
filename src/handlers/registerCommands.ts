@@ -1,7 +1,7 @@
 import type { Context, Telegraf } from 'telegraf';
 import { spreadAccessOptsForUser } from '../spreadLabels.js';
 import {
-  menuTextHtml,
+  HELP_WEBAPP_POINTER_HTML,
   PUSHTIME_INVALID_FORMAT_HTML,
   PUSHTIME_NEED_SUBSCRIPTION_HTML,
   PUSHTIME_PICK_PROMPT_HTML,
@@ -12,6 +12,7 @@ import {
   keyboardDayPushTimePresets,
   keyboardMainOrDayOnly,
   keyboardMainOrDayPlusDayPushShortcut,
+  keyboardOpenMenuWebApp,
 } from '../botKeyboards.js';
 import { getDayDrawTimezone } from '../dayDrawState.js';
 import { normalizeDayPushHhmm } from '../dayPushPresets.js';
@@ -23,14 +24,17 @@ import {
   setDayPushLocalHhmmSync,
 } from '../db/usersRepo.js';
 import { helpTextHtml } from '../statusCopy.js';
+import { webappSettingsUrl } from '../webapp/webappConfig.js';
 import { deliverWhatsNewIfNeeded } from '../releaseNotesDelivery.js';
 import { dayPushHhmmArgFromMessageText } from './botHelpers.js';
 
-async function replyHelp(ctx: Context): Promise<void> {
+async function replyHelp(ctx: Context, full = false): Promise<void> {
   const uid = ctx.from?.id;
   if (uid === undefined) return;
   getOrCreateUser(uid);
-  await ctx.reply(helpTextHtml(uid), {
+  const webappUrl = webappSettingsUrl();
+  const text = !full && webappUrl ? HELP_WEBAPP_POINTER_HTML : helpTextHtml(uid);
+  await ctx.reply(text, {
     ...keyboardMainOrDayOnly(uid),
     ...TELEGRAM_HTML_PARSE,
   });
@@ -45,26 +49,20 @@ export function registerCommands(bot: Telegraf): void {
     }
     const accessOpts = spreadAccessOptsForUser(uid);
     await ctx.reply(startTextHtml(accessOpts), {
-      ...keyboardMainOrDayOnly(uid),
+      ...keyboardOpenMenuWebApp(),
       ...TELEGRAM_HTML_PARSE,
     });
   });
 
-  bot.command('menu', async (ctx) => {
-    const uid = ctx.from?.id;
-    if (uid !== undefined) {
-      getOrCreateUser(uid);
-      await deliverWhatsNewIfNeeded(ctx, uid);
-    }
-    const accessOpts = spreadAccessOptsForUser(uid);
-    await ctx.reply(menuTextHtml(accessOpts), {
-      ...keyboardMainOrDayOnly(uid),
-      ...TELEGRAM_HTML_PARSE,
-    });
+  bot.command('help', (ctx) => {
+    const text =
+      ctx.message && 'text' in ctx.message && typeof ctx.message.text === 'string'
+        ? ctx.message.text
+        : '';
+    const full = /\bfull\b/i.test(text);
+    return replyHelp(ctx, full);
   });
-
-  bot.command('help', replyHelp);
-  bot.command('status', replyHelp);
+  bot.command('status', (ctx) => replyHelp(ctx, true));
 
   bot.command('pushtime', async (ctx) => {
     const uid = ctx.from?.id;

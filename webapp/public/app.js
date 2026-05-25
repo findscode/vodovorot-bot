@@ -6,6 +6,8 @@
   }
 
   const statusEl = document.getElementById('status');
+  const spreadsCard = document.getElementById('spreads-card');
+  const spreadList = document.getElementById('spread-list');
   const tierCard = document.getElementById('tier-card');
   const pushCard = document.getElementById('push-card');
   const helpCard = document.getElementById('help-card');
@@ -46,6 +48,43 @@
     statusEl.className = isError ? 'status error' : 'status';
   }
 
+  function launchSpread(action) {
+    if (!tg?.sendData) {
+      setStatus('Открой меню из Telegram-бота.', true);
+      return;
+    }
+    tg.sendData(JSON.stringify({ action }));
+    tg.close();
+  }
+
+  function renderSpreads(spreads) {
+    spreadList.innerHTML = '';
+    for (const item of spreads) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'spread-btn' + (item.enabled ? '' : ' disabled');
+      btn.disabled = !item.enabled || saving;
+
+      const label = document.createElement('span');
+      label.className = 'spread-label';
+      label.textContent = `${item.tierPrefix}${item.label}`;
+      btn.appendChild(label);
+
+      if (item.hint) {
+        const hint = document.createElement('span');
+        hint.className = 'spread-hint';
+        hint.textContent = item.hint;
+        btn.appendChild(hint);
+      }
+
+      if (item.enabled) {
+        btn.addEventListener('click', () => launchSpread(item.action));
+      }
+
+      spreadList.appendChild(btn);
+    }
+  }
+
   function renderPresets(data) {
     presetButtons.innerHTML = '';
     const selected = data.dayPush.hhmm;
@@ -62,9 +101,12 @@
 
   function render(data) {
     current = data;
+    spreadsCard.hidden = false;
     tierCard.hidden = false;
     pushCard.hidden = false;
     helpCard.hidden = false;
+
+    renderSpreads(data.spreads || []);
 
     tierLine.textContent = `${data.tierEmoji} ${data.helpSummary[0] || data.tier}`;
     premiumLine.textContent = data.premiumUntil ? `Premium до ${data.premiumUntil}` : '';
@@ -102,7 +144,10 @@
       setStatus(e.message || 'Не удалось сохранить', true);
     } finally {
       saving = false;
-      if (current) renderPresets(current);
+      if (current) {
+        renderPresets(current);
+        renderSpreads(current.spreads || []);
+      }
     }
   }
 
@@ -115,7 +160,7 @@
       const data = await api('/api/webapp/settings');
       render(data);
     } catch (e) {
-      setStatus('Открой настройки из Telegram-бота.', true);
+      setStatus('Открой меню из Telegram-бота.', true);
     }
   }
 

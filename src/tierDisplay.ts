@@ -1,5 +1,5 @@
 import type { AccessTier } from './accessTier.js';
-import { canUseFullDeepFinal, spreadUnlimitedForTier } from './accessTier.js';
+import { isFullDeepFinal, spreadUnlimitedForTier } from './accessTier.js';
 import { dayDrawPhrasesForServer } from './calendarDayUserPhrases.js';
 import { SPREAD_MAX_FOR_BASIC } from './spreadConstants.js';
 import { quotedSpreadLabel, SPREAD_BUTTON_LABEL, spreadTitleLineHtml } from './spreadLabels.js';
@@ -66,17 +66,17 @@ export function tierLabelWithEmojiForAdmin(tier: AccessTier): string {
 
 /** Вступление к глубинной диагностике с учётом tier. */
 export function deepIntroHtml(tier: AccessTier): string {
-  const premiumDeep = canUseFullDeepFinal(tier);
+  const premiumDeep = isFullDeepFinal(tier);
   const prefix = premiumDeep ? premiumFeaturePrefix() : basicLevelPrefix();
   const heading = `${prefix}<b>${quotedSpreadLabel(SPREAD_BUTTON_LABEL.deep)}</b>`;
   const body = premiumDeep
-    ? 'До семи вопросов подряд — на каждый три карты и короткое толкование. В конце — общий вывод.'
-    : `До трёх вопросов за одно гадание — на каждый три карты и толкование. Полный цикл (семь вопросов и общий вывод) — ${premiumFeaturePrefix()}Premium.`;
+    ? 'До семи вопросов подряд — на каждый три карты и короткое толкование. В конце — полный общий вывод.'
+    : `До трёх вопросов за одно гадание — на каждый три карты и толкование. В конце — короткий общий вывод. Семь вопросов и полный финал — ${premiumFeaturePrefix()}Premium.`;
   return `${heading}\n\n${body}\n\n${SESSION_RECOVERY_HINT_HTML}\n\nНажми <b>Начать</b>, когда будешь готов.`;
 }
 
 export function deepIntroReadyHtml(tier: AccessTier): string {
-  const premiumDeep = canUseFullDeepFinal(tier);
+  const premiumDeep = isFullDeepFinal(tier);
   const prefix = premiumDeep ? premiumFeaturePrefix() : basicLevelPrefix();
   const heading = `${prefix}<b>${quotedSpreadLabel(SPREAD_BUTTON_LABEL.deep)}</b>`;
   return `${heading}\n\nНапиши первый вопрос или утверждение <b>одним сообщением</b> в чат — лучше <b>одна тема за раз</b>. Выйти можно кнопкой «Отмена».`;

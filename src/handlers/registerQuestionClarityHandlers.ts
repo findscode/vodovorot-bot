@@ -33,6 +33,7 @@ import {
   setSpreadPhase,
 } from '../spreadSessionStore.js';
 import { resolveAccessTier } from '../accessTier.js';
+import { opsEvent } from '../opsLog.js';
 import { withTypingWhile } from '../typingIndicator.js';
 import { answerCbQuerySafe, logHandlerError } from './botHelpers.js';
 import { endSpreadSession } from '../spreadSessionStore.js';
@@ -53,6 +54,7 @@ export async function runSpreadReadingForUser(
       ...TELEGRAM_HTML_PARSE,
     });
   } else if (result === 'limit_reached') {
+    opsEvent('spread_limit_hit');
     await ctx.reply(spreadLimitMessage(), {
       ...keyboardMainOrDayOnly(uid),
       ...TELEGRAM_HTML_PARSE,

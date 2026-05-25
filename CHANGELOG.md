@@ -4,13 +4,32 @@
 
 ## [Unreleased]
 
+## [4.4.0] — 2026-05-25
+
 ### Added
 
-- **Deploy:** Caddy в `docker-compose` (profile `webapp`), `deploy/Caddyfile`, `scripts/compose-up.sh`; `WEBAPP_DOMAIN` + авто-`WEBAPP_PUBLIC_URL`.
+- **Mini App hub (#4.4):** расклады в WebApp «Меню» — `sendData` → intro в чат; лимиты и grey out «На день» в App.
+- **`readingAbort` / `readingLaunch`:** прерывание spread/deep при новом запуске из Меню с предупреждением («без общего вывода» для deep с триплетами).
+- **`/start`:** кнопка «Открыть меню» (web_app); Menu Button переименован в **«Меню»**.
+
+### Changed
+
+- Убрана главная inline-сетка раскладов и команда **`/menu`**; тексты после раскладов указывают на **Меню**.
+- Push-контролы под «На день» без дублирования сетки раскладов.
+
+## [4.2.0] — 2026-05-25
+
+### Added
+
+- **Deep basic (#60):** короткий общий финал после 3 триплетов; premium — полный финал без регрессии.
+- **Ops (#61):** `src/opsLog.ts` — `[ops]` события и latency ИИ за календарные сутки.
+- **`/admin stats` (#62):** spread/deep/day, clarity, ошибки ИИ, p95 latency.
+- **Mini App v2 (#57):** `userHelpContent.ts` — единый источник справки; `/help` → указатель на ⚙️, `/help full` и `/status` — полный текст.
+- **Deploy:** Caddy (profile `webapp`), `deploy/Caddyfile`, `scripts/compose-up.sh`; `WEBAPP_DOMAIN` + авто-`WEBAPP_PUBLIC_URL`.
 
 ### Fixed
 
-- **Mini App:** отдача статики по `/` и `/webapp/` (403 из-за `path.join` с абсолютным сегментом).
+- **Mini App:** отдача статики по `/` и `/webapp/` (403 из-за `path.join`).
 
 ## [4.1.0] — 2026-05-25
 

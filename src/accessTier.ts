@@ -16,9 +16,19 @@ export function deepMaxTripletsForTier(tier: AccessTier): number {
   return tier === 'basic' ? DEEP_MAX_TRIPLETS_BASIC : DEEP_MAX_TRIPLETS_PREMIUM;
 }
 
-/** Общий финал глубинной диагностики (длинный вывод по всей сессии). */
-export function canUseFullDeepFinal(tier: AccessTier): boolean {
+/** Есть общий финал deep (короткий на basic, полный на premium/admin). */
+export function canUseDeepFinal(_tier: AccessTier): boolean {
+  return true;
+}
+
+/** Полный финал по всей сессии (до 7 триплетов). */
+export function isFullDeepFinal(tier: AccessTier): boolean {
   return tier !== 'basic';
+}
+
+/** @deprecated Используй {@link isFullDeepFinal}. */
+export function canUseFullDeepFinal(tier: AccessTier): boolean {
+  return isFullDeepFinal(tier);
 }
 
 /** @deprecated Импортируй {@link canUseSpread} из `accessResolve.js`. */

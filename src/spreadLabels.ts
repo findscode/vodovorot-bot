@@ -62,8 +62,8 @@ export function spreadAccessOverviewHtml(opts: SpreadAccessOverviewOpts): string
   );
 
   const deepDesc = canUseFullDeepFinal(tier)
-    ? 'до семи вопросов подряд; в конце — общий вывод.'
-    : 'до трёх вопросов; полный цикл — ⭐️ Premium (кнопка «Промокод»).';
+    ? 'до семи вопросов подряд; в конце — полный общий вывод.'
+    : 'до трёх вопросов; в конце — короткий общий вывод. Семь вопросов и полный финал — ⭐️ Premium.';
   lines.push(`${spreadTitleLineHtml(tier, 'deep')} — ${deepDesc}`);
 
   return lines.join('\n\n');

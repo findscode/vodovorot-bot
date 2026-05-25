@@ -29,6 +29,7 @@ describe('statusCopy / help', () => {
     expect(html).toContain('осталось');
     expect(html).not.toContain('/promo');
     expect(html).toContain('трёх');
+    expect(html).toContain('коротким');
     expect(html).toContain('Рассылка');
     expect(html).toContain('врача');
   });

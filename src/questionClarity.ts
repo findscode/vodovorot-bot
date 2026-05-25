@@ -1,4 +1,5 @@
 import { completeServiceChat } from './ai.js';
+import { opsEvent } from './opsLog.js';
 
 const CLARITY_SYSTEM_PROMPT = `Ты служебный фильтр для бота Таро. Оцени, достаточно ли конкретен вопрос или утверждение для расклада на три карты.
 Ответь одной строкой JSON без markdown и без пояснений: {"needs_clarification":true|false,"hint":"..."}
@@ -27,11 +28,7 @@ export function parseClarityModelJson(
 }
 
 export function logQuestionClaritySkip(reason: string, detail?: string): void {
-  if (detail) {
-    console.log('[question_clarity_skip]', reason, detail);
-  } else {
-    console.log('[question_clarity_skip]', reason);
-  }
+  opsEvent('question_clarity_skip', detail ? { reason, detail } : { reason });
 }
 
 export async function evaluateQuestionClarity(question: string): Promise<QuestionClarityResult> {
@@ -40,7 +37,7 @@ export async function evaluateQuestionClarity(question: string): Promise<Questio
     const raw = await completeServiceChat(
       CLARITY_SYSTEM_PROMPT,
       `Вопрос или утверждение пользователя:\n«${safeQ}»`,
-      { max_tokens: 120, temperature: 0.2 },
+      { max_tokens: 120, temperature: 0.2, opsContext: 'clarity' },
     );
     const parsed = parseClarityModelJson(raw);
     if (!parsed) {
@@ -48,7 +45,7 @@ export async function evaluateQuestionClarity(question: string): Promise<Questio
       return { action: 'proceed' };
     }
     if (parsed.needs_clarification && parsed.hint.trim()) {
-      console.log('[question_clarity_prompted]');
+      opsEvent('question_clarity_prompted');
       return { action: 'clarify', hint: parsed.hint.trim() };
     }
     return { action: 'proceed' };

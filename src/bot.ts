@@ -40,7 +40,7 @@ bot.launch().then(async () => {
       await bot.telegram.setChatMenuButton({
         menuButton: {
           type: 'web_app',
-          text: 'Настройки',
+          text: 'Меню',
           web_app: { url: webappUrl },
         },
       });

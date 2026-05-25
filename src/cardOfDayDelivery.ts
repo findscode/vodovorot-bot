@@ -12,6 +12,7 @@ import { releaseDayDrawSlotSync, tryConsumeDayDrawSlotSync } from './db/dayDrawS
 import { CARD_DAY_IMAGE_UNAVAILABLE_MESSAGE } from './botCopy.js';
 import { keyboardAfterDayReading } from './botKeyboards.js';
 import { dayDrawCalendarDate } from './dayDrawState.js';
+import { opsAiError, opsEvent } from './opsLog.js';
 
 const TG_CAPTION_MAX = 1024;
 
@@ -68,14 +69,17 @@ export async function deliverCardOfDayReading(
   const chunkOpts = { lastChunkExtra: keyboardAfterDayReading(chatId) };
 
   try {
-    const rawText = await withTypingLoop(() => completeChat(cardOfDayPrompt(drawn, voice)));
+    const rawText = await withTypingLoop(() =>
+      completeChat(cardOfDayPrompt(drawn, voice), { opsContext: 'day' }),
+    );
     const faceId = await sendCardFaceMessage(telegram, chatId, drawn, captionHtml);
     await sendReadingChunksToChat(telegram, chatId, rawText, faceId, chunkOpts);
+    opsEvent('day_draw_delivered');
     return 'ok';
   } catch (e) {
     releaseDayDrawSlotSync(chatId, todayKey);
     if (isAiFailure(e)) {
-      console.error('[day_delivery] ai_error', e instanceof Error ? e.message : e);
+      opsAiError('day', e instanceof Error ? e.message : String(e));
       return 'ai_error';
     }
     console.error('[day_delivery] delivery_error', e);

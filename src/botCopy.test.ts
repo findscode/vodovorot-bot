@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import {
   deepSessionBlockedMessageHtml,
   isPublicEntryCommand,
-  menuTextHtml,
   promoOkMessageHtml,
+  readingAbortedNoticeHtml,
   startTextHtml,
 } from './botCopy.js';
 
@@ -16,9 +16,9 @@ describe('botCopy', () => {
     expect(html).not.toMatch(/осталось|сделано \d/i);
   });
 
-  it('startText points to buttons and states ethos', () => {
+  it('startText points to Menu and states ethos', () => {
     const html = startTextHtml(basicOpts);
-    expect(html).toContain('от простых к сложным');
+    expect(html).toContain('Меню');
     expect(html).toContain('«На день»');
     expect(html).toContain('«Глубинная диагностика»');
     expect(html).toContain('\n\n');
@@ -27,12 +27,10 @@ describe('botCopy', () => {
     expect(html).not.toContain('/promo');
   });
 
-  it('menuText lists spreads with emoji and quotes', () => {
-    const html = menuTextHtml(basicOpts);
-    expect(html).toContain('<b>Расклады</b>');
-    expect(html).toContain('🌱');
-    expect(html).toContain('⭐️');
-    expect(html).toContain('«На день»');
+  it('readingAbortedNoticeHtml matches brand tone for deep without final', () => {
+    const html = readingAbortedNoticeHtml('deep_with_triplets');
+    expect(html).toContain('без общего вывода');
+    expect(html).toContain('прервано');
   });
 
   it('promoOkMessageHtml confirms premium with date', () => {
@@ -51,10 +49,10 @@ describe('botCopy', () => {
     expect(PROMO_HELP_HTML).not.toContain('/status');
   });
 
-  it('isPublicEntryCommand recognizes start, menu, help', () => {
+  it('isPublicEntryCommand recognizes start, help', () => {
     expect(isPublicEntryCommand('/start')).toBe(true);
     expect(isPublicEntryCommand('/start@MyBot')).toBe(true);
-    expect(isPublicEntryCommand('/menu')).toBe(true);
+    expect(isPublicEntryCommand('/menu')).toBe(false);
     expect(isPublicEntryCommand('/help')).toBe(true);
     expect(isPublicEntryCommand('/help payload')).toBe(true);
     expect(isPublicEntryCommand('/promo')).toBe(true);

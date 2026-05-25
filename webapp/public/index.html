@@ -3,14 +3,19 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Настройки — Водоворот</title>
+    <title>Меню — Водоворот</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
     <main class="wrap">
-      <h1>Настройки</h1>
+      <h1>Меню</h1>
       <p id="status" class="status">Загрузка…</p>
+
+      <section class="card" id="spreads-card" hidden>
+        <h2>Расклады</h2>
+        <div id="spread-list" class="spread-list"></div>
+      </section>
 
       <section class="card" id="tier-card" hidden>
         <h2>Уровень доступа</h2>

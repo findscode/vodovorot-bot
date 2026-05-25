@@ -74,7 +74,7 @@ async function handleApi(
   }
 
   if (pathname === '/api/webapp/settings' && req.method === 'GET') {
-    json(res, 200, webAppSettingsDto(userId));
+    json(res, 200, await webAppSettingsDto(userId));
     return;
   }
 
@@ -92,7 +92,7 @@ async function handleApi(
       json(res, 400, { error: result.error });
       return;
     }
-    json(res, 200, webAppSettingsDto(userId));
+    json(res, 200, await webAppSettingsDto(userId));
     return;
   }
 

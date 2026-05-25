@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { cardOfDayPrompt, pastPresentFuturePrompt } from './prompts.js';
-import { deepFinalPrompt, deepTripletPrompt } from './deepReading/prompts.js';
+import { deepBasicFinalPrompt, deepFinalPrompt, deepTripletPrompt } from './deepReading/prompts.js';
 import { SAFETY_HINT, SAFETY_HINT_KEY_PHRASES } from './safetyHint.js';
 import { DISCLAIMER_HELP } from './botCopy.js';
 import type { DrawnCard } from './deck.js';
@@ -31,6 +31,8 @@ describe('prompt safety blocks', () => {
     expect(pastPresentFuturePrompt(cards, voice, 'Тест?')).toContain(SAFETY_HINT);
     expect(deepTripletPrompt('Тест?', cards, [], voice)).toContain(SAFETY_HINT);
     expect(deepFinalPrompt(['Q'], ['S'])).toContain(SAFETY_HINT);
+    expect(deepBasicFinalPrompt(['Q'], ['S'])).toContain(SAFETY_HINT);
+    expect(deepBasicFinalPrompt(['Q'], ['S'])).toMatch(/короткий общий вывод/i);
   });
 });
 

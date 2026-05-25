@@ -3,8 +3,10 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
+  canUseDeepFinal,
   canUseFullDeepFinal,
   deepMaxTripletsForTier,
+  isFullDeepFinal,
   resolveAccessTier,
   tierLabelForAdmin,
 } from './accessTier.js';
@@ -39,8 +41,11 @@ describe('accessTier', () => {
 
   it('model C limits for basic tier', () => {
     expect(deepMaxTripletsForTier('basic')).toBe(3);
+    expect(canUseDeepFinal('basic')).toBe(true);
+    expect(isFullDeepFinal('basic')).toBe(false);
     expect(canUseFullDeepFinal('basic')).toBe(false);
     expect(deepMaxTripletsForTier('premium')).toBe(7);
+    expect(isFullDeepFinal('premium')).toBe(true);
     expect(canUseFullDeepFinal('premium')).toBe(true);
     expect(tierLabelForAdmin('basic')).toBe('basic');
   });

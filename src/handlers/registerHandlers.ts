@@ -15,6 +15,7 @@ import { registerQuestionClarityHandlers } from './registerQuestionClarityHandle
 import { registerErrorHandler } from './registerErrorHandler.js';
 import { registerAdminHandlers } from './registerAdminHandlers.js';
 import { registerPromoHandlers } from './registerPromoHandlers.js';
+import { registerWebAppLaunchHandlers } from './registerWebAppLaunchHandlers.js';
 
 export function registerHandlers(bot: Telegraf): void {
   registerPrivateChatMiddleware(bot);
@@ -22,6 +23,7 @@ export function registerHandlers(bot: Telegraf): void {
   registerDeepSessionMiddleware(bot);
   registerSpreadSessionMiddleware(bot);
   registerReleaseNotesHandlers(bot);
+  registerWebAppLaunchHandlers(bot);
   registerAdminHandlers(bot);
   registerPromoHandlers(bot);
   registerDeepReadingHandlers(bot);

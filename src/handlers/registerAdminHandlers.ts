@@ -1,8 +1,7 @@
 import type { Telegraf } from 'telegraf';
+import { adminStatsHtml } from '../adminStatsCopy.js';
 import {
   clearPremiumSync,
-  countActivePremiumSync,
-  countUsersSync,
   createPromoCodeAutoSync,
   extendPremiumByDaysSync,
   getUserAdminInfoSync,
@@ -19,7 +18,7 @@ import { promoListMessageHtml } from '../promoAdminCopy.js';
 const ADMIN_HELP_HTML = `<b>🍀 Админ</b>
 
 <code>/admin</code> — эта справка
-<code>/admin stats</code> — пользователи и Premium
+<code>/admin stats</code> — пользователи, Premium и ops за сутки
 <code>/admin info ID</code> — карточка пользователя
 <code>/admin grant ID ДНЕЙ</code> — выдать Premium вручную
 <code>/admin revoke ID</code> — снять Premium
@@ -54,10 +53,7 @@ export function registerAdminHandlers(bot: Telegraf): void {
     }
 
     if (sub === 'stats') {
-      await ctx.reply(
-        `<b>Статистика</b>\nПользователей в БД: <b>${countUsersSync()}</b>\nАктивный Premium: <b>${countActivePremiumSync()}</b>`,
-        TELEGRAM_HTML_PARSE,
-      );
+      await ctx.reply(adminStatsHtml(), TELEGRAM_HTML_PARSE);
       return;
     }
 
