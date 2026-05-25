@@ -20,6 +20,15 @@ describe('spreadLabels', () => {
     expect(html.split('\n\n').length).toBeGreaterThanOrEqual(3);
   });
 
+  it('spreadAccessOverviewHtml order matches main menu buttons (day, spread, deep)', () => {
+    const html = spreadAccessOverviewHtml({ tier: 'basic', unlimitedSpread: false });
+    const day = html.indexOf('«На день»');
+    const spread = html.indexOf('«Прошлое — настоящее — будущее»');
+    const deep = html.indexOf('«Глубинная диагностика»');
+    expect(day).toBeLessThan(spread);
+    expect(spread).toBeLessThan(deep);
+  });
+
   it('deep title uses premium emoji when tier allows full deep', () => {
     expect(spreadTitleLineHtml('premium', 'deep')).toContain('⭐️');
     expect(spreadTitleLineHtml('premium', 'deep')).toContain('«Глубинная диагностика»');
