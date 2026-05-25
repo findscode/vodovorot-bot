@@ -1,4 +1,4 @@
-import type { Context } from 'telegraf';
+import type { ReadingLaunchContext } from './readingLaunchContext.js';
 import { canUseSpread } from './accessResolve.js';
 import { resolveAccessTier } from './accessTier.js';
 import {
@@ -28,14 +28,14 @@ const DAY_ACTION_DEBOUNCE_MS = 2500;
 const dayLastTap = new Map<number, number>();
 const dayInFlight = new Set<number>();
 
-async function replyAbortNotice(ctx: Context, userId: number): Promise<void> {
+async function replyAbortNotice(ctx: ReadingLaunchContext, userId: number): Promise<void> {
   const { noticeHtml } = abortActiveReadingsSync(userId);
   if (noticeHtml) {
     await ctx.reply(noticeHtml, TELEGRAM_HTML_PARSE);
   }
 }
 
-export async function launchDayReading(ctx: Context, userId: number): Promise<void> {
+export async function launchDayReading(ctx: ReadingLaunchContext, userId: number): Promise<void> {
   await replyAbortNotice(ctx, userId);
 
   if (dayInFlight.has(userId)) {
@@ -80,7 +80,7 @@ export async function launchDayReading(ctx: Context, userId: number): Promise<vo
   }
 }
 
-export async function launchSpreadIntro(ctx: Context, userId: number): Promise<void> {
+export async function launchSpreadIntro(ctx: ReadingLaunchContext, userId: number): Promise<void> {
   await replyAbortNotice(ctx, userId);
 
   if (!canUseSpread(userId)) {
@@ -102,7 +102,7 @@ export async function launchSpreadIntro(ctx: Context, userId: number): Promise<v
   });
 }
 
-export async function launchDeepIntro(ctx: Context, userId: number): Promise<void> {
+export async function launchDeepIntro(ctx: ReadingLaunchContext, userId: number): Promise<void> {
   await replyAbortNotice(ctx, userId);
 
   beginDeepSession(userId, userId);
@@ -115,7 +115,7 @@ export async function launchDeepIntro(ctx: Context, userId: number): Promise<voi
 }
 
 export async function launchReadingFromWebApp(
-  ctx: Context,
+  ctx: ReadingLaunchContext,
   userId: number,
   action: WebAppLaunchAction,
 ): Promise<void> {

@@ -12,6 +12,7 @@ import {
   spreadLimitMessage,
 } from '../botCopy.js';
 import { launchSpreadIntro } from '../readingLaunch.js';
+import { readingContextFromTelegraf } from '../readingLaunchContext.js';
 import {
   keyboardMainOrDayOnly,
   keyboardSpreadAwaitingQuestion,
@@ -47,7 +48,9 @@ export function registerSpreadHandlers(bot: Telegraf): void {
     await answerCbQuerySafe(ctx);
     const uid = ctx.from?.id;
     if (uid === undefined) return;
-    await launchSpreadIntro(ctx, uid);
+    const launchCtx = readingContextFromTelegraf(ctx);
+    if (!launchCtx) return;
+    await launchSpreadIntro(launchCtx, uid);
   });
 
   bot.action(SPREAD_START_CALLBACK, async (ctx) => {

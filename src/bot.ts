@@ -30,7 +30,7 @@ console.log(
 );
 
 startDayPushScheduler(bot);
-startWebappServer(token);
+startWebappServer(bot, token);
 
 bot.launch().then(async () => {
   console.log('Бот запущен (Ctrl+C для остановки)');

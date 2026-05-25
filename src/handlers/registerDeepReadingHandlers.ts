@@ -21,6 +21,7 @@ import {
   sessionReadyForQuestion,
 } from '../deepReading/deepReadingDelivery.js';
 import { launchDeepIntro } from '../readingLaunch.js';
+import { readingContextFromTelegraf } from '../readingLaunchContext.js';
 import { maybeClarifyDeepFirstQuestion } from './registerQuestionClarityHandlers.js';
 import {
   DEEP_CALLBACK,
@@ -38,7 +39,9 @@ export function registerDeepReadingHandlers(bot: Telegraf): void {
     await answerCbQuerySafe(ctx);
     const uid = ctx.from?.id;
     if (uid === undefined) return;
-    await launchDeepIntro(ctx, uid);
+    const launchCtx = readingContextFromTelegraf(ctx);
+    if (!launchCtx) return;
+    await launchDeepIntro(launchCtx, uid);
   });
 
   bot.action(DEEP_START_CALLBACK, async (ctx) => {

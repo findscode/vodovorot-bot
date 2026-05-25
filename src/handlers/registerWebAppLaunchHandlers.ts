@@ -2,10 +2,14 @@ import type { Telegraf } from 'telegraf';
 import { getOrCreateUser } from '../db/usersRepo.js';
 import { parseWebAppLaunchPayload } from '../webapp/webappLaunchPayload.js';
 import { deliverWhatsNewIfNeeded } from '../releaseNotesDelivery.js';
+import { readingContextFromTelegraf } from '../readingLaunchContext.js';
 import { launchReadingFromWebApp } from '../readingLaunch.js';
 import { logHandlerError } from './botHelpers.js';
 
-/** Запуск раскладов из Mini App через `sendData` (#4.4). */
+/**
+ * Запасной путь: `sendData` из Mini App (только Reply Keyboard WebApp).
+ * Основной запуск — POST `/api/webapp/launch` из Menu Button (#4.4 fix).
+ */
 export function registerWebAppLaunchHandlers(bot: Telegraf): void {
   bot.on('message', async (ctx, next) => {
     const msg = ctx.message;
@@ -24,8 +28,11 @@ export function registerWebAppLaunchHandlers(bot: Telegraf): void {
       return next();
     }
 
+    const launchCtx = readingContextFromTelegraf(ctx);
+    if (!launchCtx) return;
+
     try {
-      await launchReadingFromWebApp(ctx, uid, action);
+      await launchReadingFromWebApp(launchCtx, uid, action);
     } catch (e) {
       logHandlerError('web_app_launch', e);
     }

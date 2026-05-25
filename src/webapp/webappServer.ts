@@ -1,3 +1,4 @@
+import type { Telegraf } from 'telegraf';
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
@@ -5,6 +6,8 @@ import { applyWebAppSettingsPatch, type WebAppSettingsPatch } from './settingsUp
 import { webAppSettingsDto } from './settingsSnapshot.js';
 import { extractInitDataFromAuthHeader, validateTelegramInitData } from './telegramInitData.js';
 import { webappListenPort, webappStaticRoot } from './webappConfig.js';
+import { parseWebAppLaunchBody } from './webappLaunchPayload.js';
+import { runWebAppReadingLaunch } from './webappLaunchHandler.js';
 
 const MIME: Record<string, string> = {
   '.html': 'text/html; charset=utf-8',
@@ -64,6 +67,7 @@ async function serveStatic(urlPath: string, res: ServerResponse): Promise<boolea
 async function handleApi(
   req: IncomingMessage,
   res: ServerResponse,
+  bot: Telegraf,
   botToken: string,
   pathname: string,
 ): Promise<void> {
@@ -96,11 +100,34 @@ async function handleApi(
     return;
   }
 
+  if (pathname === '/api/webapp/launch' && req.method === 'POST') {
+    let body: unknown;
+    try {
+      const raw = await readBody(req);
+      body = raw ? JSON.parse(raw) : {};
+    } catch {
+      json(res, 400, { error: 'invalid_json' });
+      return;
+    }
+    const action = parseWebAppLaunchBody(body);
+    if (!action) {
+      json(res, 400, { error: 'invalid_action' });
+      return;
+    }
+    try {
+      await runWebAppReadingLaunch(bot.telegram, userId, action);
+      json(res, 200, { ok: true, action });
+    } catch {
+      json(res, 500, { error: 'launch_failed' });
+    }
+    return;
+  }
+
   json(res, 404, { error: 'not_found' });
 }
 
-/** HTTP для Mini App «Настройки» (#55). */
-export function startWebappServer(botToken: string): void {
+/** HTTP для Mini App «Меню» (#55, #4.4). */
+export function startWebappServer(bot: Telegraf, botToken: string): void {
   const port = webappListenPort();
   const server = createServer(async (req, res) => {
     try {
@@ -111,7 +138,7 @@ export function startWebappServer(botToken: string): void {
         return;
       }
       if (url.pathname.startsWith('/api/webapp/')) {
-        await handleApi(req, res, botToken, url.pathname);
+        await handleApi(req, res, bot, botToken, url.pathname);
         return;
       }
       const served = await serveStatic(url.pathname, res);

@@ -48,13 +48,18 @@
     statusEl.className = isError ? 'status error' : 'status';
   }
 
-  function launchSpread(action) {
-    if (!tg?.sendData) {
-      setStatus('Открой меню из Telegram-бота.', true);
-      return;
+  async function launchSpread(action) {
+    if (saving) return;
+    setStatus('Открываю в чате…');
+    try {
+      await api('/api/webapp/launch', {
+        method: 'POST',
+        body: JSON.stringify({ action }),
+      });
+      if (tg?.close) tg.close();
+    } catch (e) {
+      setStatus(e.message || 'Не удалось запустить расклад', true);
     }
-    tg.sendData(JSON.stringify({ action }));
-    tg.close();
   }
 
   function renderSpreads(spreads) {

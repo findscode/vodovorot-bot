@@ -4,6 +4,12 @@
 
 ## [Unreleased]
 
+## [4.4.1] — 2026-05-25
+
+### Fixed
+
+- **Mini App:** запуск раскладов через `POST /api/webapp/launch` — `Telegram.WebApp.sendData` не доставляет данные из Menu Button и inline web_app (ограничение Telegram API).
+
 ## [4.4.0] — 2026-05-25
 
 ### Added
