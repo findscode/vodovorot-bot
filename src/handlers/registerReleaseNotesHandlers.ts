@@ -1,7 +1,5 @@
 import type { Telegraf } from 'telegraf';
-import { keyboardMainOrDayOnly } from '../botKeyboards.js';
-import { TELEGRAM_HTML_PARSE } from '../readingTelegramHtml.js';
-import { markWhatsNewSeen, deliverWhatsNewIfNeeded } from '../releaseNotesDelivery.js';
+import { deliverWhatsNewIfNeeded, markWhatsNewSeen } from '../releaseNotesDelivery.js';
 import { RELEASE_NOTES_OK_CALLBACK, WHATS_NEW_TRIGGER_CALLBACKS } from '../releaseNotes.js';
 import { answerCbQuerySafe } from './botHelpers.js';
 
@@ -35,9 +33,5 @@ export function registerReleaseNotesHandlers(bot: Telegraf): void {
         /* сообщение уже удалено */
       }
     }
-    await ctx.reply('Ок.', {
-      ...keyboardMainOrDayOnly(uid),
-      ...TELEGRAM_HTML_PARSE,
-    });
   });
 }
