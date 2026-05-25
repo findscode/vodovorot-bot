@@ -1,7 +1,11 @@
 import type { DrawnCard } from '../deck.js';
 import { DEEP_MAX_TRIPLETS_PREMIUM, DEEP_SESSION_TTL_MS } from './constants.js';
 
-export type DeepSessionPhase = 'intro' | 'awaiting_first_question' | 'in_chain';
+export type DeepSessionPhase =
+  | 'intro'
+  | 'awaiting_first_question'
+  | 'awaiting_clarification'
+  | 'in_chain';
 
 export type DeepTripletRecord = {
   question: string;
@@ -16,6 +20,9 @@ export type DeepSession = {
   triplets: DeepTripletRecord[];
   /** Вопрос, ожидающий повторной отправки после ai_error (триплет не засчитан). */
   pendingQuestion: string | null;
+  /** Исходный первый вопрос на шаге clarity. */
+  clarityQuestion: string | null;
+  claritySkipNext: boolean;
   lastCompositePng: Buffer | null;
   lastCompositeWidth: number;
   lastCompositeHeight: number;
@@ -54,6 +61,8 @@ export function startDeepSession(userId: number, chatId: number, deckIds: number
     deckRemaining: deckIds,
     triplets: [],
     pendingQuestion: null,
+    clarityQuestion: null,
+    claritySkipNext: false,
     lastCompositePng: null,
     lastCompositeWidth: 0,
     lastCompositeHeight: 0,
@@ -81,6 +90,20 @@ export function setPendingQuestion(userId: number, question: string | null): voi
   const s = sessions.get(userId);
   if (!s) return;
   s.pendingQuestion = question;
+  s.updatedAt = now();
+}
+
+export function setDeepClarityQuestion(userId: number, question: string | null): void {
+  const s = sessions.get(userId);
+  if (!s) return;
+  s.clarityQuestion = question;
+  s.updatedAt = now();
+}
+
+export function setDeepClaritySkipNext(userId: number, skip: boolean): void {
+  const s = sessions.get(userId);
+  if (!s) return;
+  s.claritySkipNext = skip;
   s.updatedAt = now();
 }
 

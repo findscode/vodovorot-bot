@@ -6,6 +6,9 @@ import { canUseFullDeepFinal, resolveAccessTier } from './accessTier.js';
 import { isDayPushEnabledSync } from './db/usersRepo.js';
 import { labelBasicLevelButton, labelPremiumButton } from './tierDisplay.js';
 import { SPREAD_BUTTON_LABEL } from './spreadLabels.js';
+import { CLARITY_KEEP_CALLBACK, CLARITY_REFINE_CALLBACK } from './questionClarityConstants.js';
+import { DEEP_CANCEL_CALLBACK } from './deepReading/constants.js';
+import { SPREAD_CANCEL_CALLBACK } from './spreadConstants.js';
 
 function mainSpreadRows(userId: number | undefined) {
   const tier = resolveAccessTier(userId);
@@ -54,7 +57,25 @@ export function keyboardDeepAwaitingFirst() {
 }
 
 export function keyboardSpreadAwaitingQuestion() {
-  return Markup.inlineKeyboard([[Markup.button.callback('Отмена', 'spread_cancel')]]);
+  return Markup.inlineKeyboard([[Markup.button.callback('Отмена', SPREAD_CANCEL_CALLBACK)]]);
+}
+
+function keyboardClarification(cancelCallback: string) {
+  return Markup.inlineKeyboard([
+    [
+      Markup.button.callback('Уточнить', CLARITY_REFINE_CALLBACK),
+      Markup.button.callback('Оставить так', CLARITY_KEEP_CALLBACK),
+    ],
+    [Markup.button.callback('Отмена', cancelCallback)],
+  ]);
+}
+
+export function keyboardSpreadClarification() {
+  return keyboardClarification(SPREAD_CANCEL_CALLBACK);
+}
+
+export function keyboardDeepClarification() {
+  return keyboardClarification(DEEP_CANCEL_CALLBACK);
 }
 
 export function keyboardWhatsNewDismiss() {

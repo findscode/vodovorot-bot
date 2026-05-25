@@ -78,7 +78,7 @@ export function deepIntroReadyHtml(tier: AccessTier): string {
   const premiumDeep = canUseFullDeepFinal(tier);
   const prefix = premiumDeep ? premiumFeaturePrefix() : basicLevelPrefix();
   const heading = `${prefix}<b>${quotedSpreadLabel(SPREAD_BUTTON_LABEL.deep)}</b>`;
-  return `${heading}\n\nНапиши первый вопрос или утверждение <b>одним сообщением</b> в чат. Выйти можно кнопкой «Отмена».`;
+  return `${heading}\n\nНапиши первый вопрос или утверждение <b>одним сообщением</b> в чат — лучше <b>одна тема за раз</b>. Выйти можно кнопкой «Отмена».`;
 }
 
 /** Запрос темы перед раскладом «три карты». */
@@ -96,5 +96,5 @@ export function spreadIntroHtml(tier: AccessTier): string {
 export function spreadIntroReadyHtml(tier: AccessTier): string {
   const prefix = isPremiumTier(tier) ? premiumFeaturePrefix() : basicLevelPrefix();
   const heading = `${prefix}<b>${quotedSpreadLabel(SPREAD_BUTTON_LABEL.spread)}</b>`;
-  return `${heading}\n\nНапиши вопрос или тему <b>одним сообщением</b> в чат. Выйти можно кнопкой «Отмена».`;
+  return `${heading}\n\nНапиши вопрос или тему <b>одним сообщением</b> в чат — лучше <b>одна тема за раз</b>, так расклад будет точнее. Выйти можно кнопкой «Отмена».`;
 }

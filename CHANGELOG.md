@@ -4,13 +4,22 @@
 
 ## [Unreleased]
 
+## [4.0.0] — 2026-05-25
+
+### Added
+
+- **P1 safety:** единый `SAFETY_HINT` во всех prompt раскладов и deep; усилен `SYSTEM_PROMPT` (без дат, да/нет, agency).
+- **P1 question clarity (#54, #58):** служебная проверка первого вопроса spread/deep → «Уточнить» / «Оставить так» / «Отмена»; fail-open при сбое ИИ.
+- Intro spread/deep: подсказка «одна тема за раз» (`tierDisplay.ts`).
+- Регрессионные тесты safety/disclaimer (#59).
+
 ### Changed
 
 - `/help`: дисклеймер — «ориентир, не приговор» (`DISCLAIMER_HELP`).
 
 ### Docs
 
-- ROADMAP 4.x: issues [#57–#62](https://github.com/findscode/vodovorot-bot/milestone/14) — Tier A (Mini App v2, fail-open, smoke P1), deep финал на basic, ops-аналитика.
+- ROADMAP 4.x: issues [#57–#62](https://github.com/findscode/vodovorot-bot/milestone/14) — Tier A, deep basic final, ops-аналитика.
 
 ## [3.7.1] — 2026-05-25
 

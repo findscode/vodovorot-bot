@@ -5,9 +5,11 @@ import {
   DEEP_EMPTY_QUESTION_MESSAGE,
   DEEP_INTRO_PRESS_START_MESSAGE,
   DEEP_QUESTION_TOO_LONG_MESSAGE,
+  SPREAD_ALREADY_AWAITING_MESSAGE,
 } from '../botCopy.js';
 import {
   keyboardDeepAwaitingFirst,
+  keyboardDeepClarification,
   keyboardDeepIntro,
   keyboardDeepInChain,
   keyboardMainOrDayOnly,
@@ -20,6 +22,7 @@ import {
   runDeepFinal,
   sessionReadyForQuestion,
 } from '../deepReading/deepReadingDelivery.js';
+import { maybeClarifyDeepFirstQuestion } from './registerQuestionClarityHandlers.js';
 import {
   DEEP_CALLBACK,
   DEEP_CANCEL_CALLBACK,
@@ -129,6 +132,14 @@ export function registerDeepReadingHandlers(bot: Telegraf): void {
       return;
     }
 
+    if (session.phase === 'awaiting_clarification') {
+      await ctx.reply(SPREAD_ALREADY_AWAITING_MESSAGE, {
+        ...keyboardDeepClarification(),
+        ...TELEGRAM_HTML_PARSE,
+      });
+      return;
+    }
+
     if (!sessionReadyForQuestion(session)) return next();
 
     const question = normalizeDeepQuestion(text);
@@ -142,6 +153,9 @@ export function registerDeepReadingHandlers(bot: Telegraf): void {
     }
 
     try {
+      const clarity = await maybeClarifyDeepFirstQuestion(ctx, uid, question);
+      if (clarity === 'clarify_shown') return;
+
       const result = await deliverDeepTriplet(ctx, uid, question);
       if (result === 'deck_empty') {
         logHandlerError('deep_deck', new Error('deck exhausted'));

@@ -2,8 +2,10 @@ import { describe, expect, it } from 'vitest';
 import {
   activeTierStatusLineHtml,
   deepIntroHtml,
+  deepIntroReadyHtml,
   labelPremiumButton,
   premiumFeaturePrefix,
+  spreadIntroReadyHtml,
   tierEmoji,
 } from './tierDisplay.js';
 
@@ -35,5 +37,10 @@ describe('tierDisplay', () => {
 
   it('labelPremiumButton prefixes star', () => {
     expect(labelPremiumButton('Тест')).toBe(`${premiumFeaturePrefix()}Тест`);
+  });
+
+  it('ready intros mention one focus', () => {
+    expect(spreadIntroReadyHtml('basic')).toContain('одна тема за раз');
+    expect(deepIntroReadyHtml('premium')).toContain('одна тема за раз');
   });
 });

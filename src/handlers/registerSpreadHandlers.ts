@@ -14,12 +14,16 @@ import { canUseSpread } from '../accessResolve.js';
 import {
   keyboardMainOrDayOnly,
   keyboardSpreadAwaitingQuestion,
+  keyboardSpreadClarification,
   keyboardSpreadIntro,
 } from '../botKeyboards.js';
 import { TELEGRAM_HTML_PARSE } from '../readingTelegramHtml.js';
 import { normalizeDeepQuestion } from '../deepReading/deepReadingDelivery.js';
 import { hasActiveDeepSession } from '../deepReading/sessionStore.js';
-import { deliverSpreadReading } from '../spreadDelivery.js';
+import {
+  maybeClarifySpreadQuestion,
+  runSpreadReadingForUser,
+} from './registerQuestionClarityHandlers.js';
 import {
   beginSpreadSession,
   endSpreadSession,
@@ -34,10 +38,8 @@ import {
 } from '../spreadConstants.js';
 import { resolveAccessTier } from '../accessTier.js';
 import { spreadIntroHtml, spreadIntroReadyHtml } from '../tierDisplay.js';
-import { withTypingWhile } from '../typingIndicator.js';
 import { answerCbQuerySafe, logHandlerError } from './botHelpers.js';
-
-const spreadInFlight = new Set<number>();
+import { clearSpreadInFlight, isSpreadInFlight, tryMarkSpreadInFlight } from '../spreadInFlight.js';
 
 export function registerSpreadHandlers(bot: Telegraf): void {
   bot.action(SPREAD_CALLBACK, async (ctx) => {
@@ -57,7 +59,7 @@ export function registerSpreadHandlers(bot: Telegraf): void {
       return;
     }
 
-    if (spreadInFlight.has(uid)) {
+    if (isSpreadInFlight(uid)) {
       await ctx.reply(SPREAD_IN_FLIGHT_MESSAGE, {
         ...keyboardMainOrDayOnly(uid),
         ...TELEGRAM_HTML_PARSE,
@@ -66,10 +68,15 @@ export function registerSpreadHandlers(bot: Telegraf): void {
     }
 
     if (hasActiveSpreadSession(uid)) {
-      await ctx.reply(SPREAD_ALREADY_AWAITING_MESSAGE, {
-        ...(getSpreadSession(uid)?.phase === 'intro'
+      const session = getSpreadSession(uid)!;
+      const keyboard =
+        session.phase === 'intro'
           ? keyboardSpreadIntro()
-          : keyboardSpreadAwaitingQuestion()),
+          : session.phase === 'awaiting_clarification'
+            ? keyboardSpreadClarification()
+            : keyboardSpreadAwaitingQuestion();
+      await ctx.reply(SPREAD_ALREADY_AWAITING_MESSAGE, {
+        ...keyboard,
         ...TELEGRAM_HTML_PARSE,
       });
       return;
@@ -154,6 +161,14 @@ export function registerSpreadHandlers(bot: Telegraf): void {
       return;
     }
 
+    if (session.phase === 'awaiting_clarification') {
+      await ctx.reply(SPREAD_ALREADY_AWAITING_MESSAGE, {
+        ...keyboardSpreadClarification(),
+        ...TELEGRAM_HTML_PARSE,
+      });
+      return;
+    }
+
     const question = normalizeDeepQuestion(text);
     if (question === null) {
       const raw = text.trim();
@@ -164,7 +179,7 @@ export function registerSpreadHandlers(bot: Telegraf): void {
       return;
     }
 
-    if (spreadInFlight.has(uid)) {
+    if (isSpreadInFlight(uid)) {
       await ctx.reply(SPREAD_IN_FLIGHT_MESSAGE, {
         ...keyboardSpreadAwaitingQuestion(),
         ...TELEGRAM_HTML_PARSE,
@@ -172,32 +187,31 @@ export function registerSpreadHandlers(bot: Telegraf): void {
       return;
     }
 
-    spreadInFlight.add(uid);
-    const tier = resolveAccessTier(uid);
     try {
-      const result = await deliverSpreadReading(ctx.telegram, uid, uid, question, tier, (task) =>
-        withTypingWhile(ctx, task),
-      );
-      if (result === 'ai_error' || result === 'delivery_error') {
-        await ctx.reply(`${AI_TEXT_UNAVAILABLE_MESSAGE}\n\n${SPREAD_AI_RETRY_SUFFIX}`, {
-          ...keyboardMainOrDayOnly(uid),
+      const clarity = await maybeClarifySpreadQuestion(ctx, uid, question);
+      if (clarity === 'clarify_shown') return;
+
+      if (!tryMarkSpreadInFlight(uid)) {
+        await ctx.reply(SPREAD_IN_FLIGHT_MESSAGE, {
+          ...keyboardSpreadAwaitingQuestion(),
           ...TELEGRAM_HTML_PARSE,
         });
-      } else if (result === 'limit_reached') {
-        await ctx.reply(spreadLimitMessage(), {
-          ...keyboardMainOrDayOnly(uid),
-          ...TELEGRAM_HTML_PARSE,
-        });
+        return;
+      }
+
+      try {
+        await runSpreadReadingForUser(ctx, uid, question);
+      } finally {
+        clearSpreadInFlight(uid);
       }
     } catch (e) {
       logHandlerError('spread', e);
       endSpreadSession(uid);
+      clearSpreadInFlight(uid);
       await ctx.reply(`${AI_TEXT_UNAVAILABLE_MESSAGE}\n\n${SPREAD_AI_RETRY_SUFFIX}`, {
         ...keyboardMainOrDayOnly(uid),
         ...TELEGRAM_HTML_PARSE,
       });
-    } finally {
-      spreadInFlight.delete(uid);
     }
   });
 }

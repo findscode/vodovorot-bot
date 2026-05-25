@@ -1,10 +1,45 @@
 import { describe, expect, it } from 'vitest';
-import { pastPresentFuturePrompt } from './prompts.js';
+import { cardOfDayPrompt, pastPresentFuturePrompt } from './prompts.js';
+import { deepFinalPrompt, deepTripletPrompt } from './deepReading/prompts.js';
+import { SAFETY_HINT, SAFETY_HINT_KEY_PHRASES } from './safetyHint.js';
+import { DISCLAIMER_HELP } from './botCopy.js';
 import type { DrawnCard } from './deck.js';
 
 const stubCard = (name: string, id = 1): DrawnCard => ({
   card: { id, name },
   reversed: false,
+});
+
+describe('SAFETY_HINT', () => {
+  it('contains key phrases for regression', () => {
+    for (const phrase of SAFETY_HINT_KEY_PHRASES) {
+      expect(SAFETY_HINT).toContain(phrase);
+    }
+  });
+});
+
+describe('prompt safety blocks', () => {
+  const cards = [stubCard('Маг', 1), stubCard('Луна', 18), stubCard('Солнце', 19)] as [
+    DrawnCard,
+    DrawnCard,
+    DrawnCard,
+  ];
+  const voice = { id: 5, name: 'Иерофант' };
+
+  it('includes SAFETY_HINT in day, spread, and deep prompts', () => {
+    expect(cardOfDayPrompt(stubCard('Звезда', 17), voice)).toContain(SAFETY_HINT);
+    expect(pastPresentFuturePrompt(cards, voice, 'Тест?')).toContain(SAFETY_HINT);
+    expect(deepTripletPrompt('Тест?', cards, [], voice)).toContain(SAFETY_HINT);
+    expect(deepFinalPrompt(['Q'], ['S'])).toContain(SAFETY_HINT);
+  });
+});
+
+describe('DISCLAIMER_HELP alignment', () => {
+  it('matches safety tone in help disclaimer', () => {
+    expect(DISCLAIMER_HELP).toMatch(/ориентир/i);
+    expect(DISCLAIMER_HELP).toMatch(/не приговор/i);
+    expect(DISCLAIMER_HELP).toMatch(/не заменяет/i);
+  });
 });
 
 describe('pastPresentFuturePrompt', () => {

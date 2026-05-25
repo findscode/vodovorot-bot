@@ -2,6 +2,7 @@ import { brandFormatDeepFinalPromptBlock } from '../brandFormat.js';
 import type { DrawnCard, TarotCard } from '../deck.js';
 import { formatDrawnLine } from '../deck.js';
 import { promptVoiceArchetypeBlock } from '../readingVoice.js';
+import { SAFETY_HINT } from '../safetyHint.js';
 
 const ORIENTATION_HINT = `Внутренне для смысла: прямое положение — более «открытое» прочтение символа; перевёрнутая карта — задержки, внутренний слой, уход от темы или тень того же архетипа. В тексте для пользователя не упоминай положение карты, если она не перевёрнутая. Если карта перевёрнутая — учитывай это в смысле и при необходимости говори об этом естественно, без драматизации.`;
 
@@ -16,7 +17,7 @@ const TRIPLET_FORMAT = `ФОРМАТ ОТВЕТА:
 Тон: конкретно, но бережно; без приговоров и давления; без императивов к агрессии, вреду себе или другим. Не «сделай X» — только образы и мягкие возможности («можно присмотреться к…», «возможно, стоит…»).
 В самом конце ответа (после пустой строки) добавь служебную строку, начинающуюся ровно с: РЕЗЮМЕ:
 После «РЕЗЮМЕ:» — 2–3 коротких предложения для внутреннего контекста следующих шагов (пользователь эту часть не увидит).
-Запрещено: обещания событий; медицина, юриспруденция, финансовые советы.`;
+${SAFETY_HINT}`;
 
 export function deepTripletPrompt(
   question: string,
@@ -53,6 +54,8 @@ export function deepFinalPrompt(questions: string[], summaries: string[]): strin
 ${steps}
 
 ${LANGUAGE_HINT}
+
+${SAFETY_HINT}
 
 ${brandFormatDeepFinalPromptBlock()}`;
 }

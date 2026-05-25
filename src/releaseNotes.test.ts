@@ -14,7 +14,7 @@ describe('releaseNotes', () => {
     expect(html).toContain('Прошлое — настоящее — будущее');
     expect(html).toContain('Понятно');
     expect(html).not.toContain('трек');
-    expect(html).toContain('базовом уровне');
+    expect(html).toContain('одна тема за раз');
     expect(html.match(/^• /gm)).toHaveLength(3);
   });
 });

@@ -77,6 +77,14 @@ export const SPREAD_INTRO_PRESS_START_MESSAGE =
 
 export const SPREAD_IN_FLIGHT_MESSAGE = 'Расклад уже готовится — подожди ответ.';
 
+/** Подсказка после служебной проверки ясности вопроса (#54). */
+export function questionClarityMessageHtml(hint: string): string {
+  return `<b>Можно уточнить вопрос</b>\n\n${hint}\n\nПерепиши запрос или оставь как есть — кнопки ниже.`;
+}
+
+export const QUESTION_CLARITY_REFINE_MESSAGE =
+  'Напиши уточнённый вопрос или тему одним сообщением в чат.';
+
 export function spreadLimitMessage(): string {
   const p = dayDrawPhrasesForServer();
   return `На сегодня три расклада «Прошлое — настоящее — будущее» уже использованы. Следующие — ${p.midnight} (как у «На день»). Без лимита — ⭐️ Premium (кнопка «Промокод»).`;
@@ -85,11 +93,14 @@ export function spreadLimitMessage(): string {
 /** Сообщение при блокировке команд и других раскладов во время сессии «три карты». */
 export function spreadSessionBlockedMessageHtml(
   tier: AccessTier,
-  phase: 'intro' | 'awaiting_question',
+  phase: 'intro' | 'awaiting_question' | 'awaiting_clarification',
 ): string {
   const title = spreadTitleLineHtml(tier, 'spread');
   if (phase === 'intro') {
     return `Сейчас открыт ${title}. Нажми «Начать» или «Отмена».`;
+  }
+  if (phase === 'awaiting_clarification') {
+    return `Сейчас жду решения по уточнению вопроса для ${title}. Нажми кнопку под подсказкой или «Отмена».`;
   }
   return `Сейчас жду вопрос для ${title}. Напиши текстом или нажми «Отмена».`;
 }
