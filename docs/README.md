@@ -43,9 +43,10 @@
 | ------------------------- | ------------------------------------------------ |
 | `src/bot.ts`              | Telegraf, `registerHandlers`, `bot.catch`        |
 | `src/botCopy.ts`          | Системные тексты (`/start`, `/menu`, ошибки)     |
+| `src/releaseNotes.ts`     | In-bot «Что нового» (текст для пользователя)     |
 | `src/spreadLabels.ts`     | Названия раскладов как на кнопках, обзор доступа |
 | `src/tierDisplay.ts`      | Emoji и подписи уровней в UI                     |
-| `src/statusCopy.ts`       | `/status`                                        |
+| `src/statusCopy.ts`       | `/help` (и `/status` — то же)                    |
 | `src/dayPushScheduler.ts` | Авторассылка «карта дня» (cron)                  |
 | `src/promoConfig.ts`      | Срок Premium по промокоду, лимиты `/promo`       |
 | `src/handlers/`           | Команды, day, spread, deep, push, middleware     |

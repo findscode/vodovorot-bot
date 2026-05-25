@@ -1,8 +1,9 @@
-import { hasFullSpreadAccess } from './accessResolve.js';
+import { hasUnlimitedSpreadAccess } from './accessResolve.js';
 import type { AccessTier } from './accessTier.js';
 import { canUseFullDeepFinal, resolveAccessTier } from './accessTier.js';
 import { dayDrawPhrasesForServer } from './calendarDayUserPhrases.js';
-import { basicTrackPrefix, premiumFeaturePrefix } from './tierDisplay.js';
+import { SPREAD_MAX_FOR_BASIC } from './spreadConstants.js';
+import { basicLevelPrefix, isPremiumTier, premiumFeaturePrefix } from './tierDisplay.js';
 
 /** Подписи раскладов на inline-кнопках — единый источник для текстов бота. */
 export const SPREAD_BUTTON_LABEL = {
@@ -23,48 +24,47 @@ export function spreadTitleLineHtml(
   const label = SPREAD_BUTTON_LABEL[spread];
   const prefix =
     spread === 'day'
-      ? basicTrackPrefix()
+      ? basicLevelPrefix()
       : spread === 'spread'
-        ? premiumFeaturePrefix()
+        ? isPremiumTier(tier)
+          ? premiumFeaturePrefix()
+          : basicLevelPrefix()
         : canUseFullDeepFinal(tier)
           ? premiumFeaturePrefix()
-          : basicTrackPrefix();
+          : basicLevelPrefix();
   return `${prefix}${quotedSpreadLabel(label)}`;
 }
 
 export type SpreadAccessOverviewOpts = {
   tier: AccessTier;
-  fullSpread: boolean;
+  unlimitedSpread: boolean;
 };
 
 export function spreadAccessOptsForUser(userId: number | undefined): SpreadAccessOverviewOpts {
-  return { tier: resolveAccessTier(userId), fullSpread: hasFullSpreadAccess(userId) };
+  return { tier: resolveAccessTier(userId), unlimitedSpread: hasUnlimitedSpreadAccess(userId) };
 }
 
 /** Обзор раскладов для /start и /menu: каждый расклад — отдельный абзац, пустая строка между ними. */
 export function spreadAccessOverviewHtml(opts: SpreadAccessOverviewOpts): string {
-  const { tier, fullSpread } = opts;
+  const { tier, unlimitedSpread } = opts;
   const p = dayDrawPhrasesForServer();
   const lines: string[] = [];
 
   lines.push(
-    `${basicTrackPrefix()}${quotedSpreadLabel(SPREAD_BUTTON_LABEL.day)} — одна карта и толкование. Не чаще раза в ${p.dayLimitCalendar}.`,
+    `${basicLevelPrefix()}${quotedSpreadLabel(SPREAD_BUTTON_LABEL.day)} — одна карта и толкование. Не чаще раза в ${p.dayLimitCalendar}.`,
   );
 
   const deepDesc = canUseFullDeepFinal(tier)
     ? 'до семи вопросов подряд; в конце — общий вывод.'
-    : 'до трёх вопросов; полный цикл — ⭐️ Premium (<code>/promo</code>).';
+    : 'до трёх вопросов; полный цикл — ⭐️ Premium (кнопка «Промокод»).';
   lines.push(`${spreadTitleLineHtml(tier, 'deep')} — ${deepDesc}`);
 
-  if (fullSpread) {
-    lines.push(
-      `${premiumFeaturePrefix()}${quotedSpreadLabel(SPREAD_BUTTON_LABEL.spread)} — три карты и связное толкование.`,
-    );
-  } else {
-    lines.push(
-      `${premiumFeaturePrefix()}${quotedSpreadLabel(SPREAD_BUTTON_LABEL.spread)} — с Premium: <code>/promo КОД</code>.`,
-    );
-  }
+  const spreadLimitNote = unlimitedSpread
+    ? 'без лимита'
+    : `${SPREAD_MAX_FOR_BASIC} расклада за ${p.dayLimitCalendar} на базовом уровне`;
+  lines.push(
+    `${spreadTitleLineHtml(tier, 'spread')} — три карты по твоему вопросу (прошлое, настоящее, будущее), ${spreadLimitNote}.`,
+  );
 
   return lines.join('\n\n');
 }

@@ -113,9 +113,7 @@ export async function deliverDeepTriplet(
       height: frame.height,
     });
 
-    await sendPlainReadingChunksToChat(ctx.telegram, userId, userText, faceMessageId, {
-      saveLastReading: false,
-    });
+    await sendPlainReadingChunksToChat(ctx.telegram, userId, userText, faceMessageId);
 
     const updated = getDeepSession(userId);
     if (updated && updated.triplets.length >= maxTriplets) {

@@ -12,10 +12,11 @@ describe('spreadLabels', () => {
   });
 
   it('spreadAccessOverviewHtml separates spreads with blank lines', () => {
-    const html = spreadAccessOverviewHtml({ tier: 'basic', fullSpread: false });
+    const html = spreadAccessOverviewHtml({ tier: 'basic', unlimitedSpread: false });
     expect(html).toContain('«На день»');
     expect(html).toContain('«Глубинная диагностика»');
     expect(html).toContain('«Прошлое — настоящее — будущее»');
+    expect(html).toContain('календарные сутки');
     expect(html.split('\n\n').length).toBeGreaterThanOrEqual(3);
   });
 

@@ -19,6 +19,7 @@ export function initDatabase(customPath?: string): Database.Database {
   instance.pragma('journal_mode = WAL');
   instance.exec(SCHEMA_SQL);
   applyUserSchemaMigrations(instance);
+  applySpreadDrawSlotsMigration(instance);
   db = instance;
   return instance;
 }
@@ -32,6 +33,29 @@ function applyUserSchemaMigrations(instance: Database.Database): void {
   if (!cols.some((c) => c.name === 'day_push_last_sent_date')) {
     instance.exec('ALTER TABLE users ADD COLUMN day_push_last_sent_date TEXT');
   }
+  if (!cols.some((c) => c.name === 'last_seen_release')) {
+    instance.exec('ALTER TABLE users ADD COLUMN last_seen_release TEXT');
+  }
+}
+
+/** Миграция spread_draw_slots к схеме с calendar_date (лимит basic — за сутки). */
+function applySpreadDrawSlotsMigration(instance: Database.Database): void {
+  const table = instance
+    .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='spread_draw_slots'")
+    .get() as { name: string } | undefined;
+  if (!table) return;
+  const cols = instance.prepare('PRAGMA table_info(spread_draw_slots)').all() as { name: string }[];
+  if (cols.some((c) => c.name === 'calendar_date')) return;
+  instance.exec(`
+    DROP TABLE spread_draw_slots;
+    CREATE TABLE spread_draw_slots (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      calendar_date TEXT NOT NULL,
+      used_at TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_spread_draw_slots_user_date ON spread_draw_slots (user_id, calendar_date);
+  `);
 }
 
 /** Для тестов: закрыть и сбросить singleton. */

@@ -132,9 +132,10 @@ export function registerAdminHandlers(bot: Telegraf): void {
         return;
       }
       await ctx.reply(
-        `<b>Промокод</b> <code>${created.code}</code>\nPremium <b>${PROMO_PREMIUM_DAYS}</b> дн., одноразовый.\n\nПередай участнику:\n<code>/promo ${created.code}</code>\n\nСтатус всех кодов: <code>/admin promo list</code>`,
+        `<b>Промокод создан</b> — Premium <b>${PROMO_PREMIUM_DAYS}</b> дн., одноразовый.\nКод: <code>${created.code}</code>\n\nСледующее сообщение — <b>без форматирования</b>, его можно переслать участнику: строка копируется целиком.\nСтатус кодов: <code>/admin promo list</code>`,
         TELEGRAM_HTML_PARSE,
       );
+      await ctx.reply(`/promo ${created.code}`);
       return;
     }
 

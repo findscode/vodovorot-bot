@@ -1,8 +1,11 @@
 import { normalizeDayPushHhmm } from '../dayPushPresets.js';
 import { generateTarotPromoCode } from '../promoCodeGenerator.js';
 import { PROMO_PREMIUM_DAYS } from '../promoConfig.js';
+import { normalizePromoCode } from '../promoInput.js';
 import { checkPromoRedeemAttempt } from '../promoRedeemLimit.js';
 import { getDb } from './database.js';
+
+export { normalizePromoCode } from '../promoInput.js';
 
 const PROMO_CREATE_MAX_ATTEMPTS = 32;
 
@@ -18,6 +21,21 @@ export function getOrCreateUser(userId: number): void {
      VALUES (?, ?, ?)
      ON CONFLICT(telegram_user_id) DO UPDATE SET updated_at = excluded.updated_at`,
   ).run(userId, t, t);
+}
+
+export function getLastSeenReleaseSync(userId: number): string | null {
+  getOrCreateUser(userId);
+  const row = getDb()
+    .prepare('SELECT last_seen_release FROM users WHERE telegram_user_id = ?')
+    .get(userId) as { last_seen_release: string | null } | undefined;
+  return row?.last_seen_release ?? null;
+}
+
+export function markReleaseSeenSync(userId: number, releaseVersion: string): void {
+  getOrCreateUser(userId);
+  getDb()
+    .prepare('UPDATE users SET last_seen_release = ?, updated_at = ? WHERE telegram_user_id = ?')
+    .run(releaseVersion, isoNow(), userId);
 }
 
 export function setUserAdminSync(userId: number, isAdmin: boolean): void {
@@ -224,13 +242,6 @@ export type PromoRedeemResult = 'ok' | 'used' | 'invalid' | 'expired' | 'rate_li
 export type PromoCreateResult = 'ok' | 'exists' | 'invalid';
 
 /** Нормализация кода для хранения и поиска (верхний регистр). */
-export function normalizePromoCode(raw: string): string | null {
-  const code = raw.trim().toUpperCase();
-  if (!code || code.length > 64) return null;
-  if (!/^[A-Z0-9][A-Z0-9_-]*$/.test(code)) return null;
-  return code;
-}
-
 function insertPromoCodeSync(code: string): PromoCreateResult {
   const db = getDb();
   const exists = db.prepare('SELECT 1 FROM promo_codes WHERE code = ?').get(code);

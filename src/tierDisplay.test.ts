@@ -27,6 +27,12 @@ describe('tierDisplay', () => {
     expect(activeTierStatusLineHtml('premium')).toContain('Premium');
   });
 
+  it('status line uses basic emoji not track wording', () => {
+    const line = activeTierStatusLineHtml('basic');
+    expect(line).toContain('🌱');
+    expect(line).not.toContain('трек');
+  });
+
   it('labelPremiumButton prefixes star', () => {
     expect(labelPremiumButton('Тест')).toBe(`${premiumFeaturePrefix()}Тест`);
   });

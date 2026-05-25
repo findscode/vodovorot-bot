@@ -5,15 +5,13 @@
  */
 
 import type { AccessTier } from './accessTier.js';
-import { canUseFullDeepFinal } from './accessTier.js';
-import { formatHhmmForUser } from './calendarDayUserPhrases.js';
+import { dayDrawPhrasesForServer, formatHhmmForUser } from './calendarDayUserPhrases.js';
 import {
   quotedSpreadLabel,
   SPREAD_BUTTON_LABEL,
   spreadAccessOverviewHtml,
   type SpreadAccessOverviewOpts,
 } from './spreadLabels.js';
-import { basicTrackPrefix, premiumFeaturePrefix } from './tierDisplay.js';
 import { spreadTitleLineHtml } from './spreadLabels.js';
 
 export const ETHOS =
@@ -27,7 +25,7 @@ export const DISCLAIMER_HELP =
 
 /** Необработанная ошибка в хендлере (bot.catch). */
 export const UNHANDLED_BOT_ERROR_HTML =
-  'Что-то пошло не так. Попробуй ещё раз или открой <code>/menu</code>.';
+  'Что-то пошло не так. Попробуй ещё раз или выбери расклад кнопками ниже.';
 
 /** Не удалось получить текст от ИИ (сеть, таймаут, отказ API). */
 export const AI_TEXT_UNAVAILABLE_MESSAGE =
@@ -63,10 +61,38 @@ export const DAY_DEBOUNCE_MESSAGE = 'Ещё секунду — предыдущ�
 export const DAY_IN_FLIGHT_MESSAGE = 'Уже собираю карту дня — дождись окончания.';
 
 /** После успешного расклада в три карты. */
-export const SPREAD_DONE_HINT = 'Следующий расклад — кнопкой ниже или команда <code>/menu</code>.';
+export const SPREAD_DONE_HINT = 'Следующий расклад — кнопками ниже.';
 
 /** После сбоя ИИ у расклада «три карты» (фото уже в чате). */
-export const SPREAD_AI_RETRY_SUFFIX = 'Нажми «Прошлое — настоящее — будущее» ещё раз.';
+export const SPREAD_AI_RETRY_SUFFIX =
+  'Нажми «Прошлое — настоящее — будущее» ещё раз и напиши вопрос заново.';
+
+export const SPREAD_CANCELLED_MESSAGE = 'Расклад отменён — выбери другой кнопками ниже.';
+
+export const SPREAD_ALREADY_AWAITING_MESSAGE =
+  'Расклад уже начат — нажми «Начать» или «Отмена», либо напиши вопрос, если уже нажал «Начать».';
+
+export const SPREAD_INTRO_PRESS_START_MESSAGE =
+  'Сначала нажми «Начать», потом напиши вопрос или тему текстом в чат.';
+
+export const SPREAD_IN_FLIGHT_MESSAGE = 'Расклад уже готовится — подожди ответ.';
+
+export function spreadLimitMessage(): string {
+  const p = dayDrawPhrasesForServer();
+  return `На сегодня три расклада «Прошлое — настоящее — будущее» уже использованы. Следующие — ${p.midnight} (как у «На день»). Без лимита — ⭐️ Premium (кнопка «Промокод»).`;
+}
+
+/** Сообщение при блокировке команд и других раскладов во время сессии «три карты». */
+export function spreadSessionBlockedMessageHtml(
+  tier: AccessTier,
+  phase: 'intro' | 'awaiting_question',
+): string {
+  const title = spreadTitleLineHtml(tier, 'spread');
+  if (phase === 'intro') {
+    return `Сейчас открыт ${title}. Нажми «Начать» или «Отмена».`;
+  }
+  return `Сейчас жду вопрос для ${title}. Напиши текстом или нажми «Отмена».`;
+}
 
 /** @deprecated Используй {@link deepIntroHtml} из `tierDisplay.ts`. */
 export const DEEP_INTRO_HTML = `<b>Глубинная диагностика</b>
@@ -100,9 +126,7 @@ export const DEEP_COLLAGE_HINT_MESSAGE =
 
 /** Сообщение при блокировке команд и других раскладов во время deep-сессии. */
 export function deepSessionBlockedMessageHtml(tier: AccessTier): string {
-  return `Сейчас идёт ${spreadTitleLineHtml(tier, 'deep')}. Дождись ответа или нажми «Закончить гадание».
-
-<code>/menu</code> и <code>/help</code> снова сработают после общего вывода.`;
+  return `Сейчас идёт ${spreadTitleLineHtml(tier, 'deep')}. Дождись ответа или нажми «Закончить гадание».`;
 }
 
 export const DEEP_AI_RETRY_MESSAGE =
@@ -113,38 +137,32 @@ export const DEEP_IMAGES_UNAVAILABLE_SUFFIX =
 
 export const DEEP_FINAL_INTRO_MESSAGE = 'Собираю общий вывод по всему гаданию…';
 
-export const DEEP_DONE_HINT =
-  'Гадание завершено. Следующий расклад — кнопками ниже или команда <code>/menu</code>.';
+export const DEEP_DONE_HINT = 'Гадание завершено. Следующий расклад — кнопками ниже.';
 
 export const DEEP_MAX_TRIPLETS_MESSAGE =
   'Достигнут лимит семи вопросов за одно гадание. Сейчас соберу общий вывод.';
 
 /** Tier `basic`: лимит трёх триплетов (модель C). */
 export const DEEP_BASIC_TRIPLET_CAP_MESSAGE =
-  'На базовом треке — до трёх вопросов за гадание. Сейчас завершу сессию. Полный цикл (семь вопросов и общий вывод) — ⭐️ Premium.';
+  'На базовом уровне — до трёх вопросов за гадание. Сейчас завершу сессию. Полный цикл (семь вопросов и общий вывод) — ⭐️ Premium.';
 
 export const DEEP_BASIC_END_WITHOUT_FINAL_MESSAGE =
-  'Гадание завершено. Общий вывод по всем шагам — с ⭐️ <b>Premium</b> (<code>/promo</code> или <code>/status</code>). Следующий расклад — кнопками ниже или <code>/menu</code>.';
+  'Гадание завершено. Общий вывод по всем шагам — с ⭐️ <b>Premium</b> (кнопка «Промокод»). Следующий расклад — кнопками ниже.';
 
 export function spreadPremiumRequiredMessage(): string {
   const spreadQ = quotedSpreadLabel(SPREAD_BUTTON_LABEL.spread);
   const dayQ = quotedSpreadLabel(SPREAD_BUTTON_LABEL.day);
   const deepQ = quotedSpreadLabel(SPREAD_BUTTON_LABEL.deep);
-  return `Расклад ${spreadQ} — ⭐️ <b>Premium</b>. Промокод: <code>/promo КОД</code>. Базовый трек: 🌱 ${dayQ} и 🌱 ${deepQ} (до трёх вопросов). <code>/status</code>`;
+  return `Расклад ${spreadQ} — ⭐️ <b>Premium</b>. Код приходит от администратора — кнопка «Промокод» ниже. Базовый уровень: 🌱 ${dayQ} и 🌱 ${deepQ}.`;
 }
 
-export const PROMO_HELP_HTML = `Введи промокод одной командой в чат:
+export const PROMO_HELP_HTML = `<b>Промокод</b>
 
-<code>/promo ТВОЙ-КОД</code>
-
-Код одноразовый. После активации откроются «Прошлое — настоящее — будущее» и полная «Глубинная диагностика». Текущий уровень — <code>/status</code>.`;
+Перешли сюда сообщение с кодом от администратора.`;
 
 export function dayLimitMessage(): string {
   return 'На сегодня карта дня уже получена. Следующая — после полуночи.';
 }
-
-export const LAST_EMPTY_MESSAGE =
-  'Пока нечего повторить: сначала сделай любой расклад. Последний разбор хранится в базе и переживает перезапуск; свою копию можно переслать себе из чата.';
 
 export const SUBSCRIBE_MESSAGES = {
   off: 'Ежедневная рассылка выключена. Карту дня в любой момент — кнопкой «На день».',
@@ -153,19 +171,18 @@ export const SUBSCRIBE_MESSAGES = {
 /** После включения подписки (время и пояс — как сохранили при нажатии). */
 export function subscribeEnabledMessageHtml(hhmm: string, _tzIana: string): string {
   const t = formatHhmmForUser(hhmm);
-  return `<b>Готово</b>: подписка включена. Карта дня будет приходить около ${t}. Отписаться или сменить время — кнопками ниже или <code>/pushtime 14:30</code>.`;
+  return `<b>Готово</b>: подписка включена. Карта дня будет приходить около ${t}. Отписаться или сменить время — кнопками ниже.`;
 }
 
 /** Выбор времени рассылки (после <code>/pushtime</code> без аргумента или кнопки «Время рассылки»). */
-export const PUSHTIME_PICK_PROMPT_HTML =
-  'Нажми кнопку с удобным временем или напиши <code>/pushtime ЧЧ:ММ</code> (например <code>09:15</code>):';
+export const PUSHTIME_PICK_PROMPT_HTML = 'Выбери время кнопкой ниже:';
 
 export const PUSHTIME_NEED_SUBSCRIPTION_HTML =
   'Сначала включи рассылку кнопкой <b>«Присылать каждый день»</b> под толкованием «На день».';
 
 /** Неверный формат аргумента к <code>/pushtime</code>. */
 export const PUSHTIME_INVALID_FORMAT_HTML =
-  'Укажи время как <code>ЧЧ:ММ</code> (часы 00–23, минуты 00–59), например <code>09:15</code> или <code>14:30</code>. Или нажми одну из кнопок ниже.';
+  'Укажи время как ЧЧ:ММ (часы 00–23, минуты 00–59), например 09:15. Или нажми кнопку ниже.';
 
 export function pushtimeSavedMessageHtml(hhmm: string, _tzIana: string): string {
   const t = formatHhmmForUser(hhmm);
@@ -173,10 +190,9 @@ export function pushtimeSavedMessageHtml(hhmm: string, _tzIana: string): string 
 }
 
 export const PROMO_MESSAGES = {
-  needCode:
-    'Укажи код после команды целиком, например: <code>/promo STAR-LANTERN-K7NP4X</code>. Подсказка — кнопка «Промокод» в меню.',
+  needCode: 'Код приходит от администратора — перешли его сообщение сюда.',
   /** Единый ответ при любой неуспешной активации (без утечки «код есть в базе»). */
-  rejected: 'Не удалось активировать код. Проверь написание или запроси новый у организатора.',
+  rejected: 'Не удалось активировать код. Проверь написание или запроси новый у администратора.',
   rateLimited: 'Слишком много попыток за короткое время. Подожди около 15 минут и попробуй снова.',
 } as const;
 
@@ -194,7 +210,7 @@ export function promoOkMessageHtml(until: Date): string {
   }
   const spreadQ = quotedSpreadLabel(SPREAD_BUTTON_LABEL.spread);
   const deepQ = quotedSpreadLabel(SPREAD_BUTTON_LABEL.deep);
-  return `<b>Готово</b>, промокод принят. ⭐️ <b>Premium</b> на месяц (до ${dateRu}) — доступны ${spreadQ} и полная ${deepQ}. Подробности — <code>/status</code>. Обнови меню: <code>/menu</code>.`;
+  return `<b>Готово</b>, промокод принят. ⭐️ <b>Premium</b> на месяц (до ${dateRu}) — доступны ${spreadQ} и полная ${deepQ}.`;
 }
 
 export function startTextHtml(opts: SpreadAccessOverviewOpts): string {
@@ -211,39 +227,6 @@ export function menuTextHtml(opts: SpreadAccessOverviewOpts): string {
 ${spreadAccessOverviewHtml(opts)}`;
 }
 
-export function helpTextHtml(opts: SpreadAccessOverviewOpts): string {
-  const overview = spreadAccessOverviewHtml(opts);
-  const dayQ = quotedSpreadLabel(SPREAD_BUTTON_LABEL.day);
-  const spreadQ = quotedSpreadLabel(SPREAD_BUTTON_LABEL.spread);
-
-  return `<b>Водоворот</b> — толкование карт Таро в личке. Работает <b>только в личных сообщениях</b>.
-
-<b>Команды</b>
-/start — приветствие и кнопки
-/menu — снова показать кнопки раскладов
-/help — эта справка
-/status — уровень доступа, Premium, рассылка
-/last — повторить последний разбор (хранится в базе)
-/pushtime — время ежедневной рассылки (когда подписка включена); можно <code>/pushtime 09:15</code>
-/promo КОД — активировать одноразовый промокод Premium
-
-<b>Расклады</b>
-${overview}
-
-<b>Как выбрать</b>
-${basicTrackPrefix()}${dayQ} — одна карта на сутки, без твоих вопросов.
-
-${premiumFeaturePrefix()}${spreadQ} — один связный расклад из трёх карт.
-
-${spreadTitleLineHtml(opts.tier, 'deep')} — кнопка <b>Начать</b>, затем вопросы текстом${canUseFullDeepFinal(opts.tier) ? ' и общий финал' : ''}.
-
-<b>Подписка на карту дня</b>
-После ${dayQ} можно включить автоматическую рассылку кнопкой «Присылать каждый день». Раз в календарные сутки — и при ручном запросе, и при рассылке. Время по умолчанию из настроек бота; смена — кнопка <b>«Время рассылки»</b> или <code>/pushtime 14:30</code>. Отписка — в том же сообщении после включения или под следующим толкованием ${dayQ}.
-
-<b>Важно</b>
-${DISCLAIMER_HELP}`;
-}
-
 export function isPublicEntryCommand(text: string | undefined): boolean {
   if (!text) return false;
   const t = text.trim();
@@ -252,7 +235,6 @@ export function isPublicEntryCommand(text: string | undefined): boolean {
     /^\/menu(?:@\S+)?(?:\s|$)/i.test(t) ||
     /^\/help(?:@\S+)?(?:\s|$)/i.test(t) ||
     /^\/status(?:@\S+)?(?:\s|$)/i.test(t) ||
-    /^\/last(?:@\S+)?(?:\s|$)/i.test(t) ||
     /^\/promo(?:@\S+)?(?:\s|$)/i.test(t) ||
     /^\/pushtime(?:@\S+)?(?:\s|$)/i.test(t)
   );

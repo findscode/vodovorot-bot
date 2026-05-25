@@ -5,6 +5,7 @@ import {
   formatReadingForTelegram,
   stripModelFormatArtifacts,
   threeCardSpreadCaptionHtml,
+  threeCardSpreadCaptionWithQuestionHtml,
 } from './readingTelegramHtml.js';
 import { splitForTelegram, TG_MAX } from './telegramChunks.js';
 
@@ -26,6 +27,12 @@ describe('readingTelegramHtml', () => {
     expect(threeCardSpreadCaptionHtml(['Прошлое: X', 'Настоящее: Y'])).toBe(
       '<b>Прошлое, настоящее, будущее:</b>\n\nПрошлое: X\nНастоящее: Y',
     );
+  });
+
+  it('three-card caption with question includes theme line', () => {
+    expect(
+      threeCardSpreadCaptionWithQuestionHtml('Карьера', ['Прошлое: X', 'Настоящее: Y']),
+    ).toContain('Тема: «Карьера»');
   });
 
   it('wraps known section label lines in bold', () => {

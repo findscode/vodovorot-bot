@@ -2,11 +2,11 @@
 
 Краткий ориентир для **Cursor-агентов** и разработчиков. Человекочитаемые детали — в `docs/`; здесь только «куда смотреть» и «куда писать».
 
-**Версия:** `package.json` → сейчас **3.6.3**. История — [CHANGELOG.md](CHANGELOG.md). Запуск фокус-группы — [docs/FOCUS-GROUP.md](docs/FOCUS-GROUP.md).
+**Версия:** `package.json` → сейчас **3.7.0**. История — [CHANGELOG.md](CHANGELOG.md). Запуск фокус-группы — [docs/FOCUS-GROUP.md](docs/FOCUS-GROUP.md).
 
 ## Правила Cursor (`.cursor/rules/`)
 
-Краткие guardrails; полная карта — в этом файле и `docs/`. **alwaysApply:** `core.mdc`, `documentation.mdc`, `scripts-cleanup.mdc`. **По открытым файлам:** `bot-copy.mdc`, `deep-reading.mdc`, `card-flows.mdc`, `ai-prompts.mdc`, `testing.mdc`.
+Краткие guardrails; полная карта — в этом файле и `docs/`. **alwaysApply:** `core.mdc`, `documentation.mdc`, `scripts-cleanup.mdc`. **По открытым файлам:** `bot-copy.mdc`, `deep-reading.mdc`, `card-flows.mdc`, `ai-prompts.mdc`, `testing.mdc`, `release-notes.mdc`.
 
 ---
 
@@ -20,6 +20,7 @@
 | Формат толкований ИИ                    | [docs/BRAND-GUIDE.md](docs/BRAND-GUIDE.md) §4–5   | `src/brandFormat.ts`, `src/prompts.ts`                                             |
 | Подписи к фото                          | BRAND-GUIDE §3                                    | `src/readingTelegramHtml.ts`                                                       |
 | Релиз                                   | [CHANGELOG.md](CHANGELOG.md) + `package.json`     | SemVer — [CONTRIBUTING.md](CONTRIBUTING.md)                                        |
+| In-bot «Что нового»                     | [CHANGELOG.md](CHANGELOG.md) § релиз              | `src/releaseNotes.ts`, `src/releaseNotesDelivery.ts`, `users.last_seen_release`    |
 | Деплой, env, ops                        | [docs/DEPLOY.md](docs/DEPLOY.md)                  | Docker, workflow                                                                   |
 | Фокус-группа                            | [docs/FOCUS-GROUP.md](docs/FOCUS-GROUP.md)        | Smoke, промокоды, бриф                                                             |
 | BotFather-тексты                        | [docs/BOTFATHER.md](docs/BOTFATHER.md)            | вне кода                                                                           |
@@ -34,10 +35,11 @@
 | Область                                | Путь                                                                                                                                           |
 | -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
 | Запуск бота                            | `src/bot.ts` → `registerHandlers()`                                                                                                            |
-| Команды, /help, /status                | `src/handlers/registerCommands.ts`                                                                                                             |
+| In-bot «Что нового»                    | `src/releaseNotes.ts`, `registerReleaseNotesHandlers.ts`, `users.last_seen_release`                                                            |
+| Команды, /help (вкл. бывший /status)   | `src/handlers/registerCommands.ts`, `src/statusCopy.ts`                                                                                        |
 | «На день» + push                       | `registerDayHandlers.ts`, `cardOfDayDelivery.ts`, `dayPushScheduler.ts`, `dayPushTickLogic.ts`                                                 |
 | Названия раскладов в текстах           | `src/spreadLabels.ts` (`SPREAD_BUTTON_LABEL`)                                                                                                  |
-| Spread «Прошлое — настоящее — будущее» | `src/handlers/registerSpreadHandlers.ts`, `src/spreadComposite.ts`                                                                             |
+| Spread «Прошлое — настоящее — будущее» | `src/handlers/registerSpreadHandlers.ts`, `src/spreadComposite.ts`, `src/spreadSessionStore.ts` (фазы `intro` \| `awaiting_question`)          |
 | Чёрный фон фото карт                   | `src/compositeBackground.ts` (полосы, коллаж, `cardPhotoInput`)                                                                                |
 | Уровни доступа (модель C)              | `src/accessTier.ts`, `src/tierDisplay.ts`; промо — `promoCodeGenerator.ts`, `promoRedeemLimit.ts`; админ — `handlers/registerAdminHandlers.ts` |
 | Глубинная диагностика                  | `src/deepReading/*`, `src/handlers/registerDeepReadingHandlers.ts`                                                                             |

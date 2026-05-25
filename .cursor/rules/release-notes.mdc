@@ -1,0 +1,37 @@
+---
+description: In-bot «Что нового» при заметных релизах
+globs: src/releaseNotes.ts,src/releaseNotesDelivery.ts,CHANGELOG.md,package.json
+alwaysApply: false
+---
+
+# Release notes (in-bot)
+
+## Когда показываем
+
+Только при **заметном** релизе (MINOR или редкий PATCH с изменением UX): новый flow, лимиты, команды, промо.
+
+Не показываем при каждом патче (тексты промптов, внутренний рефакторинг).
+
+## Чеклист релиза
+
+1. **`package.json`** — поднять `version` (SemVer — [CONTRIBUTING.md](../../CONTRIBUTING.md)).
+2. **`CHANGELOG.md`** — перенести `[Unreleased]` в `[X.Y.Z] — YYYY-MM-DD`.
+3. **`src/releaseNotes.ts`** — переписать **`whatsNewHtml()`**: **ровно 3** коротких пункта, «ты», без SemVer в теле; названия раскладов как на кнопках; **уровень**, не «трек». Тон — ненавязчивый: только главное, без внутренней кухни и без «рекламы» удалённого.
+4. При новых триггерах — обновить **`WHATS_NEW_TRIGGER_CALLBACKS`** (сейчас: `day`, `spread`, `deep`, `promo_help`).
+5. **`AGENTS.md`** — версия в шапке.
+6. Прогон CI локально (см. AGENTS.md).
+
+Версия для сравнения «видел / не видел» берётся из **`package.json`** через `APP_RELEASE_VERSION` в `releaseNotes.ts` — дублировать строку версии в коде не нужно.
+
+## Поведение
+
+- Показ: первый **`/start`**, **`/menu`** или нажатие кнопки из `WHATS_NEW_TRIGGER_CALLBACKS` после деплоя.
+- Закрытие: кнопка **«Понятно»** → `users.last_seen_release` = текущая версия.
+- Не показываем во время deep- или spread-сессии.
+- Текст — отдельное сообщение **перед** основным ответом (start/menu/расклад).
+
+## Куда не дублировать
+
+- Полный changelog — только **CHANGELOG.md**.
+- BotFather — [docs/BOTFATHER.md](../../docs/BOTFATHER.md) (для новых пользователей).
+- In-bot — **3 пункта**, кратко, без внутренней кухни.

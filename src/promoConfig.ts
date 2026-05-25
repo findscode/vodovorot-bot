@@ -14,3 +14,6 @@ export const PROMO_SECRET_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 /** Лимит попыток /promo на пользователя (скользящее окно). */
 export const PROMO_REDEEM_MAX_ATTEMPTS = 10;
 export const PROMO_REDEEM_WINDOW_MS = 15 * 60 * 1000;
+
+/** Образец формата в подсказках (не рабочий код). */
+export const PROMO_EXAMPLE_CODE = 'STAR-LANTERN-K7NP4X';

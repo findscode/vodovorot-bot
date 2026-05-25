@@ -9,7 +9,15 @@ import {
   tryRedeemPromoCodeSync,
   createPromoCodeSync,
 } from './db/usersRepo.js';
-import { hasFullSpreadAccess } from './accessResolve.js';
+import {
+  canUseSpread,
+  hasFullSpreadAccess,
+  hasUnlimitedSpreadAccess,
+  remainingSpreadDrawsForUser,
+} from './accessResolve.js';
+import { tryConsumeSpreadDrawSlotSync } from './db/spreadDrawSlotsRepo.js';
+import { dayDrawCalendarDate } from './dayDrawState.js';
+import { SPREAD_MAX_FOR_BASIC } from './spreadConstants.js';
 
 describe('accessResolve', () => {
   let dir: string;
@@ -25,23 +33,35 @@ describe('accessResolve', () => {
     await rm(dir, { recursive: true, force: true });
   });
 
-  it('basic user without premium has no spread access', () => {
+  it('basic user can use spread until three draws consumed per day', () => {
+    const day = dayDrawCalendarDate();
+    expect(hasUnlimitedSpreadAccess(999)).toBe(false);
     expect(hasFullSpreadAccess(999)).toBe(false);
+    expect(canUseSpread(999)).toBe(true);
+    expect(remainingSpreadDrawsForUser(999)).toBe(SPREAD_MAX_FOR_BASIC);
+    for (let i = 0; i < SPREAD_MAX_FOR_BASIC; i++) {
+      tryConsumeSpreadDrawSlotSync(999, day);
+    }
+    expect(canUseSpread(999)).toBe(false);
+    expect(remainingSpreadDrawsForUser(999)).toBe(0);
   });
 
-  it('admin in DB has spread access', () => {
+  it('admin has unlimited spread access', () => {
     setUserAdminSync(77, true);
-    expect(hasFullSpreadAccess(77)).toBe(true);
+    expect(hasUnlimitedSpreadAccess(77)).toBe(true);
+    expect(canUseSpread(77)).toBe(true);
+    expect(remainingSpreadDrawsForUser(77)).toBeNull();
   });
 
-  it('active premium grants spread access', () => {
+  it('active premium grants unlimited spread access', () => {
     extendPremiumByDaysSync(42, 7);
-    expect(hasFullSpreadAccess(42)).toBe(true);
+    expect(hasUnlimitedSpreadAccess(42)).toBe(true);
+    expect(canUseSpread(42)).toBe(true);
   });
 
-  it('promo redeem grants spread access', () => {
+  it('promo redeem grants unlimited spread access', () => {
     createPromoCodeSync('TEST-1');
     expect(tryRedeemPromoCodeSync(55, 'test-1')).toBe('ok');
-    expect(hasFullSpreadAccess(55)).toBe(true);
+    expect(hasUnlimitedSpreadAccess(55)).toBe(true);
   });
 });

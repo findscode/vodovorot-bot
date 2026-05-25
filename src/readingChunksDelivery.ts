@@ -5,13 +5,11 @@ import {
   stripModelFormatArtifacts,
   TELEGRAM_HTML_PARSE,
 } from './readingTelegramHtml.js';
-import { saveLastReading } from './lastReadingStore.js';
 import { splitForTelegram } from './telegramChunks.js';
 
 type TelegramSendMessageExtra = NonNullable<Parameters<Telegraf['telegram']['sendMessage']>[2]>;
 
 export type ReadingChunksOptions = {
-  saveLastReading?: boolean;
   lastChunkSuffix?: string;
   /** Доп. поля последнего `sendMessage` (клавиатура и т.п.). */
   lastChunkExtra?: TelegramSendMessageExtra;
@@ -48,10 +46,6 @@ export async function sendReadingChunksToChat(
       ...TELEGRAM_HTML_PARSE,
     });
   }
-
-  if (options.saveLastReading !== false && formatted.length > 0) {
-    saveLastReading(chatId, normalized);
-  }
 }
 
 /** Толкование без меток разделов (глубинная диагностика, триплет). */
@@ -84,9 +78,5 @@ export async function sendPlainReadingChunksToChat(
       ...extra,
       ...TELEGRAM_HTML_PARSE,
     });
-  }
-
-  if (options.saveLastReading !== false && formatted.length > 0) {
-    saveLastReading(chatId, normalized);
   }
 }

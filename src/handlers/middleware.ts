@@ -11,6 +11,7 @@ import {
   DEEP_END_CALLBACK,
   DEEP_START_CALLBACK,
 } from '../deepReading/constants.js';
+import { RELEASE_NOTES_OK_CALLBACK } from '../releaseNotes.js';
 
 /** Только личные чаты: в группах и каналах не отвечаем и не обрабатываем расклады. */
 export function registerPrivateChatMiddleware(bot: Telegraf): void {
@@ -37,7 +38,12 @@ export function registerDeepSessionMiddleware(bot: Telegraf): void {
     const cq = ctx.callbackQuery;
     if (cq && 'data' in cq) {
       const d = cq.data;
-      if (d === DEEP_START_CALLBACK || d === DEEP_CANCEL_CALLBACK || d === DEEP_END_CALLBACK) {
+      if (
+        d === DEEP_START_CALLBACK ||
+        d === DEEP_CANCEL_CALLBACK ||
+        d === DEEP_END_CALLBACK ||
+        d === RELEASE_NOTES_OK_CALLBACK
+      ) {
         return next();
       }
       await answerCbQuerySafe(ctx);

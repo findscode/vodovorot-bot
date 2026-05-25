@@ -1,77 +1,203 @@
 import type { Telegraf } from 'telegraf';
 import {
   AI_TEXT_UNAVAILABLE_MESSAGE,
+  DEEP_EMPTY_QUESTION_MESSAGE,
+  DEEP_QUESTION_TOO_LONG_MESSAGE,
   SPREAD_AI_RETRY_SUFFIX,
-  SPREAD_DONE_HINT,
-  SPREAD_IMAGES_UNAVAILABLE_SUFFIX,
-  spreadPremiumRequiredMessage,
+  SPREAD_ALREADY_AWAITING_MESSAGE,
+  SPREAD_CANCELLED_MESSAGE,
+  SPREAD_IN_FLIGHT_MESSAGE,
+  SPREAD_INTRO_PRESS_START_MESSAGE,
+  spreadLimitMessage,
 } from '../botCopy.js';
-import { hasFullSpreadAccess } from '../accessResolve.js';
-import { keyboardMainOrDayOnly } from '../botKeyboards.js';
-import { completeChat } from '../ai.js';
-import { cardImageExists } from '../cardAssets.js';
-import { drawThreeUnique, drawVoiceArchetype, formatDrawnLine } from '../deck.js';
-import { pastPresentFuturePrompt } from '../prompts.js';
-import { TELEGRAM_HTML_PARSE, threeCardSpreadCaptionHtmlBounded } from '../readingTelegramHtml.js';
-import { sendReadingChunksToChat } from '../readingChunksDelivery.js';
-import { spreadCompositePhotoInput } from '../spreadComposite.js';
+import { canUseSpread } from '../accessResolve.js';
+import {
+  keyboardMainOrDayOnly,
+  keyboardSpreadAwaitingQuestion,
+  keyboardSpreadIntro,
+} from '../botKeyboards.js';
+import { TELEGRAM_HTML_PARSE } from '../readingTelegramHtml.js';
+import { normalizeDeepQuestion } from '../deepReading/deepReadingDelivery.js';
+import { hasActiveDeepSession } from '../deepReading/sessionStore.js';
+import { deliverSpreadReading } from '../spreadDelivery.js';
+import {
+  beginSpreadSession,
+  endSpreadSession,
+  getSpreadSession,
+  hasActiveSpreadSession,
+  setSpreadPhase,
+} from '../spreadSessionStore.js';
+import {
+  SPREAD_CALLBACK,
+  SPREAD_CANCEL_CALLBACK,
+  SPREAD_START_CALLBACK,
+} from '../spreadConstants.js';
+import { resolveAccessTier } from '../accessTier.js';
+import { spreadIntroHtml, spreadIntroReadyHtml } from '../tierDisplay.js';
 import { withTypingWhile } from '../typingIndicator.js';
 import { answerCbQuerySafe, logHandlerError } from './botHelpers.js';
 
-const TG_CAPTION_MAX = 1024;
+const spreadInFlight = new Set<number>();
 
 export function registerSpreadHandlers(bot: Telegraf): void {
-  bot.action('spread', async (ctx) => {
+  bot.action(SPREAD_CALLBACK, async (ctx) => {
     await answerCbQuerySafe(ctx);
     const uid = ctx.from?.id;
     if (uid === undefined) return;
 
-    if (!hasFullSpreadAccess(uid)) {
-      await ctx.reply(spreadPremiumRequiredMessage(), {
+    if (!canUseSpread(uid)) {
+      await ctx.reply(spreadLimitMessage(), {
         ...keyboardMainOrDayOnly(uid),
         ...TELEGRAM_HTML_PARSE,
       });
       return;
     }
 
-    const cards = drawThreeUnique();
-    const positions = ['Прошлое', 'Настоящее', 'Будущее'] as const;
-    const lines = cards.map((d, i) => `${positions[i]}: ${formatDrawnLine(d)}`);
-    const captionHtml = threeCardSpreadCaptionHtmlBounded(lines, TG_CAPTION_MAX);
-
-    const allExist = cards.every((d) => cardImageExists(d.card.id));
-
-    let faceMessageId: number;
-    if (allExist) {
-      const photo = await spreadCompositePhotoInput(cards);
-      const faceMsg = await ctx.replyWithPhoto(photo, {
-        caption: captionHtml,
-        ...TELEGRAM_HTML_PARSE,
-      });
-      faceMessageId = faceMsg.message_id;
-    } else {
-      const faceMsg = await ctx.reply(
-        `${captionHtml}\n\n${SPREAD_IMAGES_UNAVAILABLE_SUFFIX}`,
-        TELEGRAM_HTML_PARSE,
-      );
-      faceMessageId = faceMsg.message_id;
+    if (hasActiveDeepSession(uid)) {
+      return;
     }
 
-    const voice = drawVoiceArchetype();
-    try {
-      const text = await withTypingWhile(ctx, () =>
-        completeChat(pastPresentFuturePrompt(cards, voice)),
-      );
-      await sendReadingChunksToChat(ctx.telegram, uid, text, faceMessageId, {
-        lastChunkSuffix: SPREAD_DONE_HINT,
-        lastChunkExtra: keyboardMainOrDayOnly(uid),
+    if (spreadInFlight.has(uid)) {
+      await ctx.reply(SPREAD_IN_FLIGHT_MESSAGE, {
+        ...keyboardMainOrDayOnly(uid),
+        ...TELEGRAM_HTML_PARSE,
       });
+      return;
+    }
+
+    if (hasActiveSpreadSession(uid)) {
+      await ctx.reply(SPREAD_ALREADY_AWAITING_MESSAGE, {
+        ...(getSpreadSession(uid)?.phase === 'intro'
+          ? keyboardSpreadIntro()
+          : keyboardSpreadAwaitingQuestion()),
+        ...TELEGRAM_HTML_PARSE,
+      });
+      return;
+    }
+
+    beginSpreadSession(uid, uid);
+    const tier = resolveAccessTier(uid);
+    await ctx.reply(spreadIntroHtml(tier), {
+      ...keyboardSpreadIntro(),
+      ...TELEGRAM_HTML_PARSE,
+    });
+  });
+
+  bot.action(SPREAD_START_CALLBACK, async (ctx) => {
+    await answerCbQuerySafe(ctx);
+    const uid = ctx.from?.id;
+    if (uid === undefined) return;
+    const session = getSpreadSession(uid);
+    if (!session || session.phase !== 'intro') return;
+
+    if (!canUseSpread(uid)) {
+      endSpreadSession(uid);
+      await ctx.reply(spreadLimitMessage(), {
+        ...keyboardMainOrDayOnly(uid),
+        ...TELEGRAM_HTML_PARSE,
+      });
+      return;
+    }
+
+    setSpreadPhase(uid, 'awaiting_question');
+    const tier = resolveAccessTier(uid);
+    const readyHtml = spreadIntroReadyHtml(tier);
+    const editOpts = {
+      ...keyboardSpreadAwaitingQuestion(),
+      ...TELEGRAM_HTML_PARSE,
+    };
+    const msg = ctx.callbackQuery?.message;
+    if (msg && 'message_id' in msg) {
+      try {
+        await ctx.telegram.editMessageText(
+          msg.chat.id,
+          msg.message_id,
+          undefined,
+          readyHtml,
+          editOpts,
+        );
+        return;
+      } catch {
+        /* старое сообщение — fallback reply */
+      }
+    }
+    await ctx.reply(readyHtml, editOpts);
+  });
+
+  bot.action(SPREAD_CANCEL_CALLBACK, async (ctx) => {
+    await answerCbQuerySafe(ctx);
+    const uid = ctx.from?.id;
+    if (uid === undefined) return;
+    if (!hasActiveSpreadSession(uid)) return;
+    endSpreadSession(uid);
+    await ctx.reply(SPREAD_CANCELLED_MESSAGE, {
+      ...keyboardMainOrDayOnly(uid),
+      ...TELEGRAM_HTML_PARSE,
+    });
+  });
+
+  bot.on('text', async (ctx, next) => {
+    const uid = ctx.from?.id;
+    if (uid === undefined) return next();
+    const session = getSpreadSession(uid);
+    if (!session) return next();
+    if (hasActiveDeepSession(uid)) return next();
+
+    const text = ctx.message.text;
+    if (text.startsWith('/')) return next();
+
+    if (session.phase === 'intro') {
+      await ctx.reply(SPREAD_INTRO_PRESS_START_MESSAGE, {
+        ...keyboardSpreadIntro(),
+        ...TELEGRAM_HTML_PARSE,
+      });
+      return;
+    }
+
+    const question = normalizeDeepQuestion(text);
+    if (question === null) {
+      const raw = text.trim();
+      await ctx.reply(
+        raw.length === 0 ? DEEP_EMPTY_QUESTION_MESSAGE : DEEP_QUESTION_TOO_LONG_MESSAGE,
+        { ...keyboardSpreadAwaitingQuestion(), ...TELEGRAM_HTML_PARSE },
+      );
+      return;
+    }
+
+    if (spreadInFlight.has(uid)) {
+      await ctx.reply(SPREAD_IN_FLIGHT_MESSAGE, {
+        ...keyboardSpreadAwaitingQuestion(),
+        ...TELEGRAM_HTML_PARSE,
+      });
+      return;
+    }
+
+    spreadInFlight.add(uid);
+    const tier = resolveAccessTier(uid);
+    try {
+      const result = await deliverSpreadReading(ctx.telegram, uid, uid, question, tier, (task) =>
+        withTypingWhile(ctx, task),
+      );
+      if (result === 'ai_error' || result === 'delivery_error') {
+        await ctx.reply(`${AI_TEXT_UNAVAILABLE_MESSAGE}\n\n${SPREAD_AI_RETRY_SUFFIX}`, {
+          ...keyboardMainOrDayOnly(uid),
+          ...TELEGRAM_HTML_PARSE,
+        });
+      } else if (result === 'limit_reached') {
+        await ctx.reply(spreadLimitMessage(), {
+          ...keyboardMainOrDayOnly(uid),
+          ...TELEGRAM_HTML_PARSE,
+        });
+      }
     } catch (e) {
       logHandlerError('spread', e);
+      endSpreadSession(uid);
       await ctx.reply(`${AI_TEXT_UNAVAILABLE_MESSAGE}\n\n${SPREAD_AI_RETRY_SUFFIX}`, {
         ...keyboardMainOrDayOnly(uid),
         ...TELEGRAM_HTML_PARSE,
       });
+    } finally {
+      spreadInFlight.delete(uid);
     }
   });
 }

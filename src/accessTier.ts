@@ -1,4 +1,4 @@
-import { hasFullSpreadAccess } from './accessResolve.js';
+import { canUseSpread as canUseSpreadFromResolve } from './accessResolve.js';
 import { userIsAdminSync, userHasActivePremiumSync } from './db/usersRepo.js';
 import { DEEP_MAX_TRIPLETS_BASIC, DEEP_MAX_TRIPLETS_PREMIUM } from './deepReading/constants.js';
 
@@ -21,8 +21,14 @@ export function canUseFullDeepFinal(tier: AccessTier): boolean {
   return tier !== 'basic';
 }
 
+/** @deprecated Импортируй {@link canUseSpread} из `accessResolve.js`. */
 export function canUseSpread(userId: number | undefined): boolean {
-  return hasFullSpreadAccess(userId);
+  return canUseSpreadFromResolve(userId);
+}
+
+/** Premium или админ — расклад «три карты» без лимита. */
+export function spreadUnlimitedForTier(tier: AccessTier): boolean {
+  return tier !== 'basic';
 }
 
 /** Подпись tier для админских команд (латиница, как в коде). */

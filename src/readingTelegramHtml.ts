@@ -40,6 +40,25 @@ export function threeCardSpreadCaptionHtml(linesPlain: string[]): string {
   return `<b>${escapeTelegramHtml(THREE_POSITION_SPREAD_TITLE)}:</b>\n\n${body}`;
 }
 
+function spreadQuestionLineHtml(question: string): string {
+  return `Тема: «${escapeTelegramHtml(question)}»`;
+}
+
+/** Подпись с темой вопроса перед строками карт. */
+export function threeCardSpreadCaptionWithQuestionHtml(
+  question: string,
+  linesPlain: string[],
+): string {
+  const parts = [
+    `<b>${escapeTelegramHtml(THREE_POSITION_SPREAD_TITLE)}:</b>`,
+    '',
+    spreadQuestionLineHtml(question),
+    '',
+    ...linesPlain.map((l) => escapeTelegramHtml(l)),
+  ];
+  return parts.join('\n');
+}
+
 /** Подпись не длиннее `maxLen` (UTF-16 длина HTML для лимита Telegram). */
 export function threeCardSpreadCaptionHtmlBounded(linesPlain: string[], maxLen: number): string {
   const copy = [...linesPlain];
@@ -49,6 +68,29 @@ export function threeCardSpreadCaptionHtmlBounded(linesPlain: string[], maxLen: 
     copy.pop();
   }
   return `<b>${escapeTelegramHtml(THREE_POSITION_SPREAD_TITLE)}:</b>`;
+}
+
+/** Подпись с вопросом, укладывается в `maxLen`: сначала укорачиваются строки карт, затем вопрос. */
+export function threeCardSpreadCaptionWithQuestionHtmlBounded(
+  question: string,
+  linesPlain: string[],
+  maxLen: number,
+): string {
+  const cardLines = [...linesPlain];
+  let q = question.trim();
+  while (true) {
+    const html = threeCardSpreadCaptionWithQuestionHtml(q, cardLines);
+    if (html.length <= maxLen) return html;
+    if (cardLines.length > 1) {
+      cardLines.pop();
+      continue;
+    }
+    if (q.length > 1) {
+      q = `${q.slice(0, Math.max(1, q.length - 8))}…`;
+      continue;
+    }
+    return `<b>${escapeTelegramHtml(THREE_POSITION_SPREAD_TITLE)}:</b>`;
+  }
 }
 
 /**

@@ -4,9 +4,9 @@ import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { closeDatabase, initDatabase } from './db/database.js';
 import { extendPremiumByDaysSync, setDayPushEnabled } from './db/usersRepo.js';
-import { statusTextHtml } from './statusCopy.js';
+import { helpTextHtml } from './statusCopy.js';
 
-describe('statusCopy', () => {
+describe('statusCopy / help', () => {
   let dir: string;
 
   beforeEach(async () => {
@@ -21,18 +21,21 @@ describe('statusCopy', () => {
   });
 
   it('basic user sees sprout on base features, star on premium hints', () => {
-    const html = statusTextHtml(1);
+    const html = helpTextHtml(1);
+    expect(html).toContain('Справка');
     expect(html).not.toMatch(/новичок|basic/i);
     expect(html).toContain('🌱');
-    expect(html).toContain('⭐️');
-    expect(html).toContain('/promo');
+    expect(html).toContain('Premium');
+    expect(html).toContain('осталось');
+    expect(html).not.toContain('/promo');
     expect(html).toContain('трёх');
     expect(html).toContain('Рассылка');
+    expect(html).toContain('врача');
   });
 
   it('premium user sees star Premium active', () => {
     extendPremiumByDaysSync(3, 7);
-    const html = statusTextHtml(3);
+    const html = helpTextHtml(3);
     expect(html).toContain('⭐️');
     expect(html).toContain('Premium');
     expect(html).not.toMatch(/новичок/i);
@@ -40,7 +43,7 @@ describe('statusCopy', () => {
 
   it('при включённой подписке показывает время', () => {
     setDayPushEnabled(2, true, 'Europe/Moscow', '09:00');
-    const html = statusTextHtml(2);
+    const html = helpTextHtml(2);
     expect(html).toContain('9:00');
     expect(html).toContain('Рассылка');
   });

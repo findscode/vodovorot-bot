@@ -1,26 +1,27 @@
 import { Markup } from 'telegraf';
 import { formatHhmmForUser } from './calendarDayUserPhrases.js';
 import { DAY_PUSH_HHMM_PRESETS } from './dayPushPresets.js';
-import { hasFullSpreadAccess } from './accessResolve.js';
+import { hasUnlimitedSpreadAccess } from './accessResolve.js';
 import { canUseFullDeepFinal, resolveAccessTier } from './accessTier.js';
 import { isDayPushEnabledSync } from './db/usersRepo.js';
-import { labelBasicTrackButton, labelPremiumButton } from './tierDisplay.js';
+import { labelBasicLevelButton, labelPremiumButton } from './tierDisplay.js';
+import { SPREAD_BUTTON_LABEL } from './spreadLabels.js';
 
 function mainSpreadRows(userId: number | undefined) {
   const tier = resolveAccessTier(userId);
   const rows: ReturnType<typeof Markup.button.callback>[][] = [
-    [Markup.button.callback(labelBasicTrackButton('На день'), 'day')],
+    [Markup.button.callback(labelBasicLevelButton('На день'), 'day')],
   ];
-  if (hasFullSpreadAccess(userId)) {
-    rows.push([
-      Markup.button.callback(labelPremiumButton('Прошлое — настоящее — будущее'), 'spread'),
-    ]);
-  } else {
+  const spreadLabel = hasUnlimitedSpreadAccess(userId)
+    ? labelPremiumButton(SPREAD_BUTTON_LABEL.spread)
+    : labelBasicLevelButton(SPREAD_BUTTON_LABEL.spread);
+  rows.push([Markup.button.callback(spreadLabel, 'spread')]);
+  if (!hasUnlimitedSpreadAccess(userId)) {
     rows.push([Markup.button.callback(labelPremiumButton('Промокод (Premium)'), 'promo_help')]);
   }
   const deepLabel = canUseFullDeepFinal(tier)
     ? labelPremiumButton('Глубинная диагностика')
-    : labelBasicTrackButton('Глубинная диагностика');
+    : labelBasicLevelButton('Глубинная диагностика');
   rows.push([Markup.button.callback(deepLabel, 'deep')]);
   return rows;
 }
@@ -38,9 +39,26 @@ export function keyboardDeepIntro() {
   ]);
 }
 
+export function keyboardSpreadIntro() {
+  return Markup.inlineKeyboard([
+    [
+      Markup.button.callback('Начать', 'spread_start'),
+      Markup.button.callback('Отмена', 'spread_cancel'),
+    ],
+  ]);
+}
+
 /** После «Начать» — ждём первый вопрос, только отмена. */
 export function keyboardDeepAwaitingFirst() {
   return Markup.inlineKeyboard([[Markup.button.callback('Отмена', 'deep_cancel')]]);
+}
+
+export function keyboardSpreadAwaitingQuestion() {
+  return Markup.inlineKeyboard([[Markup.button.callback('Отмена', 'spread_cancel')]]);
+}
+
+export function keyboardWhatsNewDismiss() {
+  return Markup.inlineKeyboard([[Markup.button.callback('Понятно', 'release_notes_ok')]]);
 }
 
 export function keyboardDeepInChain() {

@@ -36,9 +36,10 @@ Git-теги релизов: **`v` + версия**, например `v1.2.3` (
 1. Убедитесь, что `main` зелёный в CI.
 2. В `CHANGELOG.md` перенесите пункты из **`[Unreleased]`** в новый блок **`[X.Y.Z] — YYYY-MM-DD`**.
 3. Обновите **`version`** в `package.json` (без префикса `v`).
-4. Коммит (например: `chore: release v1.2.3`).
-5. Тег: `git tag -a vX.Y.Z -m "vodovorot vX.Y.Z"` (или эквивалент) и `git push origin main && git push origin vX.Y.Z`.
-6. Workflow **Release** (`.github/workflows/release.yml`) создаст [GitHub Release](https://docs.github.com/en/repositories/releasing-projects-on-github/about-releases) с автогенерацией заметок по коммитам; при необходимости отредактируйте текст релиза вручную и сверьте с `CHANGELOG.md`.
+4. Перепишите **`whatsNewHtml()`** в `src/releaseNotes.ts`, если релиз заметный для пользователя (см. `.cursor/rules/release-notes.mdc`).
+5. Коммит (например: `chore: release v1.2.3`).
+6. Тег: `git tag -a vX.Y.Z -m "vodovorot vX.Y.Z"` (или эквивалент) и `git push origin main && git push origin vX.Y.Z`.
+7. Workflow **Release** (`.github/workflows/release.yml`) создаст [GitHub Release](https://docs.github.com/en/repositories/releasing-projects-on-github/about-releases) с автогенерацией заметок по коммитам; при необходимости отредактируйте текст релиза вручную и сверьте с `CHANGELOG.md`.
 
 Публикация в npm для этого проекта не предполагается (`private: true`).
 
