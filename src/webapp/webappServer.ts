@@ -37,12 +37,15 @@ function resolveUserId(req: IncomingMessage, botToken: string): number | null {
   return validateTelegramInitData(header, botToken);
 }
 
+function staticRelPath(urlPath: string): string {
+  if (urlPath === '/' || urlPath === '') return 'index.html';
+  return urlPath.replace(/^\/+/, '');
+}
+
 async function serveStatic(urlPath: string, res: ServerResponse): Promise<boolean> {
-  const rel = urlPath === '/' ? '/index.html' : urlPath;
-  const safe = path.normalize(rel).replace(/^(\.\.[/\\])+/, '');
-  const filePath = path.join(webappStaticRoot(), safe);
   const root = path.resolve(webappStaticRoot());
-  if (!filePath.startsWith(root)) {
+  const filePath = path.resolve(root, staticRelPath(urlPath));
+  if (filePath !== root && !filePath.startsWith(`${root}${path.sep}`)) {
     res.writeHead(403);
     res.end();
     return true;
