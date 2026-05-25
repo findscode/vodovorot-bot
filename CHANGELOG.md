@@ -8,6 +8,10 @@
 
 - **Deploy:** Caddy в `docker-compose` (profile `webapp`), `deploy/Caddyfile`, `scripts/compose-up.sh`; `WEBAPP_DOMAIN` + авто-`WEBAPP_PUBLIC_URL`.
 
+### Fixed
+
+- **Mini App:** отдача статики по `/` и `/webapp/` (403 из-за `path.join` с абсолютным сегментом).
+
 ## [4.1.0] — 2026-05-25
 
 ### Added
