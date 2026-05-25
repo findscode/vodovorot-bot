@@ -1,6 +1,6 @@
 # Участие в разработке
 
-Документация проекта: [docs/README.md](docs/README.md). Текущая линия — **3.0.x** (см. [CHANGELOG.md](CHANGELOG.md), [docs/ROADMAP.md](docs/ROADMAP.md#ветка-30--глубинная-диагностика)).
+Документация проекта: [docs/README.md](docs/README.md). Текущая линия — **3.7.x**; план работ — [docs/ROADMAP.md](docs/ROADMAP.md) (milestone [v4.x](https://github.com/findscode/vodovorot-bot/milestone/14)).
 
 ## Версионирование (SemVer)
 

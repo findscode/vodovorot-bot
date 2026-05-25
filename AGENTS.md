@@ -12,19 +12,20 @@
 
 ## Куда нести изменения (без новых `*-PLAN.md`)
 
-| Задача                                  | Документ                                          | Код (типично)                                                                      |
-| --------------------------------------- | ------------------------------------------------- | ---------------------------------------------------------------------------------- |
-| Продукт, поток, визуал, ограничения 3.x | [docs/ROADMAP.md](docs/ROADMAP.md) §3.0           | `src/deepReading/`, `src/handlers/`                                                |
-| Тон, «ты», строки UI, emoji tiers       | [docs/BRAND-GUIDE.md](docs/BRAND-GUIDE.md) §1, §4 | `src/botCopy.ts`, `src/spreadLabels.ts`, `src/statusCopy.ts`, `src/tierDisplay.ts` |
-| Термины ↔ код                           | [docs/GLOSSARY.md](docs/GLOSSARY.md)              | по смыслу                                                                          |
-| Формат толкований ИИ                    | [docs/BRAND-GUIDE.md](docs/BRAND-GUIDE.md) §4–5   | `src/brandFormat.ts`, `src/prompts.ts`                                             |
-| Подписи к фото                          | BRAND-GUIDE §3                                    | `src/readingTelegramHtml.ts`                                                       |
-| Релиз                                   | [CHANGELOG.md](CHANGELOG.md) + `package.json`     | SemVer — [CONTRIBUTING.md](CONTRIBUTING.md)                                        |
-| In-bot «Что нового»                     | [CHANGELOG.md](CHANGELOG.md) § релиз              | `src/releaseNotes.ts`, `src/releaseNotesDelivery.ts`, `users.last_seen_release`    |
-| Деплой, env, ops                        | [docs/DEPLOY.md](docs/DEPLOY.md)                  | Docker, workflow                                                                   |
-| Фокус-группа                            | [docs/FOCUS-GROUP.md](docs/FOCUS-GROUP.md)        | Smoke, промокоды, бриф                                                             |
-| BotFather-тексты                        | [docs/BOTFATHER.md](docs/BOTFATHER.md)            | вне кода                                                                           |
-| Индекс всех доков                       | [docs/README.md](docs/README.md)                  | —                                                                                  |
+| Задача                                  | Документ                                           | Код (типично)                                                                      |
+| --------------------------------------- | -------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| Продукт, поток, визуал, ограничения 3.x | [docs/ROADMAP.md](docs/ROADMAP.md) §3.0            | `src/deepReading/`, `src/handlers/`                                                |
+| Эпики 4.x (issues)                      | [docs/ROADMAP.md](docs/ROADMAP.md), milestone v4.x | см. [#53–#56](https://github.com/findscode/vodovorot-bot/milestone/14)             |
+| Тон, «ты», строки UI, emoji tiers       | [docs/BRAND-GUIDE.md](docs/BRAND-GUIDE.md) §1, §4  | `src/botCopy.ts`, `src/spreadLabels.ts`, `src/statusCopy.ts`, `src/tierDisplay.ts` |
+| Термины ↔ код                           | [docs/GLOSSARY.md](docs/GLOSSARY.md)               | по смыслу                                                                          |
+| Формат толкований ИИ                    | [docs/BRAND-GUIDE.md](docs/BRAND-GUIDE.md) §4–5    | `src/brandFormat.ts`, `src/prompts.ts`                                             |
+| Подписи к фото                          | BRAND-GUIDE §3                                     | `src/readingTelegramHtml.ts`                                                       |
+| Релиз                                   | [CHANGELOG.md](CHANGELOG.md) + `package.json`      | SemVer — [CONTRIBUTING.md](CONTRIBUTING.md)                                        |
+| In-bot «Что нового»                     | [CHANGELOG.md](CHANGELOG.md) § релиз               | `src/releaseNotes.ts`, `src/releaseNotesDelivery.ts`, `users.last_seen_release`    |
+| Деплой, env, ops                        | [docs/DEPLOY.md](docs/DEPLOY.md)                   | Docker, workflow                                                                   |
+| Фокус-группа                            | [docs/FOCUS-GROUP.md](docs/FOCUS-GROUP.md)         | Smoke, промокоды, бриф                                                             |
+| BotFather-тексты                        | [docs/BOTFATHER.md](docs/BOTFATHER.md)             | вне кода                                                                           |
+| Индекс всех доков                       | [docs/README.md](docs/README.md)                   | —                                                                                  |
 
 Временный чеклист — секция **«В работе»** в ROADMAP или пункты в CHANGELOG `[Unreleased]`, не отдельный plan-файл.
 

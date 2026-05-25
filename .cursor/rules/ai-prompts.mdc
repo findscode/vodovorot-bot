@@ -8,3 +8,4 @@ alwaysApply: false
 
 - Менять `prompts.ts` / `brandFormat.ts` / `ai.ts` только по **явному** запросу на толкования или промпты.
 - Структура и метки — [docs/BRAND-GUIDE.md](../../docs/BRAND-GUIDE.md) §4–5, `READING_SECTION_LABELS` в `brandFormat.ts`.
+- Safety, agency — [docs/BRAND-GUIDE.md](../../docs/BRAND-GUIDE.md) §2.1; эпик [#53](https://github.com/findscode/vodovorot-bot/issues/53).

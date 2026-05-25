@@ -4,6 +4,10 @@
 
 ## [Unreleased]
 
+### Changed
+
+- `/help`: дисклеймер — «ориентир, не приговор» (`DISCLAIMER_HELP`).
+
 ## [3.7.1] — 2026-05-25
 
 ### Fixed

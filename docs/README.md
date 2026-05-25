@@ -1,57 +1,27 @@
 # Документация Водоворот
 
-**Текущая версия:** `package.json` и [CHANGELOG.md](../CHANGELOG.md).
+**Версия:** `package.json`, [CHANGELOG.md](../CHANGELOG.md).
 
-## Для агентов и быстрый старт
+## Старт
 
-| Документ                           | Зачем                                                                               |
-| ---------------------------------- | ----------------------------------------------------------------------------------- |
-| [AGENTS.md](../AGENTS.md)          | **Главная навигация:** куда писать задачи, карта кода, инварианты, чеклист перед PR |
-| [ROADMAP.md](./ROADMAP.md) §3.0    | Глубинная диагностика: поток, визуал, ограничения                                   |
-| [BRAND-GUIDE.md](./BRAND-GUIDE.md) | Тон «ты», тексты UI, формат толкований                                              |
+| Документ                           | Зачем                                                                                               |
+| ---------------------------------- | --------------------------------------------------------------------------------------------------- |
+| [AGENTS.md](../AGENTS.md)          | Навигация, карта кода, инварианты, CI                                                               |
+| [ROADMAP.md](./ROADMAP.md)         | План **4.x** (issues [#53–#56](https://github.com/findscode/vodovorot-bot/milestone/14)), §3.0 deep |
+| [BRAND-GUIDE.md](./BRAND-GUIDE.md) | Тон, §2.1 safety, формат толкований                                                                 |
 
-Не создавать новые `*-PLAN.md` без явной просьбы — см. [.cursor/rules/](../.cursor/rules/) (`core.mdc`, `documentation.mdc`).
+Не создавать `*-PLAN.md` — см. [.cursor/rules/](../.cursor/rules/).
 
-## Оператор и деплой
+## Ops
 
-| Документ                           | Зачем                                         |
-| ---------------------------------- | --------------------------------------------- |
-| [DEPLOY.md](./DEPLOY.md)           | Env, Docker, tiers, промокоды, push, логи     |
-| [FOCUS-GROUP.md](./FOCUS-GROUP.md) | Чеклист запуска фокус-группы, smoke, бриф     |
-| [BOTFATHER.md](./BOTFATHER.md)     | About / Description / Commands для @BotFather |
-| [PRIVACY.md](./PRIVACY.md)         | Политика конфиденциальности (URL в BotFather) |
+| [DEPLOY.md](./DEPLOY.md) | [FOCUS-GROUP.md](./FOCUS-GROUP.md) | [BOTFATHER.md](./BOTFATHER.md) | [PRIVACY.md](./PRIVACY.md) |
 
-## Продукт и контент
+## Контент и термины
 
-| Документ                           | Зачем                                 |
-| ---------------------------------- | ------------------------------------- |
-| [BRAND-GUIDE.md](./BRAND-GUIDE.md) | Тон бота и правила формата толкований |
-| [GLOSSARY.md](./GLOSSARY.md)       | Термины для копирайта и промптов      |
-| [ROADMAP.md](./ROADMAP.md)         | Релизы 2.x–3.x, эпики, milestones     |
+| [GLOSSARY.md](./GLOSSARY.md) | [BRAND-GUIDE.md](./BRAND-GUIDE.md) |
 
 ## Разработка
 
-| Документ                              | Зачем                                  |
-| ------------------------------------- | -------------------------------------- |
-| [CONTRIBUTING.md](../CONTRIBUTING.md) | SemVer, релизы, Conventional Commits   |
-| [DEV-PROCESS.md](./DEV-PROCESS.md)    | Branch protection, CI, секреты Actions |
-| [BRANCHING.md](./BRANCHING.md)        | `main`, `feature/*`, `fix/*`           |
+| [CONTRIBUTING.md](../CONTRIBUTING.md) | [DEV-PROCESS.md](./DEV-PROCESS.md) | [BRANCHING.md](./BRANCHING.md) |
 
-## Код (ориентир)
-
-| Путь                      | Роль                                             |
-| ------------------------- | ------------------------------------------------ |
-| `src/bot.ts`              | Telegraf, `registerHandlers`, `bot.catch`        |
-| `src/botCopy.ts`          | Системные тексты (`/start`, `/menu`, ошибки)     |
-| `src/releaseNotes.ts`     | In-bot «Что нового» (текст для пользователя)     |
-| `src/spreadLabels.ts`     | Названия раскладов как на кнопках, обзор доступа |
-| `src/tierDisplay.ts`      | Emoji и подписи уровней в UI                     |
-| `src/statusCopy.ts`       | `/help` (и `/status` — то же)                    |
-| `src/dayPushScheduler.ts` | Авторассылка «карта дня» (cron)                  |
-| `src/promoConfig.ts`      | Срок Premium по промокоду, лимиты `/promo`       |
-| `src/handlers/`           | Команды, day, spread, deep, push, middleware     |
-| `src/deepReading/`        | Сессия, коллаж, промпты deep                     |
-| `src/spreadComposite.ts`  | Полоса трёх карт (spread + 1-й триплет deep)     |
-| `assets/cards/`           | PNG колоды (`512×896`)                           |
-
-Подробная таблица — в [AGENTS.md](../AGENTS.md).
+Карта кода — [AGENTS.md](../AGENTS.md).

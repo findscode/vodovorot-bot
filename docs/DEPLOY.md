@@ -74,7 +74,7 @@
 2. При необходимости точечно: **`/admin grant ID ДНЕЙ`**.
 3. Позже — автоматическая выдача кода после оплаты (вне текущего этапа).
 
-Уровни в коде: `basic` | `premium` | `admin` — `src/accessTier.ts`. Emoji в UI — `src/tierDisplay.ts` (см. [BRAND-GUIDE § emoji](./BRAND-GUIDE.md#4-emoji-уровней-доступа-в-ui)). См. [ROADMAP § модель C](./ROADMAP.md#модель-c--уровни-доступа-4x-в-работе).
+Уровни в коде: `basic` | `premium` | `admin` — `src/accessTier.ts`. Emoji в UI — `src/tierDisplay.ts` (см. [BRAND-GUIDE § emoji](./BRAND-GUIDE.md#4-emoji-уровней-доступа-в-ui)). См. [ROADMAP § модель C](./ROADMAP.md#модель-c--уровни-доступа-реализовано).
 
 ### Лимит «карта дня» и SQLite
 
