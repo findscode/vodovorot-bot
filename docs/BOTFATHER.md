@@ -42,11 +42,15 @@
 
 ## Privacy Policy (URL)
 
-HTTPS-ссылка на политику в репозитории (при форке замените организацию/репозиторий):
+HTTPS-ссылка на **встроенную страницу** Mini App (тот же домен, что и `WEBAPP_PUBLIC_URL`):
 
-`https://github.com/findscode/vodovorot-bot/blob/main/docs/PRIVACY.md`
+`https://<WEBAPP_DOMAIN>/webapp/privacy.html`
 
-Перед публичным запуском заполните **контакт оператора** в [PRIVACY.md](PRIVACY.md).
+Пример с sslip.io: `https://134-122-69-116.sslip.io/webapp/privacy.html`
+
+Переопределение: `WEBAPP_PRIVACY_URL` в `.env`. Исходник текста — [PRIVACY.md](PRIVACY.md) и [`webapp/public/privacy.html`](../webapp/public/privacy.html) (держите в синхронизации).
+
+Контакт оператора — в [PRIVACY.md](PRIVACY.md) и на странице `privacy.html` (держите в синхронизации).
 
 ---
 

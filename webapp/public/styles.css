@@ -160,3 +160,34 @@ a {
   font-size: 0.85rem;
   opacity: 0.9;
 }
+
+.nav-back {
+  margin: 0 0 0.75rem;
+  font-size: 0.95rem;
+}
+
+.privacy-doc h1 {
+  font-size: 1.2rem;
+  margin: 0 0 0.5rem;
+}
+
+.privacy-doc h2 {
+  font-size: 1rem;
+  margin: 1.25rem 0 0.5rem;
+}
+
+.privacy-doc p,
+.privacy-doc li {
+  margin: 0.5rem 0;
+}
+
+.privacy-doc ol,
+.privacy-doc ul {
+  margin: 0.5rem 0;
+  padding-left: 1.25rem;
+}
+
+.privacy-doc code {
+  font-size: 0.88em;
+  word-break: break-word;
+}

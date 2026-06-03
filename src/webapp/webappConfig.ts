@@ -21,11 +21,13 @@ export function webappListenPort(): number {
   return Number.isFinite(n) && n > 0 && n < 65536 ? n : 8080;
 }
 
+/** URL страницы политики: по умолчанию встроенная страница Mini App (`/privacy.html`). */
 export function webappPrivacyUrl(): string {
-  return (
-    process.env.WEBAPP_PRIVACY_URL?.trim() ||
-    'https://github.com/findscode/vodovorot-bot/blob/main/docs/PRIVACY.md'
-  );
+  const custom = process.env.WEBAPP_PRIVACY_URL?.trim();
+  if (custom) return custom;
+  const base = webappPublicBaseUrl();
+  if (base) return `${base}/privacy.html`;
+  return 'privacy.html';
 }
 
 /** Корень статики Mini App (от cwd процесса). */

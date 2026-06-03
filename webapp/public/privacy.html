@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Политика конфиденциальности — Водоворот</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="wrap">
+      <p class="nav-back"><a href="index.html">← Меню</a></p>
+      <article class="privacy-doc">
+        <h1>Политика конфиденциальности</h1>
+        <p class="muted">Водоворот (Vodovorot)</p>
+        <p><strong>Дата:</strong> 25 мая 2026 г.</p>
+        <p>
+          <strong>Контакт оператора:</strong>
+          <a href="https://t.me/pjbaraboolkin" target="_blank" rel="noopener"
+            >https://t.me/pjbaraboolkin</a
+          >
+        </p>
+
+        <h2>Назначение</h2>
+        <p>
+          Бот <strong>Водоворот</strong> в Telegram. Режим работы:
+          <strong>только личные сообщения</strong>
+          (private), группы и каналы не обслуживаются.
+        </p>
+
+        <h2>Данные</h2>
+        <ol>
+          <li>
+            <strong>Telegram user id</strong> и поля профиля, которые Telegram передаёт боту при
+            обновлениях — для ответов в чате и для учёта уровня доступа (базовый уровень, Premium,
+            админы — в локальной БД оператора).
+          </li>
+          <li>
+            <strong>Действия в чате</strong> (команды, нажатия inline-кнопок, служебные поля
+            апдейтов), необходимые для выдачи расклада и текста толкования.
+          </li>
+          <li>
+            <strong>Логи на сервере</strong> оператора — по его настройкам; в открытый доступ не
+            публикуются как продукт бота.
+          </li>
+          <li>
+            <strong>Локальная база SQLite</strong> на сервере оператора (путь задаётся
+            <code>DATABASE_PATH</code>, по умолчанию файл в каталоге <code>data/</code>): слот
+            «карта дня» (<code>day_draw_slots</code>: user id и календарная дата); слоты расклада
+            «три карты» на basic (<code>spread_draw_slots</code>, до 3 за сутки); подписка на
+            ежедневную карту; срок Premium; флаг админа; промокоды; <code>last_seen_release</code> —
+            какой релиз in-bot «Что нового» пользователь уже закрыл. Legacy JSON из 1.x может
+            <strong>один раз</strong> импортироваться при старте, если задан
+            <code>DAY_DRAW_STATE_PATH</code> или есть файл по умолчанию.
+          </li>
+          <li>
+            <strong>Глубинная диагностика (с v3.0):</strong> во время активного гадания вопросы
+            пользователя, служебные краткие резюме шагов и данные для коллажа хранятся
+            <strong>только в оперативной памяти</strong> процесса бота (до <strong>24 часов</strong>
+            без активности, до нажатия «Закончить гадание» или отмены до первого вопроса). В SQLite
+            <strong>не</strong> записываются. После перезапуска сервиса незавершённая сессия
+            <strong>не восстанавливается</strong>.
+          </li>
+          <li>
+            <strong>Расклад «три карты» (с v3.7):</strong> ожидание вопроса после «Начать» —
+            <strong>in-memory</strong> (TTL ~15 мин), как у spread-сессии до выдачи карт.
+          </li>
+        </ol>
+
+        <h2>ИИ</h2>
+        <p>
+          Текст толкования запрашивается у <strong>OpenRouter</strong> (Chat Completions; на сторону
+          провайдера уходит <strong>промпт</strong> — описание карт и инструкции формата ответа).
+          Имя и @username пользователя в промпт <strong>не включаются</strong> по умолчанию. Если
+          первая выдача по эвристике выглядит <strong>преимущественно не-русской</strong> (много
+          латинских букв в тексте), бот может отправить <strong>второй</strong> запрос: на вход
+          уходит уже <strong>сгенерированный</strong> текст толкования и инструкция редактора
+          «переписать на русский», без добавления персональных данных.
+        </p>
+
+        <h2>Третьи стороны</h2>
+        <ul>
+          <li>
+            <strong>Telegram</strong> — обработка сообщений по
+            <a href="https://telegram.org/privacy" target="_blank" rel="noopener"
+              >политике Telegram</a
+            >.
+          </li>
+          <li>
+            <strong>OpenRouter</strong> — маршрутизация запросов к языковым моделям; см.
+            <a href="https://openrouter.ai/privacy" target="_blank" rel="noopener"
+              >Privacy Policy OpenRouter</a
+            >.
+          </li>
+        </ul>
+        <p>
+          Иной состав обработчиков возможен при иной конфигурации деплоя; фактический список — у
+          оператора.
+        </p>
+
+        <h2>Хранение</h2>
+        <p>
+          Долговременное хранение в типовой сборке — <strong>файл SQLite</strong> (см. выше). Сроки
+          хранения, резервное копирование БД, удаление данных по запросу пользователя — зона
+          ответственности оператора.
+        </p>
+
+        <h2>Пользователь</h2>
+        <p>
+          Можно прекратить использование и заблокировать бота в Telegram. Запросы на удаление данных
+          — контакту оператора (если применимо по закону).
+        </p>
+
+        <h2>Изменения</h2>
+        <p>
+          Текст может обновляться; актуальная версия — на этой странице Mini App и в
+          <code>docs/PRIVACY.md</code> репозитория оператора.
+        </p>
+        <p class="disclaimer">
+          Публичный запуск: проверка текста на соответствие закону вашей юрисдикции — задача
+          оператора.
+        </p>
+      </article>
+    </main>
+    <script>
+      const tg = window.Telegram?.WebApp;
+      if (tg) {
+        tg.ready();
+        tg.expand();
+      }
+    </script>
+  </body>
+</html>

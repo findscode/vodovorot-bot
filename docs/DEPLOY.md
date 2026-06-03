@@ -130,7 +130,7 @@ sqlite3 /path/to/vodovorot.db "INSERT INTO promo_codes (code, premium_days, vali
 
 ## Mini App «Настройки» (4.1+)
 
-**Гибрид:** гадание — кнопки в чате; tier, рассылка «На день», справка и ссылка на [PRIVACY.md](./PRIVACY.md) — в **WebApp**.
+**Гибрид:** гадание — кнопки в чате; tier, рассылка «На день», справка и политика конфиденциальности (`privacy.html`) — в **WebApp**. Исходник текста — [PRIVACY.md](./PRIVACY.md).
 
 | Переменная           | Назначение                                                                                                             |
 | -------------------- | ---------------------------------------------------------------------------------------------------------------------- |
@@ -139,7 +139,7 @@ sqlite3 /path/to/vodovorot.db "INSERT INTO promo_codes (code, premium_days, vali
 | `WEBAPP_PUBLIC_URL`  | Явный HTTPS-URL Mini App (без `/` в конце); если пусто — `https://WEBAPP_DOMAIN/webapp`                                |
 | `WEBAPP_PATH`        | Путь Mini App (по умолчанию `/webapp`)                                                                                 |
 | `WEBAPP_PORT`        | Порт HTTP бота внутри compose (по умолчанию **8080**, только localhost на хосте)                                       |
-| `WEBAPP_PRIVACY_URL` | Ссылка на политику в App (опционально)                                                                                 |
+| `WEBAPP_PRIVACY_URL` | Ссылка на политику в App (опционально; по умолчанию `{WEBAPP_PUBLIC_URL}/privacy.html`)                                |
 
 ### Вариант A — Caddy в compose (рекомендуется на дроплете)
 
