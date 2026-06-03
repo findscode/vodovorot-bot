@@ -1,5 +1,5 @@
 import { getDayDrawTimezone } from '../dayDrawState.js';
-import { getDefaultDayPushHhmm } from '../dayPushConfig.js';
+import { getDefaultDayPushHhmm, isDayPushDeliveryEnabled } from '../dayPushConfig.js';
 import { isAllowedDayPushHhmm, normalizeDayPushHhmm } from '../dayPushPresets.js';
 import { setDayPushEnabled, setDayPushLocalHhmmSync } from '../db/usersRepo.js';
 
@@ -17,6 +17,9 @@ export function applyWebAppSettingsPatch(
   const tz = getDayDrawTimezone();
 
   if (patch.dayPushEnabled === true) {
+    if (!isDayPushDeliveryEnabled()) {
+      return { ok: false, error: 'push_paused' };
+    }
     const hhmm =
       patch.dayPushHhmm !== undefined
         ? normalizeDayPushHhmm(patch.dayPushHhmm)

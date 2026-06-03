@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { getDefaultDayPushHhmm } from './dayPushConfig.js';
+import { getDefaultDayPushHhmm, isDayPushDeliveryEnabled } from './dayPushConfig.js';
 import { isAllowedDayPushHhmm, normalizeDayPushHhmm } from './dayPushPresets.js';
 
 describe('dayPushPresets', () => {
@@ -23,5 +23,16 @@ describe('dayPushPresets', () => {
   it('getDefaultDayPushHhmm берёт валидное время из env как есть', () => {
     vi.stubEnv('DAY_PUSH_DEFAULT_HHMM', '10:17');
     expect(getDefaultDayPushHhmm()).toBe('10:17');
+  });
+
+  it('isDayPushDeliveryEnabled только при DAY_PUSH_ENABLED=1|true|yes', () => {
+    vi.stubEnv('DAY_PUSH_ENABLED', '1');
+    expect(isDayPushDeliveryEnabled()).toBe(true);
+    vi.stubEnv('DAY_PUSH_ENABLED', 'yes');
+    expect(isDayPushDeliveryEnabled()).toBe(true);
+    vi.stubEnv('DAY_PUSH_ENABLED', '0');
+    expect(isDayPushDeliveryEnabled()).toBe(false);
+    vi.stubEnv('DAY_PUSH_ENABLED', '');
+    expect(isDayPushDeliveryEnabled()).toBe(false);
   });
 });

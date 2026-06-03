@@ -13,7 +13,7 @@ import {
   keyboardMainOrDayPlusDayPushShortcut,
 } from '../botKeyboards.js';
 import { getDayDrawTimezone } from '../dayDrawState.js';
-import { getDefaultDayPushHhmm } from '../dayPushConfig.js';
+import { getDefaultDayPushHhmm, isDayPushDeliveryEnabled } from '../dayPushConfig.js';
 import { isAllowedDayPushHhmm } from '../dayPushPresets.js';
 import { TELEGRAM_HTML_PARSE } from '../readingTelegramHtml.js';
 import {
@@ -29,6 +29,13 @@ export function registerDayPushHandlers(bot: Telegraf): void {
     await answerCbQuerySafe(ctx);
     const uid = ctx.from?.id;
     if (uid === undefined) return;
+    if (!isDayPushDeliveryEnabled()) {
+      await ctx.reply(SUBSCRIBE_MESSAGES.paused, {
+        ...keyboardMainOrDayOnly(uid),
+        ...TELEGRAM_HTML_PARSE,
+      });
+      return;
+    }
     const tz = getDayDrawTimezone();
     const hhmm = getDefaultDayPushHhmm();
     setDayPushEnabled(uid, true, tz, hhmm);

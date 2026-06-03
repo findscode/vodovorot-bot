@@ -1,3 +1,4 @@
+import { isDayPushDeliveryEnabled } from '../dayPushConfig.js';
 import { normalizeDayPushHhmm } from '../dayPushPresets.js';
 import { generateTarotPromoCode } from '../promoCodeGenerator.js';
 import { PROMO_PREMIUM_DAYS } from '../promoConfig.js';
@@ -123,12 +124,24 @@ export function countDayPushSubscribersSync(): number {
   return row.c;
 }
 
+/** Сброс подписки на рассылку у всех пользователей (возвращает число отключённых строк). */
+export function disableAllDayPushSubscriptionsSync(): number {
+  const r = getDb()
+    .prepare(
+      `UPDATE users SET day_push_enabled = 0, updated_at = ?
+       WHERE day_push_enabled = 1`,
+    )
+    .run(isoNow());
+  return r.changes;
+}
+
 export function setDayPushEnabled(
   userId: number,
   enabled: boolean,
   timezoneIana: string,
   localHhmmWhenEnabling: string = '09:00',
 ): void {
+  if (enabled && !isDayPushDeliveryEnabled()) return;
   getOrCreateUser(userId);
   const db = getDb();
   const t = isoNow();
@@ -147,6 +160,7 @@ export function setDayPushEnabled(
 }
 
 export function isDayPushEnabledSync(userId: number): boolean {
+  if (!isDayPushDeliveryEnabled()) return false;
   const row = getDb()
     .prepare('SELECT day_push_enabled FROM users WHERE telegram_user_id = ?')
     .get(userId) as { day_push_enabled: number } | undefined;
@@ -201,6 +215,7 @@ export type DayPushSubscriberRow = {
 };
 
 export function listDayPushSubscribersSync(): DayPushSubscriberRow[] {
+  if (!isDayPushDeliveryEnabled()) return [];
   return getDb()
     .prepare(
       `SELECT telegram_user_id, day_push_timezone, day_push_local_hhmm, day_push_last_sent_date

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   extractChatCompletionContent,
   isFatalOpenRouterHttpStatus,
+  parseOpenRouterRetryDelayMs,
   shouldTryNextOpenRouterModel,
 } from './openRouterFallback.js';
 
@@ -43,6 +44,23 @@ describe('openRouterFallback', () => {
     expect(shouldTryNextOpenRouterModel(200, '{}', '')).toBe(true);
     expect(shouldTryNextOpenRouterModel(200, '{}', '   ')).toBe(true);
     expect(shouldTryNextOpenRouterModel(200, '{}', 'текст')).toBe(false);
+  });
+
+  it('shouldTryNext on 503 provider errors', () => {
+    expect(shouldTryNextOpenRouterModel(503, 'Provider returned error', null)).toBe(true);
+  });
+
+  it('parseOpenRouterRetryDelayMs uses Retry-After header', () => {
+    expect(parseOpenRouterRetryDelayMs(429, '{}', '2')).toBe(2000);
+    expect(parseOpenRouterRetryDelayMs(200, '{}', '2')).toBe(0);
+  });
+
+  it('extractChatCompletionContent from reasoning field', () => {
+    expect(
+      extractChatCompletionContent({
+        choices: [{ message: { role: 'assistant', content: null, reasoning: 'да' } }],
+      }),
+    ).toBe('да');
   });
 
   it('extractChatCompletionContent', () => {

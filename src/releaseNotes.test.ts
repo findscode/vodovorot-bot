@@ -11,9 +11,9 @@ describe('releaseNotes', () => {
   it('whatsNewHtml is short user-facing HTML', () => {
     const html = whatsNewHtml();
     expect(html).toContain('<b>Что нового</b>');
-    expect(html).toContain('Меню');
+    expect(html).toContain('На день');
     expect(html).toContain('Понятно');
-    expect(html).toContain('/promo');
+    expect(html).toContain('рассылка');
     expect(html.match(/^• /gm)).toHaveLength(3);
   });
 });

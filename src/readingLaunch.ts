@@ -42,23 +42,23 @@ export async function launchDayReading(ctx: ReadingLaunchContext, userId: number
     await ctx.reply(DAY_IN_FLIGHT_MESSAGE, TELEGRAM_HTML_PARSE);
     return;
   }
-
-  const at = new Date();
-  const prevTap = dayLastTap.get(userId) ?? 0;
-  if (at.getTime() - prevTap < DAY_ACTION_DEBOUNCE_MS) {
-    await ctx.reply(DAY_DEBOUNCE_MESSAGE, TELEGRAM_HTML_PARSE);
-    return;
-  }
-  dayLastTap.set(userId, at.getTime());
-
-  const today = dayDrawCalendarDate(at);
-  if (await hasDayDrawSlotUsed(userId, today)) {
-    await ctx.reply(dayLimitMessage(), TELEGRAM_HTML_PARSE);
-    return;
-  }
   dayInFlight.add(userId);
 
   try {
+    const at = new Date();
+    const prevTap = dayLastTap.get(userId) ?? 0;
+    if (at.getTime() - prevTap < DAY_ACTION_DEBOUNCE_MS) {
+      await ctx.reply(DAY_DEBOUNCE_MESSAGE, TELEGRAM_HTML_PARSE);
+      return;
+    }
+    dayLastTap.set(userId, at.getTime());
+
+    const today = dayDrawCalendarDate(at);
+    if (await hasDayDrawSlotUsed(userId, today)) {
+      await ctx.reply(dayLimitMessage(), TELEGRAM_HTML_PARSE);
+      return;
+    }
+
     const result = await deliverCardOfDayReading(
       ctx.telegram,
       userId,

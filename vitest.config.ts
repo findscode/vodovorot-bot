@@ -28,6 +28,9 @@ const COVERAGE_EXCLUDE = [
 export default defineConfig({
   test: {
     environment: 'node',
+    env: {
+      DAY_PUSH_ENABLED: '1',
+    },
     include: ['src/**/*.test.ts'],
     coverage: {
       provider: 'v8',

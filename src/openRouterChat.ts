@@ -3,8 +3,10 @@ import {
   extractChatCompletionContent,
   isFatalOpenRouterHttpStatus,
   parseOpenRouterErrorMessage,
+  parseOpenRouterRetryDelayMs,
   shouldTryNextOpenRouterModel,
 } from './openRouterFallback.js';
+import { withOpenRouterRateLimit } from './openRouterRequestGate.js';
 
 const OPENROUTER_CHAT_URL = 'https://openrouter.ai/api/v1/chat/completions';
 const FETCH_TIMEOUT_MS = 120_000;
@@ -33,25 +35,32 @@ async function fetchCompletion(
   model: string,
   messages: ChatMessage[],
   opts: ChatCompletionOpts,
-): Promise<{ status: number; bodyText: string; content: string | null }> {
+): Promise<{
+  status: number;
+  bodyText: string;
+  content: string | null;
+  retryAfterHeader: string | null;
+}> {
   let res: Response;
   try {
-    res = await fetch(OPENROUTER_CHAT_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${apiKey}`,
-        'HTTP-Referer': 'https://github.com/findscode/vodovorot-bot',
-        'X-OpenRouter-Title': 'Vodovorot Tarot Bot',
-      },
-      body: JSON.stringify({
-        model,
-        messages,
-        max_tokens: opts.max_tokens,
-        temperature: opts.temperature,
+    res = await withOpenRouterRateLimit(() =>
+      fetch(OPENROUTER_CHAT_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${apiKey}`,
+          'HTTP-Referer': 'https://github.com/findscode/vodovorot-bot',
+          'X-OpenRouter-Title': 'Vodovorot Tarot Bot',
+        },
+        body: JSON.stringify({
+          model,
+          messages,
+          max_tokens: opts.max_tokens,
+          temperature: opts.temperature,
+        }),
+        signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
       }),
-      signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
-    });
+    );
   } catch (e) {
     if (e instanceof Error && e.name === 'AbortError') {
       throw new OpenRouterChatError('Превышено время ожидания ответа ИИ', undefined, model, {
@@ -76,7 +85,12 @@ async function fetchCompletion(
     }
   }
 
-  return { status: res.status, bodyText, content };
+  return {
+    status: res.status,
+    bodyText,
+    content,
+    retryAfterHeader: res.headers.get('Retry-After'),
+  };
 }
 
 /**
@@ -94,8 +108,14 @@ export async function completeChatWithModelFallback(
     let status: number;
     let bodyText: string;
     let content: string | null;
+    let retryAfterHeader: string | null;
     try {
-      ({ status, bodyText, content } = await fetchCompletion(apiKey, model, messages, opts));
+      ({ status, bodyText, content, retryAfterHeader } = await fetchCompletion(
+        apiKey,
+        model,
+        messages,
+        opts,
+      ));
     } catch (e) {
       if (e instanceof OpenRouterChatError && e.status === undefined) {
         console.warn('[openrouter_fallback]', model, 'network', e.message);
@@ -125,7 +145,14 @@ export async function completeChatWithModelFallback(
         model,
       );
       const next = OPENROUTER_FREE_MODEL_CHAIN[i + 1];
-      if (next) continue;
+      if (next) {
+        const delayMs = parseOpenRouterRetryDelayMs(status, bodyText, retryAfterHeader);
+        if (delayMs > 0) {
+          console.warn('[openrouter_fallback] rate_limit_wait_ms', delayMs);
+          await new Promise((r) => setTimeout(r, delayMs));
+        }
+        continue;
+      }
       break;
     }
 

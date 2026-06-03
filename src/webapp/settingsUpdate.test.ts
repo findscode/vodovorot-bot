@@ -1,7 +1,7 @@
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { closeDatabase, initDatabase } from '../db/database.js';
 import {
   getDayPushScheduleForUserSync,
@@ -22,6 +22,7 @@ describe('applyWebAppSettingsPatch', () => {
   });
 
   afterEach(async () => {
+    vi.unstubAllEnvs();
     closeDatabase();
     await rm(dir, { recursive: true, force: true });
   });
@@ -30,6 +31,15 @@ describe('applyWebAppSettingsPatch', () => {
     expect(applyWebAppSettingsPatch(userId, { dayPushEnabled: true })).toEqual({ ok: true });
     expect(isDayPushEnabledSync(userId)).toBe(true);
     expect(getDayPushScheduleForUserSync(userId)?.hhmm).toMatch(/^\d{2}:\d{2}$/);
+  });
+
+  it('rejects enable when day push globally paused', () => {
+    vi.stubEnv('DAY_PUSH_ENABLED', '0');
+    expect(applyWebAppSettingsPatch(userId, { dayPushEnabled: true })).toEqual({
+      ok: false,
+      error: 'push_paused',
+    });
+    expect(isDayPushEnabledSync(userId)).toBe(false);
   });
 
   it('rejects invalid hhmm', () => {

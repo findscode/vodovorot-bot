@@ -10,6 +10,8 @@ import {
 } from './db/usersRepo.js';
 import { applyDayPushDeliveryResult } from './dayPushApplyResult.js';
 import { clearPushFailuresForDay } from './dayPushRetry.js';
+import { isDayPushDeliveryEnabled } from './dayPushConfig.js';
+import { disableAllDayPushSubscriptionsSync } from './db/usersRepo.js';
 import { dayDrawCalendarDate, getDayDrawTimezone } from './dayDrawState.js';
 import { decideDayPushTick, type DayPushTickDecision } from './dayPushTickLogic.js';
 import { isAtOrPastLocalHm } from './pushSchedule.js';
@@ -114,7 +116,9 @@ async function runDueDayPushes(bot: Telegraf): Promise<void> {
     console.log(`[day_push] тик ${todayKey}: подписчиков=${subs.length}, к отправке=${due}`);
   }
 
-  await Promise.all(work.map((w) => processSubscriber(bot, w, todayKey, now)));
+  for (const w of work) {
+    await processSubscriber(bot, w, todayKey, now);
+  }
 }
 
 function scheduleTick(bot: Telegraf): void {
@@ -131,6 +135,13 @@ function scheduleTick(bot: Telegraf): void {
 }
 
 export function startDayPushScheduler(bot: Telegraf): void {
+  if (!isDayPushDeliveryEnabled()) {
+    const n = disableAllDayPushSubscriptionsSync();
+    console.log(
+      `[day_push] Автоматическая рассылка выключена (DAY_PUSH_ENABLED). В БД сброшено подписок: ${n}.`,
+    );
+    return;
+  }
   cron.schedule('* * * * *', () => scheduleTick(bot));
   console.log(
     `[day_push] Планировщик: раз в минуту + catch-up при старте; слот суток — ${getDayDrawTimezone()}.`,

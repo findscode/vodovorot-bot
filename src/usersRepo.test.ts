@@ -13,6 +13,7 @@ import {
   getActivePremiumUntilSync,
   getDayPushScheduleForUserSync,
   normalizePromoCode,
+  disableAllDayPushSubscriptionsSync,
   setDayPushEnabled,
   setDayPushLocalHhmmSync,
   tryRedeemPromoCodeSync,
@@ -85,6 +86,14 @@ describe('usersRepo / promo', () => {
     const free = rows.find((r) => r.code === 'LIST-FREE');
     expect(used?.redeemed_by_user_id).toBe(9001);
     expect(free?.redeemed_at).toBeNull();
+  });
+
+  it('disableAllDayPushSubscriptionsSync сбрасывает подписки', () => {
+    setDayPushEnabled(3010, true, 'Europe/Moscow', '09:00');
+    setDayPushEnabled(3011, true, 'Europe/Moscow', '10:00');
+    expect(disableAllDayPushSubscriptionsSync()).toBe(2);
+    expect(disableAllDayPushSubscriptionsSync()).toBe(0);
+    expect(getDayPushScheduleForUserSync(3010)).toBeNull();
   });
 
   it('getDayPushScheduleForUserSync после включения подписки', () => {
