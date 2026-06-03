@@ -2,6 +2,7 @@ import { deepMaxTripletsForTier, resolveAccessTier, type AccessTier } from '../a
 import { DISCLAIMER_HELP } from '../botCopy.js';
 import { DAY_PUSH_HHMM_PRESETS } from '../dayPushPresets.js';
 import { getDayDrawTimezone } from '../dayDrawState.js';
+import { isDayPushDeliveryEnabled } from '../dayPushConfig.js';
 import {
   getDayPushScheduleForUserSync,
   getOrCreateUser,
@@ -24,6 +25,8 @@ export type WebAppSettingsDto = {
   premiumUntil: string | null;
   dayPush: {
     enabled: boolean;
+    /** Глобально ли доступна подписка (`DAY_PUSH_ENABLED`). */
+    available: boolean;
     hhmm: string | null;
     timezone: string;
   };
@@ -54,6 +57,7 @@ export async function webAppSettingsDto(userId: number): Promise<WebAppSettingsD
     premiumUntil: facts.premiumUntil ? formatPremiumUntilRu(facts.premiumUntil) : null,
     dayPush: {
       enabled: isDayPushEnabledSync(userId),
+      available: isDayPushDeliveryEnabled(),
       hhmm: pushRow?.hhmm ?? null,
       timezone: tz,
     },

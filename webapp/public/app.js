@@ -48,6 +48,15 @@
     statusEl.className = isError ? 'status error' : 'status';
   }
 
+  function settingsErrorMessage(code) {
+    if (code === 'push_paused') {
+      return 'Рассылка сейчас недоступна на сервере. Карту дня можно взять кнопкой расклада в Меню.';
+    }
+    if (code === 'push_disabled') return 'Сначала включи «Присылать каждый день».';
+    if (code === 'invalid_hhmm') return 'Это время недоступно.';
+    return code || 'Не удалось сохранить';
+  }
+
   async function launchSpread(action) {
     if (saving) return;
     setStatus('Открываю в чате…');
@@ -118,8 +127,11 @@
     premiumLine.hidden = !data.premiumUntil;
 
     pushEnabled.checked = data.dayPush.enabled;
-    pushTz.textContent = `Часовой пояс: ${data.dayPush.timezone}`;
-    pushEnabled.disabled = saving;
+    const pushAvailable = data.dayPush.available !== false;
+    pushTz.textContent = pushAvailable
+      ? `Часовой пояс: ${data.dayPush.timezone}`
+      : 'Рассылка «На день» сейчас недоступна на сервере.';
+    pushEnabled.disabled = saving || !pushAvailable;
 
     helpList.innerHTML = '';
     for (const line of data.helpSummary) {
@@ -146,7 +158,10 @@
       render(data);
       if (tg?.showAlert) tg.showAlert('Сохранено');
     } catch (e) {
-      setStatus(e.message || 'Не удалось сохранить', true);
+      const msg = settingsErrorMessage(e.message);
+      setStatus(msg, true);
+      if (tg?.showAlert) tg.showAlert(msg);
+      if (current) render(current);
     } finally {
       saving = false;
       if (current) {

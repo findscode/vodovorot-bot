@@ -11,7 +11,6 @@ import {
 import { applyDayPushDeliveryResult } from './dayPushApplyResult.js';
 import { clearPushFailuresForDay } from './dayPushRetry.js';
 import { isDayPushDeliveryEnabled } from './dayPushConfig.js';
-import { disableAllDayPushSubscriptionsSync } from './db/usersRepo.js';
 import { dayDrawCalendarDate, getDayDrawTimezone } from './dayDrawState.js';
 import { decideDayPushTick, type DayPushTickDecision } from './dayPushTickLogic.js';
 import { isAtOrPastLocalHm } from './pushSchedule.js';
@@ -136,9 +135,8 @@ function scheduleTick(bot: Telegraf): void {
 
 export function startDayPushScheduler(bot: Telegraf): void {
   if (!isDayPushDeliveryEnabled()) {
-    const n = disableAllDayPushSubscriptionsSync();
     console.log(
-      `[day_push] Автоматическая рассылка выключена (DAY_PUSH_ENABLED). В БД сброшено подписок: ${n}.`,
+      '[day_push] Автоматическая рассылка выключена (DAY_PUSH_ENABLED). Планировщик не запущен; подписки в БД сохранены.',
     );
     return;
   }
