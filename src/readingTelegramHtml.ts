@@ -3,7 +3,7 @@
  * Метки разделов — строки из READING_SECTION_LABELS (см. brandFormat.ts), без тире в конце.
  */
 
-import { isReadingSectionLabelLine } from './brandFormat.js';
+import { isReadingSectionLabelLine, sanitizeReadingModelText } from './brandFormat.js';
 
 /** Заголовки в подписи к фото (без HTML — экранируются в шаблонах). */
 export const DAY_CARD_FACE_TITLE = 'Карта на день';
@@ -20,13 +20,9 @@ export function escapeTelegramHtml(text: string): string {
   return text.replace(/[&<>]/g, (ch) => HTML_ESCAPE[ch] ?? ch);
 }
 
-/** Убирает строки-артефакты из инструкций модели («Пустая строка.» и варианты). */
+/** Убирает артефакты модели («Пустая строка.», эхо «строка-метка ровно: …»). */
 export function stripModelFormatArtifacts(plain: string): string {
-  const cleaned = plain
-    .split('\n')
-    .filter((line) => !/^\s*Пустая строка\.?\s*$/i.test(line))
-    .join('\n');
-  return cleaned.replace(/\n{3,}/g, '\n\n');
+  return sanitizeReadingModelText(plain);
 }
 
 /** Подпись к фото «карта дня»: жирный заголовок, пустая строка, строка карты. */

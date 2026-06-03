@@ -20,6 +20,14 @@ describe('readingTelegramHtml', () => {
     expect(stripModelFormatArtifacts('пустая строка\nX')).toBe('X');
   });
 
+  it('stripModelFormatArtifacts normalizes echoed meta label lines', () => {
+    const plain = 'Отдельная строка-метка ровно: О чём здесь речь\n\nАбзац.';
+    expect(stripModelFormatArtifacts(plain)).toBe('О чём здесь речь\n\nАбзац.');
+    const html = formatReadingForTelegram(plain);
+    expect(html).toContain('<b>О чём здесь речь</b>');
+    expect(html).not.toContain('строка-метка');
+  });
+
   it('day and three-card captions: bold title, colon, blank line, body', () => {
     expect(dayCardFaceCaptionHtml('Маг (перевёрнутая)')).toBe(
       '<b>Карта на день:</b>\n\nМаг (перевёрнутая)',
