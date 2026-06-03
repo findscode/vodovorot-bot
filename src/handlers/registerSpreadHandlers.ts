@@ -41,7 +41,7 @@ import { resolveAccessTier } from '../accessTier.js';
 import { spreadIntroReadyHtml } from '../tierDisplay.js';
 import { answerCbQuerySafe, logHandlerError } from './botHelpers.js';
 import { opsEvent } from '../opsLog.js';
-import { clearSpreadInFlight, isSpreadInFlight, tryMarkSpreadInFlight } from '../spreadInFlight.js';
+import { clearSpreadInFlight, tryMarkSpreadInFlight } from '../spreadInFlight.js';
 
 export function registerSpreadHandlers(bot: Telegraf): void {
   bot.action(SPREAD_CALLBACK, async (ctx) => {
@@ -143,7 +143,7 @@ export function registerSpreadHandlers(bot: Telegraf): void {
       return;
     }
 
-    if (isSpreadInFlight(uid)) {
+    if (!tryMarkSpreadInFlight(uid)) {
       await ctx.reply(SPREAD_IN_FLIGHT_MESSAGE, {
         ...keyboardSpreadAwaitingQuestion(),
         ...TELEGRAM_HTML_PARSE,
@@ -155,27 +155,16 @@ export function registerSpreadHandlers(bot: Telegraf): void {
       const clarity = await maybeClarifySpreadQuestion(ctx, uid, question);
       if (clarity === 'clarify_shown') return;
 
-      if (!tryMarkSpreadInFlight(uid)) {
-        await ctx.reply(SPREAD_IN_FLIGHT_MESSAGE, {
-          ...keyboardSpreadAwaitingQuestion(),
-          ...TELEGRAM_HTML_PARSE,
-        });
-        return;
-      }
-
-      try {
-        await runSpreadReadingForUser(ctx, uid, question);
-      } finally {
-        clearSpreadInFlight(uid);
-      }
+      await runSpreadReadingForUser(ctx, uid, question);
     } catch (e) {
       logHandlerError('spread', e);
       endSpreadSession(uid);
-      clearSpreadInFlight(uid);
       await ctx.reply(`${AI_TEXT_UNAVAILABLE_MESSAGE}\n\n${SPREAD_AI_RETRY_SUFFIX}`, {
         ...keyboardMainOrDayOnly(uid),
         ...TELEGRAM_HTML_PARSE,
       });
+    } finally {
+      clearSpreadInFlight(uid);
     }
   });
 }

@@ -18,6 +18,7 @@ import { TELEGRAM_HTML_PARSE } from './readingTelegramHtml.js';
 import { abortActiveReadingsSync } from './readingAbort.js';
 import { opsEvent } from './opsLog.js';
 import { beginSpreadSession } from './spreadSessionStore.js';
+import { clearDayInFlight, tryMarkDayInFlight } from './dayInFlight.js';
 import { isSpreadInFlight } from './spreadInFlight.js';
 import { deepIntroHtml, spreadIntroHtml } from './tierDisplay.js';
 import { withTypingWhile } from './typingIndicator.js';
@@ -26,7 +27,6 @@ import type { WebAppLaunchAction } from './webapp/webappLaunchPayload.js';
 
 const DAY_ACTION_DEBOUNCE_MS = 2500;
 const dayLastTap = new Map<number, number>();
-const dayInFlight = new Set<number>();
 
 async function replyAbortNotice(ctx: ReadingLaunchContext, userId: number): Promise<void> {
   const { noticeHtml } = abortActiveReadingsSync(userId);
@@ -36,15 +36,13 @@ async function replyAbortNotice(ctx: ReadingLaunchContext, userId: number): Prom
 }
 
 export async function launchDayReading(ctx: ReadingLaunchContext, userId: number): Promise<void> {
-  await replyAbortNotice(ctx, userId);
-
-  if (dayInFlight.has(userId)) {
+  if (!tryMarkDayInFlight(userId)) {
     await ctx.reply(DAY_IN_FLIGHT_MESSAGE, TELEGRAM_HTML_PARSE);
     return;
   }
-  dayInFlight.add(userId);
 
   try {
+    await replyAbortNotice(ctx, userId);
     const at = new Date();
     const prevTap = dayLastTap.get(userId) ?? 0;
     if (at.getTime() - prevTap < DAY_ACTION_DEBOUNCE_MS) {
@@ -76,7 +74,7 @@ export async function launchDayReading(ctx: ReadingLaunchContext, userId: number
     logHandlerError('day', e);
     await ctx.reply(CARD_DAY_DELIVERY_ERROR_MESSAGE, TELEGRAM_HTML_PARSE);
   } finally {
-    dayInFlight.delete(userId);
+    clearDayInFlight(userId);
   }
 }
 
