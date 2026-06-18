@@ -22,7 +22,7 @@
     "node": ">=20"
   },
   "dependencies": {
-    "better-sqlite3": "^12.10.0",
+    "better-sqlite3": "^12.11.1",
     "dotenv": "^17.4.2",
     "node-cron": "^4.2.1",
     "random": "^5.4.1",
