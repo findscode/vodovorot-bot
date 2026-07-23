@@ -51,20 +51,25 @@ export async function runSpreadReadingForUser(
   const result = await deliverSpreadReading(ctx.telegram, uid, uid, question, tier, (task) =>
     withTypingWhile(ctx, task),
   );
-  if (result === 'ai_error' || result === 'delivery_error') {
-    await ctx.reply(`${AI_TEXT_UNAVAILABLE_MESSAGE}\n\n${SPREAD_AI_RETRY_MESSAGE}`, {
-      ...keyboardSpreadAwaitingQuestion(),
-      ...TELEGRAM_HTML_PARSE,
-    });
-  } else if (result === 'limit_reached') {
-    opsEvent('spread_limit_hit');
-    endSpreadSession(uid);
-    await ctx.reply(spreadLimitMessage(), {
-      ...keyboardMainOrDayOnly(uid),
-      ...TELEGRAM_HTML_PARSE,
-    });
+  try {
+    if (result === 'ai_error' || result === 'delivery_error') {
+      await ctx.reply(`${AI_TEXT_UNAVAILABLE_MESSAGE}\n\n${SPREAD_AI_RETRY_MESSAGE}`, {
+        ...keyboardSpreadAwaitingQuestion(),
+        ...TELEGRAM_HTML_PARSE,
+      });
+    } else if (result === 'limit_reached') {
+      opsEvent('spread_limit_hit');
+      endSpreadSession(uid);
+      await ctx.reply(spreadLimitMessage(), {
+        ...keyboardMainOrDayOnly(uid),
+        ...TELEGRAM_HTML_PARSE,
+      });
+    }
+    // 'aborted' — сессию уже сменили/закрыли; ничего не пишем
+  } catch (e) {
+    // Не даём reply уйти в bot.catch поверх уже обработанного сбоя выдачи.
+    logHandlerError('spread_result_reply', e);
   }
-  // 'aborted' — сессию уже сменили/закрыли; ничего не пишем
 }
 
 export async function maybeClarifySpreadQuestion(

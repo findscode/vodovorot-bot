@@ -159,10 +159,14 @@ export function registerSpreadHandlers(bot: Telegraf): void {
       await runSpreadReadingForUser(ctx, uid, question);
     } catch (e) {
       logHandlerError('spread', e);
-      await ctx.reply(`${AI_TEXT_UNAVAILABLE_MESSAGE}\n\n${SPREAD_AI_RETRY_MESSAGE}`, {
-        ...keyboardSpreadAwaitingQuestion(),
-        ...TELEGRAM_HTML_PARSE,
-      });
+      try {
+        await ctx.reply(`${AI_TEXT_UNAVAILABLE_MESSAGE}\n\n${SPREAD_AI_RETRY_MESSAGE}`, {
+          ...keyboardSpreadAwaitingQuestion(),
+          ...TELEGRAM_HTML_PARSE,
+        });
+      } catch (replyErr) {
+        logHandlerError('spread_retry_reply', replyErr);
+      }
     } finally {
       clearSpreadInFlight(uid);
     }
