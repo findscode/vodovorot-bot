@@ -1,5 +1,5 @@
 import type { AccessTier } from '../accessTier.js';
-import { escapeTelegramHtml } from '../readingTelegramHtml.js';
+import { escapeTelegramHtml, voiceArchetypeCaptionLineHtml } from '../readingTelegramHtml.js';
 import { spreadTitleLineHtml } from '../spreadLabels.js';
 
 function questionLineHtml(question: string, number: number, bold: boolean): string {
@@ -9,9 +9,9 @@ function questionLineHtml(question: string, number: number, bold: boolean): stri
   return bold ? `<b>${line}</b>` : line;
 }
 
-function appendSessionHeader(body: string, tier: AccessTier): string {
+function wrapCaption(body: string, tier: AccessTier, voiceName: string): string {
   const header = `${spreadTitleLineHtml(tier, 'deep')}\n\n`;
-  return `${header}${body}`;
+  return `${header}${body}\n\n${voiceArchetypeCaptionLineHtml(voiceName)}`;
 }
 
 /** Подпись: название гадания с emoji, затем вопросы в «»; текущий — жирным; между вопросами — пустая строка. */
@@ -20,8 +20,11 @@ export function deepReadingCaptionHtmlBounded(
   currentIndex: number,
   maxLen: number,
   tier: AccessTier,
+  voiceName: string,
 ): string {
-  if (questions.length === 0) return spreadTitleLineHtml(tier, 'deep');
+  if (questions.length === 0) {
+    return `${spreadTitleLineHtml(tier, 'deep')}\n\n${voiceArchetypeCaptionLineHtml(voiceName)}`;
+  }
   let start = 0;
   while (start <= currentIndex) {
     const html = questions
@@ -31,7 +34,7 @@ export function deepReadingCaptionHtmlBounded(
         return questionLineHtml(q, n, start + i === currentIndex);
       })
       .join('\n\n');
-    const withHeader = appendSessionHeader(html, tier);
+    const withHeader = wrapCaption(html, tier, voiceName);
     if (withHeader.length <= maxLen) return withHeader;
     start++;
   }
@@ -40,9 +43,9 @@ export function deepReadingCaptionHtmlBounded(
   const n = currentIndex + 1;
   while (trimmed.length > 0) {
     const html = questionLineHtml(trimmed, n, true);
-    const withHeader = appendSessionHeader(html, tier);
+    const withHeader = wrapCaption(html, tier, voiceName);
     if (withHeader.length <= maxLen) return withHeader;
     trimmed = `${trimmed.slice(0, Math.max(0, trimmed.length - 20))}…`;
   }
-  return appendSessionHeader(questionLineHtml('…', n, true), tier);
+  return wrapCaption(questionLineHtml('…', n, true), tier, voiceName);
 }

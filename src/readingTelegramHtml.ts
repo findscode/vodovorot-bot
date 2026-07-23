@@ -20,20 +20,37 @@ export function escapeTelegramHtml(text: string): string {
   return text.replace(/[&<>]/g, (ch) => HTML_ESCAPE[ch] ?? ch);
 }
 
+/** Единая строка видимого архетипа-толкователя в подписи к картам. */
+export function voiceArchetypeCaptionLineHtml(voiceName: string): string {
+  return `Толкователь: «${escapeTelegramHtml(voiceName)}»`;
+}
+
 /** Убирает артефакты модели («Пустая строка.», эхо «строка-метка ровно: …»). */
 export function stripModelFormatArtifacts(plain: string): string {
   return sanitizeReadingModelText(plain);
 }
 
-/** Подпись к фото «карта дня»: жирный заголовок, пустая строка, строка карты. */
-export function dayCardFaceCaptionHtml(drawnLinePlain: string): string {
-  return `<b>${escapeTelegramHtml(DAY_CARD_FACE_TITLE)}:</b>\n\n${escapeTelegramHtml(drawnLinePlain)}`;
+/** Подпись к фото «карта дня»: заголовок, карта и видимый толкователь. */
+export function dayCardFaceCaptionHtml(drawnLinePlain: string, voiceName: string): string {
+  return [
+    `<b>${escapeTelegramHtml(DAY_CARD_FACE_TITLE)}:</b>`,
+    '',
+    escapeTelegramHtml(drawnLinePlain),
+    '',
+    voiceArchetypeCaptionLineHtml(voiceName),
+  ].join('\n');
 }
 
-/** Подпись к коллажу «три карты»: жирный заголовок, пустая строка, строки позиций. */
-export function threeCardSpreadCaptionHtml(linesPlain: string[]): string {
+/** Подпись к коллажу «три карты»: заголовок, позиции и видимый толкователь. */
+export function threeCardSpreadCaptionHtml(linesPlain: string[], voiceName: string): string {
   const body = linesPlain.map((l) => escapeTelegramHtml(l)).join('\n');
-  return `<b>${escapeTelegramHtml(THREE_POSITION_SPREAD_TITLE)}:</b>\n\n${body}`;
+  return [
+    `<b>${escapeTelegramHtml(THREE_POSITION_SPREAD_TITLE)}:</b>`,
+    '',
+    body,
+    '',
+    voiceArchetypeCaptionLineHtml(voiceName),
+  ].join('\n');
 }
 
 function spreadQuestionLineHtml(question: string): string {
@@ -44,38 +61,50 @@ function spreadQuestionLineHtml(question: string): string {
 export function threeCardSpreadCaptionWithQuestionHtml(
   question: string,
   linesPlain: string[],
+  voiceName: string,
 ): string {
   const parts = [
     `<b>${escapeTelegramHtml(THREE_POSITION_SPREAD_TITLE)}:</b>`,
     '',
-    spreadQuestionLineHtml(question),
-    '',
     ...linesPlain.map((l) => escapeTelegramHtml(l)),
+    '',
+    voiceArchetypeCaptionLineHtml(voiceName),
+    '',
+    spreadQuestionLineHtml(question),
   ];
   return parts.join('\n');
 }
 
 /** Подпись не длиннее `maxLen` (UTF-16 длина HTML для лимита Telegram). */
-export function threeCardSpreadCaptionHtmlBounded(linesPlain: string[], maxLen: number): string {
+export function threeCardSpreadCaptionHtmlBounded(
+  linesPlain: string[],
+  voiceName: string,
+  maxLen: number,
+): string {
   const copy = [...linesPlain];
   while (copy.length >= 1) {
-    const html = threeCardSpreadCaptionHtml(copy);
+    const html = threeCardSpreadCaptionHtml(copy, voiceName);
     if (html.length <= maxLen) return html;
     copy.pop();
   }
-  return `<b>${escapeTelegramHtml(THREE_POSITION_SPREAD_TITLE)}:</b>`;
+  return [
+    `<b>${escapeTelegramHtml(THREE_POSITION_SPREAD_TITLE)}:</b>`,
+    '',
+    voiceArchetypeCaptionLineHtml(voiceName),
+  ].join('\n');
 }
 
 /** Подпись с вопросом, укладывается в `maxLen`: сначала укорачиваются строки карт, затем вопрос. */
 export function threeCardSpreadCaptionWithQuestionHtmlBounded(
   question: string,
   linesPlain: string[],
+  voiceName: string,
   maxLen: number,
 ): string {
   const cardLines = [...linesPlain];
   let q = question.trim();
   while (true) {
-    const html = threeCardSpreadCaptionWithQuestionHtml(q, cardLines);
+    const html = threeCardSpreadCaptionWithQuestionHtml(q, cardLines, voiceName);
     if (html.length <= maxLen) return html;
     if (cardLines.length > 1) {
       cardLines.pop();
@@ -85,7 +114,11 @@ export function threeCardSpreadCaptionWithQuestionHtmlBounded(
       q = `${q.slice(0, Math.max(1, q.length - 8))}…`;
       continue;
     }
-    return `<b>${escapeTelegramHtml(THREE_POSITION_SPREAD_TITLE)}:</b>`;
+    return [
+      `<b>${escapeTelegramHtml(THREE_POSITION_SPREAD_TITLE)}:</b>`,
+      '',
+      voiceArchetypeCaptionLineHtml(voiceName),
+    ].join('\n');
   }
 }
 

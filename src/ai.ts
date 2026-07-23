@@ -1,14 +1,23 @@
 import 'dotenv/config';
 import { textLooksNonRussianDominant } from './aiRussianGate.js';
-import { opsAiError, opsAiRequest } from './opsLog.js';
+import { sanitizeReadingModelText } from './brandFormat.js';
+import { opsAiError, opsAiRequest, opsEvent } from './opsLog.js';
 import { completeChatWithModelFallback } from './openRouterChat.js';
 
 const SYSTEM_PROMPT =
-  'Ты пишешь толкование по картам Таро для бота Водоворот. Строго соблюдай формат из запроса: строки-метки разделов — ровно как указано (без тире в конце названия метки), пустые строки между блоками; не сокращай и не переименовывай метки. Не пиши служебных фраз про оформление («Пустая строка», «пустая строка», «Отдельная строка-метка», «метка ровно» и т.п.) и не описывай разметку текста — только содержание для читателя. Язык — только русский, целиком: норма современного русского литературного языка (согласование, падежи, естественный порядок слов); без английских и прочих иноязычных слов, без кальки и без латиницы в обычных словах; названия карт уже по-русски. Пиши так, чтобы текст было легко читать в мессенджере: в основном короткие и средние предложения, без перегруженных фраз. Тон спокойный, взрослый, по-человечески ясный; без лести, без крика, без обращений вроде «дорогой друг» и без морализаторства. Учитывай, что читатель может быть и новичком, и тем, кто давно с картами: не уводи в энциклопедичность и не поучай. Не называй конкретных дат и сроков; не отвечай на будущее бинарным «да» или «нет»; говори о вероятностях и направлениях, не об абсолютных гарантиях; у человека есть выбор — без запугивания и без слащавости. Без медицины, юриспруденции и финансовых советов. Только текст толкования. Не упоминай программы, нейросети, боты, API, серверы, модели и любую технику; не раскрывай, что ты «искусственный интеллект».';
+  'Ты пишешь толкования Таро для Водоворота. Выводи только готовый текст на грамотном естественном русском языке, без латиницы и переводных оборотов. Строго соблюдай каркас из запроса: не переименовывай метки, не добавляй вступление и не повторяй инструкции. Пиши короткими и средними предложениями; тон спокойный, взрослый и ясный, без лести, запугивания, морализаторства и энциклопедичности. Не упоминай программы, модели и другую технику. Правила безопасности из запроса обязательны.';
 
 /** Второй прогон: выровнять язык, не меняя структуру блоков из первого ответа. */
 const RUSSIAN_POLISH_SYSTEM_PROMPT =
-  'Ты редактор толкований Таро для русскоязычного Telegram-бота. Тебе дают текст, который должен быть полностью на русском, но иногда модель вставила английские абзацы или фразы. Твоя задача: переписать весь текст на естественный русский литературный язык, сохранив смысл, тон и структуру: те же строки-меток разделов (как в исходнике), те же пустые строки между блоками, тот же порядок частей. Убери служебные фразы про оформление («Пустая строка», «Отдельная строка-метка» и подобное), если они есть. Не добавляй предисловий («Конечно», «Вот перевод»), не комментируй процесс — только готовый текст толкования. Не упоминай ИИ, API, боты.';
+  'Ты редактор толкований Таро. Перепиши иноязычные фрагменты на естественный русский, сохрани смысл, порядок, метки и пустые строки. Сохрани естественные упоминания толкователя, но не добавляй о нём отдельную шапку. Удали служебные фразы о формате. Выведи только готовый текст.';
+
+const FORMAT_REPAIR_SYSTEM_PROMPT =
+  'Ты редактор толкований Таро. Восстанови обязательные метки и разложи исходный смысл по ним. Не добавляй новых выводов, вступления или комментарии о работе. Выведи только исправленный текст.';
+
+const REQUIRED_LABELS_BY_CONTEXT: Record<string, readonly string[]> = {
+  day: ['О чём здесь речь', 'Коротко о дне'],
+  spread: ['Прошлое', 'Настоящее', 'Будущее', 'Как это сходится'],
+};
 
 export type CompleteChatOpts = {
   max_tokens?: number;
@@ -16,7 +25,47 @@ export type CompleteChatOpts = {
 };
 
 function polishUserPayload(firstPass: string): string {
-  return `Ниже — текст толкования после первой генерации. Если в нём есть английские (или иные не-русские) фразы в основном тексте, устрани это: весь вывод должен быть по-русски, как в финальной выдаче читателю. Сохрани разметку HTML, если она есть (<b>…</b> и т.д.), и строки-метки разделов.\n\n---\n\n${firstPass}`;
+  return `Исправь язык этого толкования, сохранив структуру:\n\n${firstPass}`;
+}
+
+function hasRequiredLabels(text: string, labels: readonly string[]): boolean {
+  const lines = new Set(
+    sanitizeReadingModelText(text)
+      .split('\n')
+      .map((line) => line.trim()),
+  );
+  return labels.every((label) => lines.has(label));
+}
+
+async function repairReadingFormatIfNeeded(
+  apiKey: string,
+  text: string,
+  opsContext: string,
+  maxTokens: number,
+): Promise<string> {
+  const labels = REQUIRED_LABELS_BY_CONTEXT[opsContext];
+  if (!labels || hasRequiredLabels(text, labels)) return text;
+
+  opsEvent('reading_format_thin', { context: opsContext });
+  console.warn('[ai_format_repair]', opsContext, 'missing_labels');
+  try {
+    const repaired = await timedFallback(
+      apiKey,
+      [
+        { role: 'system', content: FORMAT_REPAIR_SYSTEM_PROMPT },
+        {
+          role: 'user',
+          content: `Обязательные метки по порядку:\n${labels.join('\n')}\n\nИсходный текст:\n${text}`,
+        },
+      ],
+      { max_tokens: Math.max(maxTokens + 200, 1400), temperature: 0.25 },
+      `${opsContext}_format_repair`,
+    );
+    return hasRequiredLabels(repaired, labels) ? repaired : text;
+  } catch (e) {
+    console.warn('[ai_format_repair]', opsContext, e instanceof Error ? e.message : e);
+    return text;
+  }
 }
 
 function requireOpenRouterApiKey(): string {
@@ -76,30 +125,29 @@ export async function completeChat(userPrompt: string, opts?: CompleteChatOpts):
     opsContext,
   );
 
-  if (!textLooksNonRussianDominant(first)) {
-    console.log('[ai_success]');
-    return first;
+  let finalText = first;
+  if (textLooksNonRussianDominant(first)) {
+    console.log('[ai_russian_polish] second pass');
+    try {
+      finalText = await timedFallback(
+        apiKey,
+        [
+          { role: 'system', content: RUSSIAN_POLISH_SYSTEM_PROMPT },
+          { role: 'user', content: polishUserPayload(first) },
+        ],
+        { max_tokens: Math.max(maxTokens + 400, 2200), temperature: 0.35 },
+        `${opsContext}_polish`,
+      );
+      if (textLooksNonRussianDominant(finalText)) {
+        console.warn('[ai_russian_polish] still looks latin-heavy after polish');
+      }
+    } catch (e) {
+      console.error('[ai_russian_polish]', 'failed', e instanceof Error ? e.message : e);
+      finalText = first;
+    }
   }
 
-  console.log('[ai_russian_polish] second pass');
-  try {
-    const polished = await timedFallback(
-      apiKey,
-      [
-        { role: 'system', content: RUSSIAN_POLISH_SYSTEM_PROMPT },
-        { role: 'user', content: polishUserPayload(first) },
-      ],
-      { max_tokens: Math.max(maxTokens + 400, 2200), temperature: 0.35 },
-      `${opsContext}_polish`,
-    );
-    if (textLooksNonRussianDominant(polished)) {
-      console.warn('[ai_russian_polish] still looks latin-heavy after polish; using polished text');
-    }
-    console.log('[ai_success]');
-    return polished;
-  } catch (e) {
-    console.error('[ai_russian_polish]', 'failed', e instanceof Error ? e.message : e);
-    console.log('[ai_success]');
-    return first;
-  }
+  finalText = await repairReadingFormatIfNeeded(apiKey, finalText, opsContext, maxTokens);
+  console.log('[ai_success]');
+  return finalText;
 }

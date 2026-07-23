@@ -139,7 +139,7 @@ export function drawTripletFromRemainingIds(remainingIds: number[]): {
   };
 }
 
-/** Случайный старший аркан как маска голоса толкования (не входит в расклад). */
+/** Случайный старший аркан как видимый архетип толкователя (не входит в расклад). */
 export function drawVoiceArchetype(): TarotCard {
   const c = random.choice([...MAJOR_ARCANA]);
   if (c === undefined) {

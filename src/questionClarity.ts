@@ -33,6 +33,7 @@ export function logQuestionClaritySkip(reason: string, detail?: string): void {
 
 export async function evaluateQuestionClarity(question: string): Promise<QuestionClarityResult> {
   const safeQ = question.replace(/"/g, "'");
+  opsEvent('question_clarity_checked');
   try {
     const raw = await completeServiceChat(
       CLARITY_SYSTEM_PROMPT,

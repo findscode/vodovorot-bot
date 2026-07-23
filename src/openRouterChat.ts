@@ -1,12 +1,13 @@
 import { OPENROUTER_FREE_MODEL_CHAIN } from './openRouterModels.js';
 import {
-  extractChatCompletionContent,
+  extractChatCompletion,
   isFatalOpenRouterHttpStatus,
   parseOpenRouterErrorMessage,
   parseOpenRouterRetryDelayMs,
   shouldTryNextOpenRouterModel,
 } from './openRouterFallback.js';
 import { withOpenRouterRateLimit } from './openRouterRequestGate.js';
+import { opsAiModelSuccess, opsEvent } from './opsLog.js';
 
 const OPENROUTER_CHAT_URL = 'https://openrouter.ai/api/v1/chat/completions';
 const FETCH_TIMEOUT_MS = 120_000;
@@ -39,6 +40,7 @@ async function fetchCompletion(
   status: number;
   bodyText: string;
   content: string | null;
+  finishReason: string | null;
   retryAfterHeader: string | null;
 }> {
   let res: Response;
@@ -77,9 +79,10 @@ async function fetchCompletion(
 
   const bodyText = await res.text();
   let content: string | null = null;
+  let finishReason: string | null = null;
   if (res.ok) {
     try {
-      content = extractChatCompletionContent(JSON.parse(bodyText) as unknown);
+      ({ content, finishReason } = extractChatCompletion(JSON.parse(bodyText) as unknown));
     } catch {
       content = null;
     }
@@ -89,6 +92,7 @@ async function fetchCompletion(
     status: res.status,
     bodyText,
     content,
+    finishReason,
     retryAfterHeader: res.headers.get('Retry-After'),
   };
 }
@@ -102,15 +106,17 @@ export async function completeChatWithModelFallback(
   opts: ChatCompletionOpts,
 ): Promise<string> {
   let lastError: OpenRouterChatError | null = null;
+  let truncationRetried = false;
 
   for (let i = 0; i < OPENROUTER_FREE_MODEL_CHAIN.length; i++) {
     const model = OPENROUTER_FREE_MODEL_CHAIN[i]!;
     let status: number;
     let bodyText: string;
     let content: string | null;
+    let finishReason: string | null;
     let retryAfterHeader: string | null;
     try {
-      ({ status, bodyText, content, retryAfterHeader } = await fetchCompletion(
+      ({ status, bodyText, content, finishReason, retryAfterHeader } = await fetchCompletion(
         apiKey,
         model,
         messages,
@@ -126,8 +132,36 @@ export async function completeChatWithModelFallback(
       throw e;
     }
 
+    if (status >= 200 && status < 300 && content && finishReason === 'length') {
+      opsEvent('ai_truncated', { model });
+      if (!truncationRetried) {
+        truncationRetried = true;
+        console.warn('[openrouter_retry]', model, 'finish_reason=length');
+        try {
+          ({ status, bodyText, content, finishReason, retryAfterHeader } = await fetchCompletion(
+            apiKey,
+            model,
+            messages,
+            { ...opts, max_tokens: opts.max_tokens + 400 },
+          ));
+        } catch (e) {
+          if (e instanceof OpenRouterChatError) {
+            console.warn('[openrouter_fallback]', model, 'retry_network', e.message);
+            lastError = e;
+            continue;
+          }
+          throw e;
+        }
+      }
+      if (finishReason === 'length') {
+        console.warn('[openrouter_fallback]', model, 'still_truncated');
+        content = null;
+      }
+    }
+
     if (status >= 200 && status < 300 && content) {
       console.log('[openrouter_success]', model);
+      opsAiModelSuccess(model);
       return content;
     }
 

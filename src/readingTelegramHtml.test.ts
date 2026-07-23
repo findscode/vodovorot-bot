@@ -6,6 +6,8 @@ import {
   stripModelFormatArtifacts,
   threeCardSpreadCaptionHtml,
   threeCardSpreadCaptionWithQuestionHtml,
+  threeCardSpreadCaptionWithQuestionHtmlBounded,
+  voiceArchetypeCaptionLineHtml,
 } from './readingTelegramHtml.js';
 import { splitForTelegram, TG_MAX } from './telegramChunks.js';
 
@@ -29,18 +31,31 @@ describe('readingTelegramHtml', () => {
   });
 
   it('day and three-card captions: bold title, colon, blank line, body', () => {
-    expect(dayCardFaceCaptionHtml('Маг (перевёрнутая)')).toBe(
-      '<b>Карта на день:</b>\n\nМаг (перевёрнутая)',
+    expect(dayCardFaceCaptionHtml('Маг (перевёрнутая)', 'Иерофант')).toBe(
+      '<b>Карта на день:</b>\n\nМаг (перевёрнутая)\n\nТолкователь: «Иерофант»',
     );
-    expect(threeCardSpreadCaptionHtml(['Прошлое: X', 'Настоящее: Y'])).toBe(
-      '<b>Прошлое, настоящее, будущее:</b>\n\nПрошлое: X\nНастоящее: Y',
+    expect(threeCardSpreadCaptionHtml(['Прошлое: X', 'Настоящее: Y'], 'Луна')).toBe(
+      '<b>Прошлое, настоящее, будущее:</b>\n\nПрошлое: X\nНастоящее: Y\n\nТолкователь: «Луна»',
     );
+    expect(voiceArchetypeCaptionLineHtml('<Маг>')).toBe('Толкователь: «&lt;Маг&gt;»');
   });
 
   it('three-card caption with question includes theme line', () => {
     expect(
-      threeCardSpreadCaptionWithQuestionHtml('Карьера', ['Прошлое: X', 'Настоящее: Y']),
-    ).toContain('Тема: «Карьера»');
+      threeCardSpreadCaptionWithQuestionHtml('Карьера', ['Прошлое: X', 'Настоящее: Y'], 'Иерофант'),
+    ).toContain('Толкователь: «Иерофант»\n\nТема: «Карьера»');
+  });
+
+  it('bounded spread caption keeps valid HTML and visible voice', () => {
+    const html = threeCardSpreadCaptionWithQuestionHtmlBounded(
+      'Очень длинная тема '.repeat(100),
+      ['Прошлое: X', 'Настоящее: Y', 'Будущее: Z'],
+      'Иерофант',
+      180,
+    );
+    expect(html.length).toBeLessThanOrEqual(180);
+    expect(html).toContain('Толкователь: «Иерофант»');
+    expect(html.match(/<b>/g)).toHaveLength(html.match(/<\/b>/g)?.length ?? 0);
   });
 
   it('wraps known section label lines in bold', () => {

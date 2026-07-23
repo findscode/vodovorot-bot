@@ -16,6 +16,9 @@ import {
 import { quotedSpreadLabel, SPREAD_BUTTON_LABEL } from './spreadLabels.js';
 import { SPREAD_MAX_FOR_BASIC } from './spreadConstants.js';
 
+export const READING_VOICE_HELP_LINE =
+  'Каждое гадание ведёт случайный архетип-толкователь из старших арканов; его имя указано в подписи к картам.';
+
 export function formatPremiumUntilRu(d: Date): string {
   try {
     return d.toLocaleDateString('ru-RU', {
@@ -81,6 +84,7 @@ export function buildHelpSummaryLines(facts: UserHelpFacts): string[] {
     facts.unlimitedSpread
       ? `${spreadQ} — без лимита`
       : `${spreadQ} — осталось ${facts.spreadRemaining ?? 0} из ${SPREAD_MAX_FOR_BASIC} за ${facts.dayLimitPhrase}`,
+    READING_VOICE_HELP_LINE,
     facts.pushEnabled
       ? `Рассылка «На день» включена, около ${facts.pushHhmm ?? '—'}`
       : 'Рассылка «На день» выключена',

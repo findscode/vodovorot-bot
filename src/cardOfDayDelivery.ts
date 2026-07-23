@@ -64,8 +64,8 @@ export async function deliverCardOfDayReading(
   }
 
   const drawn = drawOne();
-  const captionHtml = dayCardFaceCaptionHtml(formatDrawnLine(drawn));
   const voice = drawVoiceArchetype();
+  const captionHtml = dayCardFaceCaptionHtml(formatDrawnLine(drawn), voice.name);
   const chunkOpts = { lastChunkExtra: keyboardAfterDayReading(chatId) };
 
   try {

@@ -59,7 +59,14 @@ export async function deliverDeepTriplet(
   const { drawn, remaining } = drawTripletFromRemainingIds(session.deckRemaining);
   const tripletIndex = session.triplets.length;
   const questions = [...session.triplets.map((t) => t.question), question];
-  const captionHtml = deepReadingCaptionHtmlBounded(questions, tripletIndex, TG_CAPTION_MAX, tier);
+  const voice = drawVoiceArchetype();
+  const captionHtml = deepReadingCaptionHtmlBounded(
+    questions,
+    tripletIndex,
+    TG_CAPTION_MAX,
+    tier,
+    voice.name,
+  );
 
   const newStrip = await tripletStripFrame(drawn);
   let frame =
@@ -101,7 +108,6 @@ export async function deliverDeepTriplet(
     faceMessageId = faceMsg.message_id;
   }
 
-  const voice = drawVoiceArchetype();
   const priorSummaries = session.triplets.map((t) => t.summary);
 
   try {

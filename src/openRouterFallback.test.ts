@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  extractChatCompletion,
   extractChatCompletionContent,
   isFatalOpenRouterHttpStatus,
   parseOpenRouterRetryDelayMs,
@@ -70,5 +71,13 @@ describe('openRouterFallback', () => {
       }),
     ).toBe('Привет');
     expect(extractChatCompletionContent({ choices: [{ message: { content: '' } }] })).toBeNull();
+  });
+
+  it('extractChatCompletion preserves finish_reason', () => {
+    expect(
+      extractChatCompletion({
+        choices: [{ finish_reason: 'length', message: { content: 'Оборвано' } }],
+      }),
+    ).toEqual({ content: 'Оборвано', finishReason: 'length' });
   });
 });

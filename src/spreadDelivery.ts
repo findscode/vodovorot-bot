@@ -49,15 +49,16 @@ export async function deliverSpreadReading(
   }
 
   const cards = drawThreeUnique();
+  const voice = drawVoiceArchetype();
   const lines = cards.map((d, i) => `${POSITIONS[i]}: ${formatDrawnLine(d)}`);
   const captionHtml = threeCardSpreadCaptionWithQuestionHtmlBounded(
     question,
     lines,
+    voice.name,
     TG_CAPTION_MAX,
   );
 
   const allExist = cards.every((d) => cardImageExists(d.card.id));
-  const voice = drawVoiceArchetype();
   const chunkOpts = {
     lastChunkSuffix: SPREAD_DONE_HINT,
     lastChunkExtra: keyboardMainOrDayOnly(userId),

@@ -34,6 +34,14 @@ describe('prompt safety blocks', () => {
     expect(deepBasicFinalPrompt(['Q'], ['S'])).toContain(SAFETY_HINT);
     expect(deepBasicFinalPrompt(['Q'], ['S'])).toMatch(/короткий общий вывод/i);
   });
+
+  it('uses visible voice without the old hidden-mask instruction', () => {
+    const prompt = cardOfDayPrompt(stubCard('Звезда', 17), voice);
+    expect(prompt).toContain('Толкователь — старший аркан «Иерофант»');
+    expect(prompt).toContain('его имя уже указано в подписи');
+    expect(prompt).not.toMatch(/не называй маску|невидимая маска/i);
+    expect(prompt).toContain('Не пиши ничего до первой метки');
+  });
 });
 
 describe('DISCLAIMER_HELP alignment', () => {
@@ -57,6 +65,6 @@ describe('pastPresentFuturePrompt', () => {
       'Что меня ждёт в работе?',
     );
     expect(prompt).toContain('«Что меня ждёт в работе?»');
-    expect(prompt).toContain('отталкивайся от вопроса пользователя');
+    expect(prompt).toContain('свяжи каждую позицию с вопросом пользователя');
   });
 });

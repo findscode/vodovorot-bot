@@ -109,12 +109,28 @@ function textFromAssistantMessage(message: unknown): string | null {
   return null;
 }
 
-export function extractChatCompletionContent(data: unknown): string | null {
-  if (!data || typeof data !== 'object') return null;
+export type ExtractedChatCompletion = {
+  content: string | null;
+  finishReason: string | null;
+};
+
+export function extractChatCompletion(data: unknown): ExtractedChatCompletion {
+  if (!data || typeof data !== 'object') return { content: null, finishReason: null };
   const choices = (data as { choices?: unknown }).choices;
-  if (!Array.isArray(choices) || choices.length === 0) return null;
+  if (!Array.isArray(choices) || choices.length === 0) {
+    return { content: null, finishReason: null };
+  }
   const first = choices[0];
-  if (!first || typeof first !== 'object') return null;
-  const message = (first as { message?: unknown }).message;
-  return textFromAssistantMessage(message);
+  if (!first || typeof first !== 'object') {
+    return { content: null, finishReason: null };
+  }
+  const choice = first as { message?: unknown; finish_reason?: unknown };
+  return {
+    content: textFromAssistantMessage(choice.message),
+    finishReason: typeof choice.finish_reason === 'string' ? choice.finish_reason : null,
+  };
+}
+
+export function extractChatCompletionContent(data: unknown): string | null {
+  return extractChatCompletion(data).content;
 }

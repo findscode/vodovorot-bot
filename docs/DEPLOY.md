@@ -31,8 +31,8 @@
 - `BOT_TOKEN` (обязательно)
 - **`DATABASE_PATH`** (опционально) — файл **SQLite**; по умолчанию **`./data/vodovorot.db`**. В проде смонтируйте **том** на каталог `data` (в `docker-compose.yml` — `vodovorot-data:/app/data`) или задайте абсолютный путь на постоянный диск хоста.
 - **`OPENROUTER_API_KEY`** (обязательно для ИИ) — ключ [OpenRouter](https://openrouter.ai/keys). Толкования идут через [Chat Completions](https://openrouter.ai/docs/api/reference/overview).
-- Цепочка **бесплатных** моделей (`:free`) задана в [`src/openRouterModels.ts`](../src/openRouterModels.ts): последовательный **fallback** (не «умный роутер») — при 429, недоступной модели, гео-ограничении провайдера или пустом ответе пробуется следующая модель; при 401/прочих фатальных ошибках цепочку не перебираем.
-- При «подозрении» на англоязычную выдачу бот делает **второй** запрос (роль «редактор») с той же цепочкой моделей.
+- Цепочка актуальных **бесплатных** моделей (`:free`) задана в [`src/openRouterModels.ts`](../src/openRouterModels.ts): сильные general-модели идут первыми, затем последовательный fallback при 429, недоступности, гео-ограничении или пустом ответе. Перед ротацией сверять live-каталог `GET /api/v1/models`.
+- При `finish_reason=length` бот один раз повторяет запрос с увеличенным лимитом. При англоязычной выдаче или нарушенном каркасе выполняется один редакторский проход.
 - **`ADMIN_TELEGRAM_USER_IDS`** (опционально) — числовые user id через запятую/пробел/`;`: при старте им в БД выставляется **админ** (полный доступ + `/admin`).
 - `DAY_DRAW_STATE_PATH` (опционально) — только для **однократной миграции** слотов из JSON 1.x в SQLite; см. ниже
 - `DAY_DRAW_TIMEZONE`, **`DAY_PUSH_DEFAULT_HHMM`** (опционально) — см. разделы «Лимит карты дня» и «Подписка на карту дня»
@@ -179,18 +179,18 @@ Caddy (`deploy/Caddyfile`) проксирует:
 
 Структурированные события с префиксом **`[ops]`** (stdout контейнера, `docker compose logs -f bot`):
 
-| Событие                                                     | Смысл                                |
-| ----------------------------------------------------------- | ------------------------------------ | --- | -------- | --------- |
-| `event=spread_limit_hit`                                    | basic упёрся в лимит spread за сутки |
-| `event=spread_completed`                                    | успешный расклад «три карты»         |
-| `event=deep_session_start`                                  | старт глубинной диагностики          |
-| `event=deep_final_basic` / `deep_final_full`                | финал deep                           |
-| `event=day_draw_delivered`                                  | выдана «карта дня»                   |
-| `event=question_clarity_skip` / `question_clarity_prompted` | фильтр вопроса (#54)                 |
-| `event=ai_request_ms`                                       | latency OpenRouter (`context=spread  | day | deep\_\* | clarity`) |
-| `event=ai_error`                                            | сбой ИИ по контексту                 |
+| Событие                                                             | Смысл                                            |
+| ------------------------------------------------------------------- | ------------------------------------------------ | ------ | -------- | -------- |
+| `event=spread_limit_hit` / `spread_completed`                       | лимит / успешный расклад «три карты»             |
+| `event=deep_session_start` / `deep_final_basic` / `deep_final_full` | старт / финал deep                               |
+| `event=day_draw_delivered`                                          | выдана «карта дня»                               |
+| `event=question_clarity_checked` / `skip` / `prompted`              | проверка ясности, fail-open или показ уточнения  |
+| `event=ai_request_ms`                                               | latency OpenRouter с `context=day                | spread | deep\_\* | clarity` |
+| `event=ai_model_success`                                            | успешная модель из fallback-цепочки              |
+| `event=ai_truncated` / `reading_format_thin`                        | обрезка ответа / нарушение обязательного каркаса |
+| `event=ai_error`                                                    | сбой ИИ по контексту                             |
 
-Счётчики за **календарные сутки** (`DAY_DRAW_TIMEZONE`) — in-memory; агрегаты в **`/admin stats`** (только админ). Тексты вопросов пользователей **не** логируются.
+Счётчики за **календарные сутки** (`DAY_DRAW_TIMEZONE`) — in-memory; агрегаты в **`/admin stats`** (только админ): расклады, clarity с причинами, ошибки, модели, обрезки/формат и p95 latency. Тексты вопросов пользователей **не** логируются.
 
 ## Картинки карт
 

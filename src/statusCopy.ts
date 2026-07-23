@@ -11,6 +11,7 @@ import {
   collectUserHelpFacts,
   deepFinalPhraseForTier,
   formatPremiumUntilRu,
+  READING_VOICE_HELP_LINE,
 } from './userHelpContent.js';
 
 /** Справка: уровень доступа, расклады, рассылка (`/help full`; `/status` — то же). */
@@ -36,6 +37,8 @@ export function helpTextHtml(userId: number): string {
     `• ${basicLevelPrefix()}${quotedSpreadLabel(SPREAD_BUTTON_LABEL.day)} — доступен`,
     `• ${spreadTitleLineHtml(tier, 'deep')} — до ${maxDeep} вопросов за гадание${deepFinalNote}`,
     spreadStatus,
+    '',
+    READING_VOICE_HELP_LINE,
     '',
     `Лимит ${quotedSpreadLabel(SPREAD_BUTTON_LABEL.day)}: не чаще раза в ${phrases.dayLimitCalendar}.`,
   );

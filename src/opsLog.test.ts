@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   getOpsStatsSnapshot,
   opsAiError,
+  opsAiModelSuccess,
   opsAiRequest,
   opsEvent,
   resetOpsStatsForTests,
@@ -28,6 +29,7 @@ describe('opsLog', () => {
     const snap = getOpsStatsSnapshot();
     expect(snap.aiLatencySampleCount).toBe(20);
     expect(snap.aiLatencyP95Ms).toBe(190);
+    expect(snap.aiLatencyByContext.spread).toEqual({ p95Ms: 190, sampleCount: 20 });
   });
 
   it('aggregates ai errors by context', () => {
@@ -39,5 +41,18 @@ describe('opsLog', () => {
     expect(snap.counts.ai_error).toBe(3);
     expect(snap.aiErrorsByContext.spread).toBe(2);
     expect(snap.aiErrorsByContext.day).toBe(1);
+  });
+
+  it('aggregates clarity reasons and successful models', () => {
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    opsEvent('question_clarity_skip', { reason: 'ai_error' });
+    opsEvent('question_clarity_skip', { reason: 'parse_error' });
+    opsEvent('question_clarity_skip', { reason: 'ai_error' });
+    opsAiModelSuccess('google/gemma-4-31b-it:free');
+    opsAiModelSuccess('google/gemma-4-31b-it:free');
+
+    const snap = getOpsStatsSnapshot();
+    expect(snap.claritySkipByReason).toEqual({ ai_error: 2, parse_error: 1 });
+    expect(snap.aiSuccessByModel['google/gemma-4-31b-it:free']).toBe(2);
   });
 });
