@@ -4,7 +4,7 @@ import {
   AI_TEXT_UNAVAILABLE_MESSAGE,
   DEEP_EMPTY_QUESTION_MESSAGE,
   DEEP_QUESTION_TOO_LONG_MESSAGE,
-  SPREAD_AI_RETRY_SUFFIX,
+  SPREAD_AI_RETRY_MESSAGE,
   SPREAD_ALREADY_AWAITING_MESSAGE,
   SPREAD_CANCELLED_MESSAGE,
   SPREAD_IN_FLIGHT_MESSAGE,
@@ -101,6 +101,7 @@ export function registerSpreadHandlers(bot: Telegraf): void {
     if (uid === undefined) return;
     if (!hasActiveSpreadSession(uid)) return;
     endSpreadSession(uid);
+    clearSpreadInFlight(uid);
     await ctx.reply(SPREAD_CANCELLED_MESSAGE, {
       ...keyboardMainOrDayOnly(uid),
       ...TELEGRAM_HTML_PARSE,
@@ -158,9 +159,8 @@ export function registerSpreadHandlers(bot: Telegraf): void {
       await runSpreadReadingForUser(ctx, uid, question);
     } catch (e) {
       logHandlerError('spread', e);
-      endSpreadSession(uid);
-      await ctx.reply(`${AI_TEXT_UNAVAILABLE_MESSAGE}\n\n${SPREAD_AI_RETRY_SUFFIX}`, {
-        ...keyboardMainOrDayOnly(uid),
+      await ctx.reply(`${AI_TEXT_UNAVAILABLE_MESSAGE}\n\n${SPREAD_AI_RETRY_MESSAGE}`, {
+        ...keyboardSpreadAwaitingQuestion(),
         ...TELEGRAM_HTML_PARSE,
       });
     } finally {

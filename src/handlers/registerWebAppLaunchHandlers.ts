@@ -1,9 +1,12 @@
 import type { Telegraf } from 'telegraf';
+import { WEBAPP_LAUNCH_ERROR_HTML } from '../botCopy.js';
+import { keyboardMainOrDayOnly } from '../botKeyboards.js';
 import { getOrCreateUser } from '../db/usersRepo.js';
 import { parseWebAppLaunchPayload } from '../webapp/webappLaunchPayload.js';
 import { deliverWhatsNewIfNeeded } from '../releaseNotesDelivery.js';
 import { readingContextFromTelegraf } from '../readingLaunchContext.js';
 import { launchReadingFromWebApp } from '../readingLaunch.js';
+import { TELEGRAM_HTML_PARSE } from '../readingTelegramHtml.js';
 import { logHandlerError } from './botHelpers.js';
 
 /**
@@ -35,6 +38,14 @@ export function registerWebAppLaunchHandlers(bot: Telegraf): void {
       await launchReadingFromWebApp(launchCtx, uid, action);
     } catch (e) {
       logHandlerError('web_app_launch', e);
+      try {
+        await ctx.reply(WEBAPP_LAUNCH_ERROR_HTML, {
+          ...keyboardMainOrDayOnly(uid),
+          ...TELEGRAM_HTML_PARSE,
+        });
+      } catch {
+        /* чат недоступен */
+      }
     }
   });
 }

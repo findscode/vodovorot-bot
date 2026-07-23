@@ -13,6 +13,8 @@ export type ReadingChunksOptions = {
   lastChunkSuffix?: string;
   /** Доп. поля последнего `sendMessage` (клавиатура и т.п.). */
   lastChunkExtra?: TelegramSendMessageExtra;
+  /** Если вернёт false — остановить отправку оставшихся чанков (abort сессии). */
+  shouldContinue?: () => boolean;
 };
 
 /** Нарезка толкования на сообщения Telegram (общий код для расклада и «карты дня»). */
@@ -29,6 +31,7 @@ export async function sendReadingChunksToChat(
   const reply = { reply_parameters: { message_id: replyToMessageId } };
 
   for (let i = 0; i < formatted.length; i++) {
+    if (options.shouldContinue && !options.shouldContinue()) return;
     const last = i === formatted.length - 1;
     let body = formatted[i];
     let extra: TelegramSendMessageExtra = {};
@@ -62,6 +65,7 @@ export async function sendPlainReadingChunksToChat(
   const reply = { reply_parameters: { message_id: replyToMessageId } };
 
   for (let i = 0; i < formatted.length; i++) {
+    if (options.shouldContinue && !options.shouldContinue()) return;
     const last = i === formatted.length - 1;
     let body = formatted[i];
     let extra: TelegramSendMessageExtra = {};

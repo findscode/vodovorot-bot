@@ -86,8 +86,9 @@ App → intro в чат → «Начать» → результат; после 
 - Актуализировать fallback бесплатных OpenRouter-моделей; учитывать `finish_reason`, повторять обрезанный ответ один раз.
 - Проверять каркас «На день» и spread; один repair-pass при нарушении формата.
 - Сделать `/admin stats` читаемым: русские секции, причины сбоев clarity, модели, latency и показатели качества.
+- **Бесшовный UX при сбоях:** сохранять spread/deep-сессию; retry того же шага без Menu; ИИ → фото → текст; soft `bot.catch` (только in-flight).
 
-**Код:** `readingVoice.ts`, `prompts.ts`, `brandFormat.ts`, `openRouterChat.ts`, `opsLog.ts`, `adminStatsCopy.ts`, delivery/caption раскладов.
+**Код:** `readingVoice.ts`, `prompts.ts`, `brandFormat.ts`, `openRouterChat.ts`, `opsLog.ts`, `adminStatsCopy.ts`, delivery/caption раскладов, `spreadDelivery.ts`, `deepReadingDelivery.ts`, `registerErrorHandler.ts`.
 
 ---
 
@@ -99,7 +100,7 @@ App → intro в чат → «Начать» → результат; после 
 | **Промпты**                    | Без дат и «да/нет»; agency; «вероятности, не абсолют». Дисклеймер в `/help` ✅. Intro: «одна тема / один фокус». → [#53](https://github.com/findscode/vodovorot-bot/issues/53), [#59](https://github.com/findscode/vodovorot-bot/issues/59)                                                                                                              |
 | **Толкователь и качество ИИ**  | Случайный старший аркан — видимый толкователь в подписи к картам; lean-промпты, format-gate и один retry обрезанного ответа. → §4.5                                                                                                                                                                                                                      |
 | **Mini App**                   | **Гибрид 4.4:** App = **запуск** раскладов + настройки/справка (Menu «Меню»); чат = гадание и служебные inline. v1–v2 ✅ [#55](https://github.com/findscode/vodovorot-bot/issues/55), [#57](https://github.com/findscode/vodovorot-bot/issues/57); hub → §4.4                                                                                            |
-| **Deep / spread после обрыва** | **Без** SQLite для сессий. Явные тексты в intro и при «висящем» вводе. → [#56](https://github.com/findscode/vodovorot-bot/issues/56)                                                                                                                                                                                                                     |
+| **Deep / spread после обрыва** | **Без** SQLite для сессий. Явные тексты в intro и при «висящем» вводе. После abort/ошибки старый in-flight delivery не пишет в новую сессию (session id + deep in-flight). При сбое ИИ сессия сохраняется для retry того же шага; `bot.catch` не рвёт сессию. → [#56](https://github.com/findscode/vodovorot-bot/issues/56), §4.5                        |
 | **Deep на basic**              | До **3** триплетов; **укороченный** общий финал (2–3 абзаца). Premium — 7 + полный финал. → [#60](https://github.com/findscode/vodovorot-bot/issues/60)                                                                                                                                                                                                  |
 | **Ops / аналитика**            | Структурированные логи (`question_clarity_skip`, `spread_limit_hit`, latency ИИ) → [#61](https://github.com/findscode/vodovorot-bot/issues/61); агрегаты в `/admin stats` → [#62](https://github.com/findscode/vodovorot-bot/issues/62)                                                                                                                  |
 | **Рост и оплата**              | **Вне плана** (рефералы, Stars — только «на будущее»).                                                                                                                                                                                                                                                                                                   |
@@ -112,12 +113,12 @@ App → intro в чат → «Начать» → результат; после 
 
 Сессия до **7** триплетов + финал; вход — «Глубинная диагностика» (`deep`), **нет** `/deep`. Тон — [BRAND-GUIDE §5.1](./BRAND-GUIDE.md); данные — [PRIVACY §6](./PRIVACY.md).
 
-|                     |                                                                        |
-| ------------------- | ---------------------------------------------------------------------- |
-| **Фазы**            | `intro` → `awaiting_first_question` → `in_chain`                       |
-| **Basic / Premium** | 3 триплета + **укороченный финал** / 7 + полный финал ✅ **4.2.0**     |
-| **Spread basic**    | до **3**/сутки («Начать» + вопрос) — **3.7.0**                         |
-| **Код**             | `src/deepReading/*`, `registerDeepReadingHandlers.ts`, `middleware.ts` |
+|                     |                                                                                                       |
+| ------------------- | ----------------------------------------------------------------------------------------------------- |
+| **Фазы**            | `intro` → `awaiting_first_question` → `in_chain` (+ `awaiting_clarification`, `awaiting_final_retry`) |
+| **Basic / Premium** | 3 триплета + **укороченный финал** / 7 + полный финал ✅ **4.2.0**                                    |
+| **Spread basic**    | до **3**/сутки («Начать» + вопрос) — **3.7.0**                                                        |
+| **Код**             | `src/deepReading/*`, `registerDeepReadingHandlers.ts`, `middleware.ts`                                |
 
 ### Модель C — уровни доступа
 

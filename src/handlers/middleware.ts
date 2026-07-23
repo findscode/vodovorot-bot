@@ -35,7 +35,7 @@ function deepAllowedCallbacks(session: DeepSession): string[] {
   if (session.phase === 'awaiting_clarification') {
     return [...base, CLARITY_REFINE_CALLBACK, CLARITY_KEEP_CALLBACK];
   }
-  if (session.phase === 'in_chain') {
+  if (session.phase === 'in_chain' || session.phase === 'awaiting_final_retry') {
     return [...base, DEEP_END_CALLBACK];
   }
   return base;

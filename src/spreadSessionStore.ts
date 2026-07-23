@@ -6,6 +6,8 @@ export const SPREAD_ORPHAN_HINT_TTL_MS = 30 * 60 * 1000;
 export type SpreadSessionPhase = 'intro' | 'awaiting_question' | 'awaiting_clarification';
 
 export type SpreadSession = {
+  /** Уникальный id экземпляра сессии: после abort/restart старый delivery должен выйти. */
+  id: number;
   chatId: number;
   phase: SpreadSessionPhase;
   /** Исходный вопрос, пока ждём «Уточнить» / «Оставить так». */
@@ -17,6 +19,12 @@ export type SpreadSession = {
 
 const sessions = new Map<number, SpreadSession>();
 const spreadOrphanHints = new Map<number, number>();
+let nextSpreadSessionId = 1;
+
+/** true, если активная сессия всё ещё тот же экземпляр, что при старте delivery. */
+export function isCurrentSpreadSession(userId: number, sessionId: number): boolean {
+  return getSpreadSession(userId)?.id === sessionId;
+}
 
 function maybeMarkSpreadOrphan(userId: number, phase: SpreadSessionPhase): void {
   if (phase === 'awaiting_question' || phase === 'awaiting_clarification') {
@@ -78,6 +86,7 @@ export function beginSpreadSession(userId: number, chatId: number): void {
   purgeExpiredSpreadSessions();
   clearSpreadOrphanHint(userId);
   sessions.set(userId, {
+    id: nextSpreadSessionId++,
     chatId,
     phase: 'intro',
     clarityQuestion: null,

@@ -5,7 +5,8 @@ export type DeepSessionPhase =
   | 'intro'
   | 'awaiting_first_question'
   | 'awaiting_clarification'
-  | 'in_chain';
+  | 'in_chain'
+  | 'awaiting_final_retry';
 
 export type DeepTripletRecord = {
   question: string;
@@ -14,6 +15,8 @@ export type DeepTripletRecord = {
 };
 
 export type DeepSession = {
+  /** Уникальный id экземпляра сессии: после abort/restart старый delivery должен выйти. */
+  id: number;
   chatId: number;
   phase: DeepSessionPhase;
   deckRemaining: number[];
@@ -30,9 +33,15 @@ export type DeepSession = {
 };
 
 const sessions = new Map<number, DeepSession>();
+let nextDeepSessionId = 1;
 
 function now(): number {
   return Date.now();
+}
+
+/** true, если активная сессия всё ещё тот же экземпляр, что при старте delivery. */
+export function isCurrentDeepSession(userId: number, sessionId: number): boolean {
+  return getDeepSession(userId)?.id === sessionId;
 }
 
 export function purgeExpiredDeepSessions(): void {
@@ -56,6 +65,7 @@ export function getDeepSession(userId: number): DeepSession | undefined {
 
 export function startDeepSession(userId: number, chatId: number, deckIds: number[]): void {
   sessions.set(userId, {
+    id: nextDeepSessionId++,
     chatId,
     phase: 'intro',
     deckRemaining: deckIds,

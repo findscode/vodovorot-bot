@@ -48,7 +48,7 @@
 | Блокировка во время deep               | `src/handlers/middleware.ts` (`registerDeepSessionMiddleware`)                                                                                 |
 | Клавиатуры                             | `src/botKeyboards.ts`                                                                                                                          |
 | Callback deep                          | `deep`, `deep_start`, `deep_cancel`, `deep_end` — `src/deepReading/constants.ts`                                                               |
-| Фазы deep                              | `intro` \| `awaiting_first_question` \| `in_chain` — `sessionStore.ts`                                                                         |
+| Фазы deep                              | `intro` \| `awaiting_first_question` \| `awaiting_clarification` \| `in_chain` \| `awaiting_final_retry` — `sessionStore.ts`                   |
 | Коллаж 2–7 триплетов                   | `src/deepReading/compositeStack.ts` (наслоение `k × 12.5%` высоты карты)                                                                       |
 | 1-й триплет = spread                   | `tripletStripFrame()` в `spreadComposite.ts`                                                                                                   |
 

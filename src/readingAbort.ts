@@ -5,6 +5,7 @@ import {
 } from './deepReading/sessionStore.js';
 import { endSpreadSession, hasActiveSpreadSession } from './spreadSessionStore.js';
 import { clearSpreadInFlight } from './spreadInFlight.js';
+import { clearDeepInFlight } from './deepInFlight.js';
 import { readingAbortedNoticeHtml, type ReadingAbortKind } from './botCopy.js';
 
 export type ReadingAbortResult = {
@@ -26,7 +27,10 @@ export function abortActiveReadingsSync(userId: number): ReadingAbortResult {
     const kind: ReadingAbortKind =
       session && session.triplets.length > 0 ? 'deep_with_triplets' : 'deep_intro';
     endDeepSession(userId);
+    clearDeepInFlight(userId);
     notices.push(kind);
+  } else {
+    clearDeepInFlight(userId);
   }
 
   if (notices.length === 0) {

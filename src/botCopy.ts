@@ -23,9 +23,12 @@ const START_ETHOS = `Запомни: ${ETHOS}`;
 export const DISCLAIMER_HELP =
   'Толкование — ориентир для размышления, не приговор и не гарантия событий. Не заменяет консультацию врача, юриста или финансового специалиста.';
 
-/** Необработанная ошибка в хендлере (bot.catch). */
+/** Необработанная ошибка в хендлере (bot.catch). Сессию не сбрасываем. */
 export const UNHANDLED_BOT_ERROR_HTML =
-  'Что-то пошло не так. Открой <b>Меню</b> или попробуй ещё раз.';
+  'Что-то пошло не так. Если гадание уже начато — повтори последний шаг; иначе открой <b>Меню</b>.';
+
+export const WEBAPP_LAUNCH_ERROR_HTML =
+  'Не удалось запустить расклад. Открой <b>Меню</b> и попробуй ещё раз.';
 
 /** Не удалось получить текст от ИИ (сеть, таймаут, отказ API). */
 export const AI_TEXT_UNAVAILABLE_MESSAGE =
@@ -63,9 +66,12 @@ export const DAY_IN_FLIGHT_MESSAGE = 'Уже собираю карту дня �
 /** После успешного расклада в три карты. */
 export const SPREAD_DONE_HINT = 'Следующий расклад — в <b>Меню</b>.';
 
-/** После сбоя ИИ у расклада «три карты» (фото уже в чате). */
-export const SPREAD_AI_RETRY_SUFFIX =
-  'Открой «Прошлое — настоящее — будущее» в <b>Меню</b> и напиши вопрос заново.';
+/** После сбоя ИИ у расклада «три карты»: сессия сохранена, вопрос можно повторить. */
+export const SPREAD_AI_RETRY_MESSAGE =
+  'Не удалось получить толкование. Напиши вопрос ещё раз в этот же чат — расклад не сброшен.';
+
+/** @deprecated Используй {@link SPREAD_AI_RETRY_MESSAGE}. */
+export const SPREAD_AI_RETRY_SUFFIX = SPREAD_AI_RETRY_MESSAGE;
 
 export const SPREAD_CANCELLED_MESSAGE = 'Расклад отменён — следующий выбери в <b>Меню</b>.';
 
@@ -142,6 +148,12 @@ export function deepSessionBlockedMessageHtml(tier: AccessTier): string {
 
 export const DEEP_AI_RETRY_MESSAGE =
   'Не удалось получить текст толкования. Отправь тот же вопрос ещё раз — этот шаг не засчитан.';
+
+export const DEEP_FINAL_RETRY_MESSAGE =
+  'Не удалось собрать общий вывод. Нажми «Закончить гадание» ещё раз — предыдущие шаги сохранены.';
+
+export const DEEP_IN_FLIGHT_MESSAGE =
+  'Уже собираю ответ на текущий вопрос — дождись окончания или нажми «Закончить гадание».';
 
 export const DEEP_IMAGES_UNAVAILABLE_SUFFIX =
   'Картинки карт сейчас недоступны — ниже пришлю толкование текстом.';

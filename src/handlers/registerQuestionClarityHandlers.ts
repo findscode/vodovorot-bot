@@ -1,32 +1,17 @@
-import type { Context } from 'telegraf';
-import type { Telegraf } from 'telegraf';
-import {
-  AI_TEXT_UNAVAILABLE_MESSAGE,
-  QUESTION_CLARITY_REFINE_MESSAGE,
-  SPREAD_AI_RETRY_SUFFIX,
-  SPREAD_IN_FLIGHT_MESSAGE,
-  questionClarityMessageHtml,
-  spreadLimitMessage,
-} from '../botCopy.js';
-import {
-  keyboardDeepAwaitingFirst,
-  keyboardDeepClarification,
-  keyboardMainOrDayOnly,
-  keyboardSpreadAwaitingQuestion,
-  keyboardSpreadClarification,
-} from '../botKeyboards.js';
-import { deliverDeepTriplet } from '../deepReading/deepReadingDelivery.js';
+import { deliverDeepTriplet, runDeepFinal } from '../deepReading/deepReadingDelivery.js';
 import {
   getDeepSession,
   setDeepClarityQuestion,
   setDeepClaritySkipNext,
   setDeepPhase,
 } from '../deepReading/sessionStore.js';
+import { clearDeepInFlight, tryMarkDeepInFlight } from '../deepInFlight.js';
 import { TELEGRAM_HTML_PARSE } from '../readingTelegramHtml.js';
 import { evaluateQuestionClarity } from '../questionClarity.js';
 import { CLARITY_KEEP_CALLBACK, CLARITY_REFINE_CALLBACK } from '../questionClarityConstants.js';
 import { deliverSpreadReading } from '../spreadDelivery.js';
 import {
+  endSpreadSession,
   getSpreadSession,
   setSpreadClarityQuestion,
   setSpreadClaritySkipNext,
@@ -36,8 +21,26 @@ import { resolveAccessTier } from '../accessTier.js';
 import { opsEvent } from '../opsLog.js';
 import { withTypingWhile } from '../typingIndicator.js';
 import { answerCbQuerySafe, logHandlerError } from './botHelpers.js';
-import { endSpreadSession } from '../spreadSessionStore.js';
 import { clearSpreadInFlight, tryMarkSpreadInFlight } from '../spreadInFlight.js';
+import {
+  AI_TEXT_UNAVAILABLE_MESSAGE,
+  DEEP_IN_FLIGHT_MESSAGE,
+  QUESTION_CLARITY_REFINE_MESSAGE,
+  SPREAD_AI_RETRY_MESSAGE,
+  SPREAD_IN_FLIGHT_MESSAGE,
+  questionClarityMessageHtml,
+  spreadLimitMessage,
+} from '../botCopy.js';
+import {
+  keyboardDeepAwaitingFirst,
+  keyboardDeepClarification,
+  keyboardDeepInChain,
+  keyboardMainOrDayOnly,
+  keyboardSpreadAwaitingQuestion,
+  keyboardSpreadClarification,
+} from '../botKeyboards.js';
+import type { Context } from 'telegraf';
+import type { Telegraf } from 'telegraf';
 
 export async function runSpreadReadingForUser(
   ctx: Context,
@@ -49,17 +52,19 @@ export async function runSpreadReadingForUser(
     withTypingWhile(ctx, task),
   );
   if (result === 'ai_error' || result === 'delivery_error') {
-    await ctx.reply(`${AI_TEXT_UNAVAILABLE_MESSAGE}\n\n${SPREAD_AI_RETRY_SUFFIX}`, {
-      ...keyboardMainOrDayOnly(uid),
+    await ctx.reply(`${AI_TEXT_UNAVAILABLE_MESSAGE}\n\n${SPREAD_AI_RETRY_MESSAGE}`, {
+      ...keyboardSpreadAwaitingQuestion(),
       ...TELEGRAM_HTML_PARSE,
     });
   } else if (result === 'limit_reached') {
     opsEvent('spread_limit_hit');
+    endSpreadSession(uid);
     await ctx.reply(spreadLimitMessage(), {
       ...keyboardMainOrDayOnly(uid),
       ...TELEGRAM_HTML_PARSE,
     });
   }
+  // 'aborted' — сессию уже сменили/закрыли; ничего не пишем
 }
 
 export async function maybeClarifySpreadQuestion(
@@ -163,9 +168,8 @@ export function registerQuestionClarityHandlers(bot: Telegraf): void {
         await runSpreadReadingForUser(ctx, uid, question);
       } catch (e) {
         logHandlerError('spread_clarity_keep', e);
-        endSpreadSession(uid);
-        await ctx.reply(`${AI_TEXT_UNAVAILABLE_MESSAGE}\n\n${SPREAD_AI_RETRY_SUFFIX}`, {
-          ...keyboardMainOrDayOnly(uid),
+        await ctx.reply(`${AI_TEXT_UNAVAILABLE_MESSAGE}\n\n${SPREAD_AI_RETRY_MESSAGE}`, {
+          ...keyboardSpreadAwaitingQuestion(),
           ...TELEGRAM_HTML_PARSE,
         });
       } finally {
@@ -177,12 +181,29 @@ export function registerQuestionClarityHandlers(bot: Telegraf): void {
     const deep = getDeepSession(uid);
     if (deep?.phase === 'awaiting_clarification' && deep.clarityQuestion) {
       const question = deep.clarityQuestion;
+      if (!tryMarkDeepInFlight(uid)) {
+        await ctx.reply(DEEP_IN_FLIGHT_MESSAGE, {
+          ...keyboardDeepClarification(),
+          ...TELEGRAM_HTML_PARSE,
+        });
+        return;
+      }
       setDeepClarityQuestion(uid, null);
       setDeepPhase(uid, 'awaiting_first_question');
       try {
-        await deliverDeepTriplet(ctx, uid, question);
+        const result = await deliverDeepTriplet(ctx, uid, question);
+        if (result === 'deck_empty') {
+          logHandlerError('deep_clarity_keep_deck', new Error('deck exhausted'));
+          await runDeepFinal(ctx, uid);
+        }
       } catch (e) {
         logHandlerError('deep_clarity_keep', e);
+        await ctx.reply(AI_TEXT_UNAVAILABLE_MESSAGE, {
+          ...keyboardDeepInChain(),
+          ...TELEGRAM_HTML_PARSE,
+        });
+      } finally {
+        clearDeepInFlight(uid);
       }
     }
   });

@@ -1,8 +1,19 @@
 import { describe, expect, it, beforeEach } from 'vitest';
 import { beginDeepSession } from './deepReading/deepReadingDelivery.js';
-import { appendTriplet, hasActiveDeepSession } from './deepReading/sessionStore.js';
+import {
+  appendTriplet,
+  getDeepSession,
+  hasActiveDeepSession,
+  isCurrentDeepSession,
+} from './deepReading/sessionStore.js';
 import { abortActiveReadingsSync } from './readingAbort.js';
-import { beginSpreadSession, hasActiveSpreadSession } from './spreadSessionStore.js';
+import { tryMarkDeepInFlight, isDeepInFlight } from './deepInFlight.js';
+import {
+  beginSpreadSession,
+  getSpreadSession,
+  hasActiveSpreadSession,
+  isCurrentSpreadSession,
+} from './spreadSessionStore.js';
 import { readingAbortedNoticeHtml } from './botCopy.js';
 import type { DrawnCard } from './deck.js';
 
@@ -50,5 +61,29 @@ describe('readingAbort', () => {
     beginDeepSession(uid, uid);
     const result = abortActiveReadingsSync(uid);
     expect(result.noticeHtml).toBe(readingAbortedNoticeHtml('deep_intro'));
+  });
+
+  it('invalidates previous deep session id after restart', () => {
+    beginDeepSession(uid, uid);
+    const oldId = getDeepSession(uid)!.id;
+    expect(tryMarkDeepInFlight(uid)).toBe(true);
+    abortActiveReadingsSync(uid);
+    expect(isDeepInFlight(uid)).toBe(false);
+    beginDeepSession(uid, uid);
+    const newId = getDeepSession(uid)!.id;
+    expect(newId).not.toBe(oldId);
+    expect(isCurrentDeepSession(uid, oldId)).toBe(false);
+    expect(isCurrentDeepSession(uid, newId)).toBe(true);
+  });
+
+  it('invalidates previous spread session id after restart', () => {
+    beginSpreadSession(uid, uid);
+    const oldId = getSpreadSession(uid)!.id;
+    abortActiveReadingsSync(uid);
+    beginSpreadSession(uid, uid);
+    const newId = getSpreadSession(uid)!.id;
+    expect(newId).not.toBe(oldId);
+    expect(isCurrentSpreadSession(uid, oldId)).toBe(false);
+    expect(isCurrentSpreadSession(uid, newId)).toBe(true);
   });
 });

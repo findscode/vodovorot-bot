@@ -11,6 +11,7 @@ import {
 import { applyDayPushDeliveryResult } from './dayPushApplyResult.js';
 import { clearPushFailuresForDay } from './dayPushRetry.js';
 import { isDayPushDeliveryEnabled } from './dayPushConfig.js';
+import { clearDayInFlight, tryMarkDayInFlight } from './dayInFlight.js';
 import { dayDrawCalendarDate, getDayDrawTimezone } from './dayDrawState.js';
 import { decideDayPushTick, type DayPushTickDecision } from './dayPushTickLogic.js';
 import { isAtOrPastLocalHm } from './pushSchedule.js';
@@ -66,6 +67,11 @@ async function processSubscriber(
     return;
   }
 
+  if (!tryMarkDayInFlight(uid)) {
+    console.log(`[day_push] user ${uid}: уже идёт «На день», тик пропущен`);
+    return;
+  }
+
   try {
     console.log(
       `[day_push] user ${uid}: отправка (${todayKey}, ${s.day_push_local_hhmm} ${s.day_push_timezone})`,
@@ -85,6 +91,8 @@ async function processSubscriber(
     } else {
       console.error('[day_push] user', uid, e);
     }
+  } finally {
+    clearDayInFlight(uid);
   }
 }
 
