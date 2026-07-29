@@ -225,7 +225,7 @@ export function listDayPushSubscribersSync(): DayPushSubscriberRow[] {
 }
 
 /**
- * Рассылка за календарный день закрыта: успешная доставка или пропуск (слот «на день» уже занят).
+ * Рассылка за календарный день закрыта: успех, пропуск (слот занят) или 3 сбоя подряд.
  * Планировщик не шлёт повторные попытки и не пишет в чат без запроса.
  */
 export function markDayPushClosedForTodaySync(userId: number, calendarDateKey: string): void {

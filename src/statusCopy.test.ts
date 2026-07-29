@@ -1,7 +1,7 @@
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { closeDatabase, initDatabase } from './db/database.js';
 import { extendPremiumByDaysSync, setDayPushEnabled } from './db/usersRepo.js';
 import { helpTextHtml } from './statusCopy.js';
@@ -16,6 +16,7 @@ describe('statusCopy / help', () => {
   });
 
   afterEach(async () => {
+    vi.unstubAllEnvs();
     closeDatabase();
     await rm(dir, { recursive: true, force: true });
   });
@@ -43,9 +44,19 @@ describe('statusCopy / help', () => {
   });
 
   it('при включённой подписке показывает время', () => {
+    vi.stubEnv('DAY_PUSH_ENABLED', '1');
     setDayPushEnabled(2, true, 'Europe/Moscow', '09:00');
     const html = helpTextHtml(2);
     expect(html).toContain('9:00');
     expect(html).toContain('Рассылка');
+  });
+
+  it('при глобальной паузе не говорит, что рассылка включена', () => {
+    vi.stubEnv('DAY_PUSH_ENABLED', '1');
+    setDayPushEnabled(4, true, 'Europe/Moscow', '09:00');
+    vi.stubEnv('DAY_PUSH_ENABLED', '0');
+    const html = helpTextHtml(4);
+    expect(html).toContain('временно недоступна');
+    expect(html).not.toContain('Рассылка</b>: включена');
   });
 });

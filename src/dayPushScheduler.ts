@@ -16,6 +16,8 @@ import { dayDrawCalendarDate, getDayDrawTimezone } from './dayDrawState.js';
 import { decideDayPushTick, type DayPushTickDecision } from './dayPushTickLogic.js';
 import { isAtOrPastLocalHm } from './pushSchedule.js';
 import { withTelegramTypingWhile } from './typingIndicator.js';
+import { DAY_PUSH_CONFIG_ERROR_MESSAGE } from './botCopy.js';
+import { TELEGRAM_HTML_PARSE } from './readingTelegramHtml.js';
 
 let tickBusy = false;
 
@@ -54,6 +56,13 @@ async function processSubscriber(
   if (decision.action === 'skip') {
     if (decision.reason === 'invalid_local_hhmm' || decision.reason === 'invalid_timezone') {
       warnConfigOnce(uid, decision.reason);
+      setDayPushEnabled(uid, false, s.day_push_timezone);
+      clearPushFailuresForDay(uid, todayKey);
+      try {
+        await bot.telegram.sendMessage(uid, DAY_PUSH_CONFIG_ERROR_MESSAGE, TELEGRAM_HTML_PARSE);
+      } catch (sendErr) {
+        console.error('[day_push] не удалось сообщить о некорректной подписке user', uid, sendErr);
+      }
     }
     return;
   }
@@ -90,6 +99,16 @@ async function processSubscriber(
       console.log(`[day_push] подписка отключена для user ${uid} (403)`);
     } else {
       console.error('[day_push] user', uid, e);
+      try {
+        await applyDayPushDeliveryResult({
+          bot,
+          userId: uid,
+          todayKey,
+          result: 'delivery_error',
+        });
+      } catch (applyErr) {
+        console.error('[day_push] не удалось учесть delivery_error user', uid, applyErr);
+      }
     }
   } finally {
     clearDayInFlight(uid);

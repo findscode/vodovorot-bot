@@ -1,6 +1,6 @@
 import type { Telegraf } from 'telegraf';
 import { resolveAccessTier } from '../accessTier.js';
-import { spreadSessionBlockedMessageHtml } from '../botCopy.js';
+import { isPublicEntryCommand, spreadSessionBlockedMessageHtml } from '../botCopy.js';
 import {
   keyboardSpreadAwaitingQuestion,
   keyboardSpreadClarification,
@@ -53,6 +53,7 @@ export function registerSpreadSessionMiddleware(bot: Telegraf): void {
     if (ctx.message && 'text' in ctx.message) {
       const text = ctx.message.text.trim();
       if (text.startsWith('/')) {
+        if (isPublicEntryCommand(text)) return next();
         await ctx.reply(blockedHtml, {
           ...blockedKeyboard,
           ...TELEGRAM_HTML_PARSE,

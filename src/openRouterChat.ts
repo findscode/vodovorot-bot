@@ -1,7 +1,13 @@
+import {
+  clearOpenRouterCircuit,
+  isOpenRouterCircuitOpen,
+  tripOpenRouterCircuit,
+} from './openRouterCircuitBreaker.js';
 import { OPENROUTER_FREE_MODEL_CHAIN } from './openRouterModels.js';
 import {
   extractChatCompletion,
   isFatalOpenRouterHttpStatus,
+  isOpenRouterAccountLimitError,
   parseOpenRouterErrorMessage,
   parseOpenRouterRetryDelayMs,
   shouldTryNextOpenRouterModel,
@@ -99,14 +105,20 @@ async function fetchCompletion(
 
 /**
  * Chat Completions с последовательным fallback по OPENROUTER_FREE_MODEL_CHAIN.
+ * При дневной квоте / волне 429 — circuit breaker на 15 мин (без лишних HTTP).
  */
 export async function completeChatWithModelFallback(
   apiKey: string,
   messages: ChatMessage[],
   opts: ChatCompletionOpts,
 ): Promise<string> {
+  if (isOpenRouterCircuitOpen()) {
+    throw new OpenRouterChatError('OpenRouter временно на паузе (лимит/квота)', 429, undefined);
+  }
+
   let lastError: OpenRouterChatError | null = null;
   let truncationRetried = false;
+  let sawRateLimit = false;
 
   for (let i = 0; i < OPENROUTER_FREE_MODEL_CHAIN.length; i++) {
     const model = OPENROUTER_FREE_MODEL_CHAIN[i]!;
@@ -161,6 +173,7 @@ export async function completeChatWithModelFallback(
 
     if (status >= 200 && status < 300 && content) {
       console.log('[openrouter_success]', model);
+      clearOpenRouterCircuit();
       opsAiModelSuccess(model);
       return content;
     }
@@ -169,6 +182,16 @@ export async function completeChatWithModelFallback(
       const msg = parseOpenRouterErrorMessage(bodyText);
       console.error('[openrouter_error]', 'fatal', status, model, msg.slice(0, 120));
       throw new OpenRouterChatError(`ИИ API ${status}: ${msg}`, status, model);
+    }
+
+    if (status === 429 || isOpenRouterAccountLimitError(bodyText)) {
+      sawRateLimit = true;
+      if (isOpenRouterAccountLimitError(bodyText)) {
+        const msg = parseOpenRouterErrorMessage(bodyText) || `ИИ API ${status}`;
+        console.warn('[openrouter_circuit]', 'account_limit', model, msg.slice(0, 120));
+        tripOpenRouterCircuit();
+        throw new OpenRouterChatError(msg, status, model);
+      }
     }
 
     if (shouldTryNextOpenRouterModel(status, bodyText, content)) {
@@ -193,6 +216,11 @@ export async function completeChatWithModelFallback(
     const msg = parseOpenRouterErrorMessage(bodyText);
     console.error('[openrouter_error]', status, model, msg.slice(0, 120));
     throw new OpenRouterChatError(`ИИ API ${status}: ${msg}`, status, model);
+  }
+
+  if (sawRateLimit || lastError?.status === 429) {
+    console.warn('[openrouter_circuit]', 'trip_after_chain_429');
+    tripOpenRouterCircuit();
   }
 
   throw (

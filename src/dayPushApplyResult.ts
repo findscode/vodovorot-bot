@@ -2,12 +2,7 @@ import type { Telegraf } from 'telegraf';
 import type { CardOfDayDeliveryResult } from './cardOfDayDelivery.js';
 import { CARD_DAY_DELIVERY_ERROR_MESSAGE, DAY_PUSH_AI_UNAVAILABLE_MESSAGE } from './botCopy.js';
 import { markDayPushClosedForTodaySync } from './db/usersRepo.js';
-import {
-  clearPushFailuresForDay,
-  clearPushFailure,
-  pushFailureKey,
-  recordPushFailure,
-} from './dayPushRetry.js';
+import { clearPushFailuresForDay, pushFailureKey, recordPushFailure } from './dayPushRetry.js';
 
 export type ApplyDayPushResultParams = {
   bot: Telegraf;
@@ -48,9 +43,12 @@ export async function applyDayPushDeliveryResult(params: ApplyDayPushResultParam
       }
     }
     if (shouldGiveUp) {
-      clearPushFailure(aiKey);
+      // Закрываем цикл рассылки на сутки — иначе cron каждую минуту жжёт OpenRouter.
+      // Слот «на день» не занимает: ручная кнопка остаётся доступной.
+      markDayPushClosedForTodaySync(userId, todayKey);
+      clearPushFailuresForDay(userId, todayKey);
       console.warn(
-        `[day_push] user ${userId}: сбой ИИ ${count} раз за ${todayKey}, пауза до завтра (слот не занят)`,
+        `[day_push] user ${userId}: сбой ИИ ${count} раз за ${todayKey}, рассылка закрыта до завтра (слот не занят)`,
       );
     } else {
       console.warn(`[day_push] user ${userId}: ai_error, попытка ${count}/3`);
@@ -67,9 +65,10 @@ export async function applyDayPushDeliveryResult(params: ApplyDayPushResultParam
     }
   }
   if (shouldGiveUp) {
-    clearPushFailure(deliveryKey);
+    markDayPushClosedForTodaySync(userId, todayKey);
+    clearPushFailuresForDay(userId, todayKey);
     console.warn(
-      `[day_push] user ${userId}: delivery_error ${count} раз за ${todayKey}, пауза до завтра`,
+      `[day_push] user ${userId}: delivery_error ${count} раз за ${todayKey}, рассылка закрыта до завтра`,
     );
   } else {
     console.warn(`[day_push] user ${userId}: delivery_error, попытка ${count}/3`);

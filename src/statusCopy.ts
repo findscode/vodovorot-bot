@@ -2,7 +2,7 @@ import { hasUnlimitedSpreadAccess, remainingSpreadDrawsForUser } from './accessR
 import { deepMaxTripletsForTier, spreadUnlimitedForTier } from './accessTier.js';
 import { DISCLAIMER_HELP } from './botCopy.js';
 import { dayDrawPhrasesForServer, formatHhmmForUser } from './calendarDayUserPhrases.js';
-import { getDayPushScheduleForUserSync } from './db/usersRepo.js';
+import { getDayPushScheduleForUserSync, isDayPushEnabledSync } from './db/usersRepo.js';
 import { quotedSpreadLabel, SPREAD_BUTTON_LABEL, spreadTitleLineHtml } from './spreadLabels.js';
 import { SPREAD_MAX_FOR_BASIC } from './spreadConstants.js';
 import { activeTierStatusLineHtml, basicLevelPrefix, premiumFeaturePrefix } from './tierDisplay.js';
@@ -56,9 +56,14 @@ export function helpTextHtml(userId: number): string {
   }
 
   const push = getDayPushScheduleForUserSync(userId);
-  if (push) {
+  if (push && isDayPushEnabledSync(userId)) {
     const t = formatHhmmForUser(push.hhmm);
     lines.push('', `<b>Рассылка</b>: включена, около ${t}.`);
+  } else if (push) {
+    lines.push(
+      '',
+      '<b>Рассылка</b>: временно недоступна на сервере. Подписка сохранена и заработает после возобновления рассылки.',
+    );
   } else {
     lines.push(
       '',

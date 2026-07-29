@@ -20,6 +20,15 @@ export function isFatalOpenRouterHttpStatus(status: number): boolean {
   return status === 401 || status === 403;
 }
 
+const ACCOUNT_LIMIT_RE =
+  /daily\s*(limit|quota)|quota\s*exceeded|usage\s*limit|insufficient\s*credits|credit\s*limit|free\s*tier.*limit/i;
+
+/** Дневная/аккаунтная квота — дальше по цепочке смысла нет, только жжём лимит. */
+export function isOpenRouterAccountLimitError(bodyText: string): boolean {
+  const msg = parseOpenRouterErrorMessage(bodyText);
+  return ACCOUNT_LIMIT_RE.test(msg) || ACCOUNT_LIMIT_RE.test(bodyText);
+}
+
 /** Переход к следующей модели в цепочке. */
 export function shouldTryNextOpenRouterModel(
   status: number,

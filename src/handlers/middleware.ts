@@ -1,6 +1,10 @@
 import type { Telegraf } from 'telegraf';
 import { resolveAccessTier } from '../accessTier.js';
-import { DEEP_ALREADY_ACTIVE_MESSAGE, deepSessionBlockedMessageHtml } from '../botCopy.js';
+import {
+  DEEP_ALREADY_ACTIVE_MESSAGE,
+  deepSessionBlockedMessageHtml,
+  isPublicEntryCommand,
+} from '../botCopy.js';
 import {
   keyboardDeepAwaitingFirst,
   keyboardDeepClarification,
@@ -50,7 +54,7 @@ export function registerDeepSessionMiddleware(bot: Telegraf): void {
     }
 
     const session = getDeepSession(uid)!;
-    const blockedHtml = deepSessionBlockedMessageHtml(resolveAccessTier(uid));
+    const blockedHtml = deepSessionBlockedMessageHtml(resolveAccessTier(uid), session.phase);
     const blockedKeyboard = deepBlockedKeyboard(session);
     const allowed = deepAllowedCallbacks(session);
 
@@ -78,6 +82,7 @@ export function registerDeepSessionMiddleware(bot: Telegraf): void {
     if (ctx.message && 'text' in ctx.message) {
       const text = ctx.message.text.trim();
       if (text.startsWith('/')) {
+        if (isPublicEntryCommand(text)) return next();
         await ctx.reply(blockedHtml, {
           ...blockedKeyboard,
           ...TELEGRAM_HTML_PARSE,

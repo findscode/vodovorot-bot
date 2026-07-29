@@ -6,6 +6,7 @@
 
 import type { AccessTier } from './accessTier.js';
 import { dayDrawPhrasesForServer, formatHhmmForUser } from './calendarDayUserPhrases.js';
+import type { DeepSessionPhase } from './deepReading/sessionStore.js';
 import {
   quotedSpreadLabel,
   SPREAD_BUTTON_LABEL,
@@ -32,7 +33,11 @@ export const WEBAPP_LAUNCH_ERROR_HTML =
 
 /** Не удалось получить текст от ИИ (сеть, таймаут, отказ API). */
 export const AI_TEXT_UNAVAILABLE_MESSAGE =
-  'Не удалось получить текст толкования. Попробуй через пару минут.';
+  'Не удалось получить текст толкования. Попробуй немного позже.';
+
+/** Дополнительная обратная связь, если ИИ отвечает дольше обычного. */
+export const AI_LONG_WAIT_MESSAGE =
+  'Толкование ещё готовится. Ответ ИИ иногда занимает больше минуты — можно просто дождаться сообщения.';
 
 /** Сбой ИИ при «На день» (фото ещё не отправлено — порядок ИИ → фото). */
 export const CARD_DAY_AI_UNAVAILABLE_MESSAGE =
@@ -48,6 +53,10 @@ export const AI_TEXT_UNAVAILABLE_AFTER_CARD_MESSAGE = CARD_DAY_AI_UNAVAILABLE_ME
 /** Подписчикам: сбой ИИ в день рассылки. */
 export const DAY_PUSH_AI_UNAVAILABLE_MESSAGE =
   'Сегодня не удалось прислать карту дня по подписке. Завтра попробую снова, если она включена.';
+
+/** Повреждённые сохранённые настройки push: отключаем, пользователь включает заново. */
+export const DAY_PUSH_CONFIG_ERROR_MESSAGE =
+  'Рассылка «На день» отключена: сохранённые время или часовой пояс больше не подходят. Включи её заново в <b>Меню</b>.';
 
 /** Текст под раскладом, если JPEG карт нет. */
 export const SPREAD_IMAGES_UNAVAILABLE_SUFFIX =
@@ -77,6 +86,9 @@ export const SPREAD_CANCELLED_MESSAGE = 'Расклад отменён — сл�
 
 export const SPREAD_ALREADY_AWAITING_MESSAGE =
   'Расклад уже начат — нажми «Начать» или «Отмена», либо напиши вопрос, если уже нажал «Начать».';
+
+export const QUESTION_CLARITY_AWAITING_MESSAGE =
+  'Сейчас жду твоё решение. Нажми «Уточнить», «Оставить так» или «Отмена» под подсказкой.';
 
 export const SPREAD_INTRO_PRESS_START_MESSAGE =
   'Сначала нажми «Начать», потом напиши вопрос или тему текстом в чат.';
@@ -126,6 +138,9 @@ export const DEEP_INTRO_PRESS_START_MESSAGE =
 
 export const DEEP_CANCELLED_MESSAGE = 'Гадание отменено — следующий расклад в <b>Меню</b>.';
 
+export const DEEP_CANCELLED_WITHOUT_FINAL_MESSAGE =
+  'Гадание завершено без общего вывода — следующий расклад выбери в <b>Меню</b>.';
+
 export const DEEP_EMPTY_QUESTION_MESSAGE =
   'Напиши вопрос или утверждение текстом — без пустого сообщения.';
 
@@ -142,8 +157,21 @@ export const DEEP_COLLAGE_HINT_MESSAGE =
   'Коллаж наслоен — на экране телефона мелкий; опирайся на текст толкования ниже.';
 
 /** Сообщение при блокировке команд и других раскладов во время deep-сессии. */
-export function deepSessionBlockedMessageHtml(tier: AccessTier): string {
-  return `Сейчас идёт ${spreadTitleLineHtml(tier, 'deep')}. Дождись ответа или нажми «Закончить гадание».`;
+export function deepSessionBlockedMessageHtml(tier: AccessTier, phase: DeepSessionPhase): string {
+  const title = spreadTitleLineHtml(tier, 'deep');
+  if (phase === 'intro') {
+    return `Сейчас открыт ${title}. Нажми «Начать» или «Отмена».`;
+  }
+  if (phase === 'awaiting_first_question') {
+    return `Сейчас идёт ${title}. Напиши первый вопрос или нажми «Отмена».`;
+  }
+  if (phase === 'awaiting_clarification') {
+    return `Сейчас жду решения по уточнению вопроса для ${title}. Нажми кнопку под подсказкой или «Отмена».`;
+  }
+  if (phase === 'awaiting_final_retry') {
+    return `Сейчас идёт ${title}. Нажми «Закончить гадание», чтобы повторить общий вывод.`;
+  }
+  return `Сейчас идёт ${title}. Напиши следующий вопрос или нажми «Закончить гадание».`;
 }
 
 export const DEEP_AI_RETRY_MESSAGE =

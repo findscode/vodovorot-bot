@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   deepSessionBlockedMessageHtml,
   isPublicEntryCommand,
+  QUESTION_CLARITY_AWAITING_MESSAGE,
   promoOkMessageHtml,
   readingAbortedNoticeHtml,
   startTextHtml,
@@ -10,10 +11,22 @@ import {
 const basicOpts = { tier: 'basic' as const, unlimitedSpread: false };
 
 describe('botCopy', () => {
-  it('deepSessionBlockedMessageHtml explains blocked state without counters', () => {
-    const html = deepSessionBlockedMessageHtml('basic');
-    expect(html).toContain('«Глубинная диагностика»');
-    expect(html).not.toMatch(/осталось|сделано \d/i);
+  it('deepSessionBlockedMessageHtml gives phase-specific actions', () => {
+    expect(deepSessionBlockedMessageHtml('basic', 'intro')).toContain('«Начать»');
+    expect(deepSessionBlockedMessageHtml('basic', 'awaiting_first_question')).toContain(
+      'Напиши первый вопрос',
+    );
+    expect(deepSessionBlockedMessageHtml('basic', 'awaiting_clarification')).toContain(
+      'кнопку под подсказкой',
+    );
+    expect(deepSessionBlockedMessageHtml('basic', 'in_chain')).toContain('Закончить гадание');
+    expect(deepSessionBlockedMessageHtml('basic', 'in_chain')).not.toMatch(/осталось|сделано \d/i);
+  });
+
+  it('clarity waiting copy points to visible buttons', () => {
+    expect(QUESTION_CLARITY_AWAITING_MESSAGE).toContain('Уточнить');
+    expect(QUESTION_CLARITY_AWAITING_MESSAGE).toContain('Оставить так');
+    expect(QUESTION_CLARITY_AWAITING_MESSAGE).not.toContain('Начать');
   });
 
   it('startText points to Menu and states ethos', () => {

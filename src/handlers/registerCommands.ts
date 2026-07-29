@@ -5,6 +5,7 @@ import {
   PUSHTIME_INVALID_FORMAT_HTML,
   PUSHTIME_NEED_SUBSCRIPTION_HTML,
   PUSHTIME_PICK_PROMPT_HTML,
+  SUBSCRIBE_MESSAGES,
   pushtimeSavedMessageHtml,
   startTextHtml,
 } from '../botCopy.js';
@@ -15,6 +16,7 @@ import {
   keyboardOpenMenuWebApp,
 } from '../botKeyboards.js';
 import { getDayDrawTimezone } from '../dayDrawState.js';
+import { isDayPushDeliveryEnabled } from '../dayPushConfig.js';
 import { normalizeDayPushHhmm } from '../dayPushPresets.js';
 import { TELEGRAM_HTML_PARSE } from '../readingTelegramHtml.js';
 import {
@@ -67,6 +69,14 @@ export function registerCommands(bot: Telegraf): void {
   bot.command('pushtime', async (ctx) => {
     const uid = ctx.from?.id;
     if (uid === undefined) return;
+    const pushSchedule = getDayPushScheduleForUserSync(uid);
+    if (pushSchedule && !isDayPushDeliveryEnabled()) {
+      await ctx.reply(SUBSCRIBE_MESSAGES.paused, {
+        ...keyboardMainOrDayOnly(uid),
+        ...TELEGRAM_HTML_PARSE,
+      });
+      return;
+    }
     if (!isDayPushEnabledSync(uid)) {
       await ctx.reply(PUSHTIME_NEED_SUBSCRIPTION_HTML, {
         ...keyboardMainOrDayOnly(uid),

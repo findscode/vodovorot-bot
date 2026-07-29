@@ -3,6 +3,7 @@ import {
   extractChatCompletion,
   extractChatCompletionContent,
   isFatalOpenRouterHttpStatus,
+  isOpenRouterAccountLimitError,
   parseOpenRouterRetryDelayMs,
   shouldTryNextOpenRouterModel,
 } from './openRouterFallback.js';
@@ -17,6 +18,19 @@ describe('openRouterFallback', () => {
 
   it('shouldTryNext on 429', () => {
     expect(shouldTryNextOpenRouterModel(429, '', null)).toBe(true);
+  });
+
+  it('isOpenRouterAccountLimitError detects quota / daily limit', () => {
+    expect(
+      isOpenRouterAccountLimitError('{"error":{"message":"Rate limit exceeded: daily limit"}}'),
+    ).toBe(true);
+    expect(isOpenRouterAccountLimitError('{"error":{"message":"Insufficient credits"}}')).toBe(
+      true,
+    );
+    expect(
+      isOpenRouterAccountLimitError('{"error":{"message":"Rate limit exceeded: 20/min"}}'),
+    ).toBe(false);
+    expect(isOpenRouterAccountLimitError('{"error":{"message":"No endpoints found"}}')).toBe(false);
   });
 
   it('shouldTryNext on 404 No endpoints found', () => {

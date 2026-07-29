@@ -24,6 +24,7 @@ import { answerCbQuerySafe, logHandlerError } from './botHelpers.js';
 import { clearSpreadInFlight, tryMarkSpreadInFlight } from '../spreadInFlight.js';
 import {
   AI_TEXT_UNAVAILABLE_MESSAGE,
+  DEEP_AI_RETRY_MESSAGE,
   DEEP_IN_FLIGHT_MESSAGE,
   QUESTION_CLARITY_REFINE_MESSAGE,
   SPREAD_AI_RETRY_MESSAGE,
@@ -36,11 +37,13 @@ import {
   keyboardDeepClarification,
   keyboardDeepInChain,
   keyboardMainOrDayOnly,
+  keyboardOpenMenuWebApp,
   keyboardSpreadAwaitingQuestion,
   keyboardSpreadClarification,
 } from '../botKeyboards.js';
 import type { Context } from 'telegraf';
 import type { Telegraf } from 'telegraf';
+import { staleSessionButtonMessageHtml } from '../sessionRecoveryCopy.js';
 
 export async function runSpreadReadingForUser(
   ctx: Context,
@@ -149,7 +152,13 @@ export function registerQuestionClarityHandlers(bot: Telegraf): void {
         ...keyboardDeepAwaitingFirst(),
         ...TELEGRAM_HTML_PARSE,
       });
+      return;
     }
+
+    await ctx.reply(staleSessionButtonMessageHtml(), {
+      ...keyboardOpenMenuWebApp(),
+      ...TELEGRAM_HTML_PARSE,
+    });
   });
 
   bot.action(CLARITY_KEEP_CALLBACK, async (ctx) => {
@@ -203,13 +212,19 @@ export function registerQuestionClarityHandlers(bot: Telegraf): void {
         }
       } catch (e) {
         logHandlerError('deep_clarity_keep', e);
-        await ctx.reply(AI_TEXT_UNAVAILABLE_MESSAGE, {
+        await ctx.reply(`${AI_TEXT_UNAVAILABLE_MESSAGE}\n\n${DEEP_AI_RETRY_MESSAGE}`, {
           ...keyboardDeepInChain(),
           ...TELEGRAM_HTML_PARSE,
         });
       } finally {
         clearDeepInFlight(uid);
       }
+      return;
     }
+
+    await ctx.reply(staleSessionButtonMessageHtml(), {
+      ...keyboardOpenMenuWebApp(),
+      ...TELEGRAM_HTML_PARSE,
+    });
   });
 }

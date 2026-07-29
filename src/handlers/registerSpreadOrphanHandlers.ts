@@ -2,13 +2,16 @@ import type { Telegraf } from 'telegraf';
 import { resolveAccessTier } from '../accessTier.js';
 import { normalizeDeepQuestion } from '../deepReading/deepReadingDelivery.js';
 import { hasActiveDeepSession } from '../deepReading/sessionStore.js';
-import { keyboardMainOrDayOnly } from '../botKeyboards.js';
+import { keyboardOpenMenuWebApp } from '../botKeyboards.js';
 import { TELEGRAM_HTML_PARSE } from '../readingTelegramHtml.js';
-import { spreadSessionLostMessageHtml } from '../sessionRecoveryCopy.js';
+import {
+  inactiveSessionTextMessageHtml,
+  spreadSessionLostMessageHtml,
+} from '../sessionRecoveryCopy.js';
 import { spreadTitleLineHtml } from '../spreadLabels.js';
 import { consumeSpreadOrphanHint, hasActiveSpreadSession } from '../spreadSessionStore.js';
 
-/** Текст вопроса без активной spread-сессии после TTL (#56). */
+/** Текст вопроса без активной spread/deep-сессии: TTL, рестарт или старая переписка. */
 export function registerSpreadOrphanHandlers(bot: Telegraf): void {
   bot.on('text', async (ctx, next) => {
     const uid = ctx.from?.id;
@@ -19,14 +22,15 @@ export function registerSpreadOrphanHandlers(bot: Telegraf): void {
     const text = ctx.message.text;
     if (text.startsWith('/')) return next();
 
-    if (!consumeSpreadOrphanHint(uid)) return next();
-
     const question = normalizeDeepQuestion(text);
     if (question === null) return next();
 
-    const tier = resolveAccessTier(uid);
-    await ctx.reply(spreadSessionLostMessageHtml(spreadTitleLineHtml(tier, 'spread')), {
-      ...keyboardMainOrDayOnly(uid),
+    const hadSpreadHint = consumeSpreadOrphanHint(uid);
+    const message = hadSpreadHint
+      ? spreadSessionLostMessageHtml(spreadTitleLineHtml(resolveAccessTier(uid), 'spread'))
+      : inactiveSessionTextMessageHtml();
+    await ctx.reply(message, {
+      ...keyboardOpenMenuWebApp(),
       ...TELEGRAM_HTML_PARSE,
     });
   });

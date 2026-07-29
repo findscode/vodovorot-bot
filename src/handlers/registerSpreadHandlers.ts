@@ -4,8 +4,8 @@ import {
   AI_TEXT_UNAVAILABLE_MESSAGE,
   DEEP_EMPTY_QUESTION_MESSAGE,
   DEEP_QUESTION_TOO_LONG_MESSAGE,
+  QUESTION_CLARITY_AWAITING_MESSAGE,
   SPREAD_AI_RETRY_MESSAGE,
-  SPREAD_ALREADY_AWAITING_MESSAGE,
   SPREAD_CANCELLED_MESSAGE,
   SPREAD_IN_FLIGHT_MESSAGE,
   SPREAD_INTRO_PRESS_START_MESSAGE,
@@ -15,6 +15,7 @@ import { launchSpreadIntro } from '../readingLaunch.js';
 import { readingContextFromTelegraf } from '../readingLaunchContext.js';
 import {
   keyboardMainOrDayOnly,
+  keyboardOpenMenuWebApp,
   keyboardSpreadAwaitingQuestion,
   keyboardSpreadClarification,
   keyboardSpreadIntro,
@@ -42,6 +43,7 @@ import { spreadIntroReadyHtml } from '../tierDisplay.js';
 import { answerCbQuerySafe, logHandlerError } from './botHelpers.js';
 import { opsEvent } from '../opsLog.js';
 import { clearSpreadInFlight, tryMarkSpreadInFlight } from '../spreadInFlight.js';
+import { staleSessionButtonMessageHtml } from '../sessionRecoveryCopy.js';
 
 export function registerSpreadHandlers(bot: Telegraf): void {
   bot.action(SPREAD_CALLBACK, async (ctx) => {
@@ -58,7 +60,13 @@ export function registerSpreadHandlers(bot: Telegraf): void {
     const uid = ctx.from?.id;
     if (uid === undefined) return;
     const session = getSpreadSession(uid);
-    if (!session || session.phase !== 'intro') return;
+    if (!session || session.phase !== 'intro') {
+      await ctx.reply(staleSessionButtonMessageHtml(), {
+        ...keyboardOpenMenuWebApp(),
+        ...TELEGRAM_HTML_PARSE,
+      });
+      return;
+    }
 
     if (!canUseSpread(uid)) {
       opsEvent('spread_limit_hit');
@@ -99,7 +107,13 @@ export function registerSpreadHandlers(bot: Telegraf): void {
     await answerCbQuerySafe(ctx);
     const uid = ctx.from?.id;
     if (uid === undefined) return;
-    if (!hasActiveSpreadSession(uid)) return;
+    if (!hasActiveSpreadSession(uid)) {
+      await ctx.reply(staleSessionButtonMessageHtml(), {
+        ...keyboardOpenMenuWebApp(),
+        ...TELEGRAM_HTML_PARSE,
+      });
+      return;
+    }
     endSpreadSession(uid);
     clearSpreadInFlight(uid);
     await ctx.reply(SPREAD_CANCELLED_MESSAGE, {
@@ -127,7 +141,7 @@ export function registerSpreadHandlers(bot: Telegraf): void {
     }
 
     if (session.phase === 'awaiting_clarification') {
-      await ctx.reply(SPREAD_ALREADY_AWAITING_MESSAGE, {
+      await ctx.reply(QUESTION_CLARITY_AWAITING_MESSAGE, {
         ...keyboardSpreadClarification(),
         ...TELEGRAM_HTML_PARSE,
       });

@@ -2,12 +2,14 @@ import type { Telegraf } from 'telegraf';
 import {
   AI_TEXT_UNAVAILABLE_MESSAGE,
   DEEP_CANCELLED_MESSAGE,
+  DEEP_CANCELLED_WITHOUT_FINAL_MESSAGE,
   DEEP_EMPTY_QUESTION_MESSAGE,
+  DEEP_AI_RETRY_MESSAGE,
   DEEP_FINAL_RETRY_MESSAGE,
   DEEP_IN_FLIGHT_MESSAGE,
   DEEP_INTRO_PRESS_START_MESSAGE,
   DEEP_QUESTION_TOO_LONG_MESSAGE,
-  SPREAD_ALREADY_AWAITING_MESSAGE,
+  QUESTION_CLARITY_AWAITING_MESSAGE,
 } from '../botCopy.js';
 import {
   keyboardDeepAwaitingFirst,
@@ -15,6 +17,7 @@ import {
   keyboardDeepIntro,
   keyboardDeepInChain,
   keyboardMainOrDayOnly,
+  keyboardOpenMenuWebApp,
 } from '../botKeyboards.js';
 import { TELEGRAM_HTML_PARSE } from '../readingTelegramHtml.js';
 import {
@@ -37,6 +40,7 @@ import { clearDeepInFlight, tryMarkDeepInFlight } from '../deepInFlight.js';
 import { resolveAccessTier } from '../accessTier.js';
 import { deepIntroReadyHtml } from '../tierDisplay.js';
 import { answerCbQuerySafe, logHandlerError } from './botHelpers.js';
+import { staleSessionButtonMessageHtml } from '../sessionRecoveryCopy.js';
 
 export function registerDeepReadingHandlers(bot: Telegraf): void {
   bot.action(DEEP_CALLBACK, async (ctx) => {
@@ -53,7 +57,13 @@ export function registerDeepReadingHandlers(bot: Telegraf): void {
     const uid = ctx.from?.id;
     if (uid === undefined) return;
     const session = getDeepSession(uid);
-    if (!session || session.phase !== 'intro') return;
+    if (!session || session.phase !== 'intro') {
+      await ctx.reply(staleSessionButtonMessageHtml(), {
+        ...keyboardOpenMenuWebApp(),
+        ...TELEGRAM_HTML_PARSE,
+      });
+      return;
+    }
 
     setDeepPhase(uid, 'awaiting_first_question');
     const tier = resolveAccessTier(uid);
@@ -85,11 +95,18 @@ export function registerDeepReadingHandlers(bot: Telegraf): void {
     const uid = ctx.from?.id;
     if (uid === undefined) return;
     const session = getDeepSession(uid);
-    if (!session) return;
-    if (session.triplets.length > 0) return;
+    if (!session) {
+      await ctx.reply(staleSessionButtonMessageHtml(), {
+        ...keyboardOpenMenuWebApp(),
+        ...TELEGRAM_HTML_PARSE,
+      });
+      return;
+    }
+    const cancelledMessage =
+      session.triplets.length > 0 ? DEEP_CANCELLED_WITHOUT_FINAL_MESSAGE : DEEP_CANCELLED_MESSAGE;
     endDeepSession(uid);
     clearDeepInFlight(uid);
-    await ctx.reply(DEEP_CANCELLED_MESSAGE, {
+    await ctx.reply(cancelledMessage, {
       ...keyboardMainOrDayOnly(uid),
       ...TELEGRAM_HTML_PARSE,
     });
@@ -100,8 +117,17 @@ export function registerDeepReadingHandlers(bot: Telegraf): void {
     const uid = ctx.from?.id;
     if (uid === undefined) return;
     const session = getDeepSession(uid);
-    if (!session || session.triplets.length === 0) return;
-    if (session.phase !== 'in_chain' && session.phase !== 'awaiting_final_retry') return;
+    if (
+      !session ||
+      session.triplets.length === 0 ||
+      (session.phase !== 'in_chain' && session.phase !== 'awaiting_final_retry')
+    ) {
+      await ctx.reply(staleSessionButtonMessageHtml(), {
+        ...keyboardOpenMenuWebApp(),
+        ...TELEGRAM_HTML_PARSE,
+      });
+      return;
+    }
     if (!tryMarkDeepInFlight(uid)) {
       await ctx.reply(DEEP_IN_FLIGHT_MESSAGE, {
         ...keyboardDeepInChain(),
@@ -134,7 +160,7 @@ export function registerDeepReadingHandlers(bot: Telegraf): void {
     }
 
     if (session.phase === 'awaiting_clarification') {
-      await ctx.reply(SPREAD_ALREADY_AWAITING_MESSAGE, {
+      await ctx.reply(QUESTION_CLARITY_AWAITING_MESSAGE, {
         ...keyboardDeepClarification(),
         ...TELEGRAM_HTML_PARSE,
       });
@@ -180,7 +206,7 @@ export function registerDeepReadingHandlers(bot: Telegraf): void {
       }
     } catch (e) {
       logHandlerError('deep_text', e);
-      await ctx.reply(AI_TEXT_UNAVAILABLE_MESSAGE, {
+      await ctx.reply(`${AI_TEXT_UNAVAILABLE_MESSAGE}\n\n${DEEP_AI_RETRY_MESSAGE}`, {
         ...keyboardDeepInChain(),
         ...TELEGRAM_HTML_PARSE,
       });

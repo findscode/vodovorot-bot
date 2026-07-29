@@ -70,7 +70,10 @@ export function keyboardWhatsNewDismiss() {
 }
 
 export function keyboardDeepInChain() {
-  return Markup.inlineKeyboard([[Markup.button.callback('Закончить гадание', 'deep_end')]]);
+  return Markup.inlineKeyboard([
+    [Markup.button.callback('Закончить гадание', 'deep_end')],
+    [Markup.button.callback('Выйти без общего вывода', DEEP_CANCEL_CALLBACK)],
+  ]);
 }
 
 /**
