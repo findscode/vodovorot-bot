@@ -7,7 +7,6 @@ import { quotedSpreadLabel, SPREAD_BUTTON_LABEL, spreadTitleLineHtml } from './s
 import { SPREAD_MAX_FOR_BASIC } from './spreadConstants.js';
 import { activeTierStatusLineHtml, basicLevelPrefix, premiumFeaturePrefix } from './tierDisplay.js';
 import {
-  buildHelpSummaryLines,
   collectUserHelpFacts,
   deepFinalPhraseForTier,
   formatPremiumUntilRu,
@@ -44,7 +43,7 @@ export function helpTextHtml(userId: number): string {
   );
   if (!spreadUnlimitedForTier(tier)) {
     lines.push(
-      `Лимит ${spreadQ}: ${SPREAD_MAX_FOR_BASIC} расклада за ${phrases.dayLimitCalendar} на базовом уровне (сначала «Начать», потом вопрос).`,
+      `Лимит ${spreadQ}: ${SPREAD_MAX_FOR_BASIC} расклада за ${phrases.dayLimitCalendar} на базовом уровне (вопрос можно написать сразу после запуска расклада).`,
     );
   }
 
@@ -62,7 +61,7 @@ export function helpTextHtml(userId: number): string {
   } else if (push) {
     lines.push(
       '',
-      '<b>Рассылка</b>: временно недоступна на сервере. Подписка сохранена и заработает после возобновления рассылки.',
+      '<b>Рассылка</b>: пока на паузе. Подписка сохранена и заработает, когда рассылку возобновят.',
     );
   } else {
     lines.push(
@@ -75,11 +74,3 @@ export function helpTextHtml(userId: number): string {
 
   return lines.join('\n');
 }
-
-/** Краткая справка plain-text (Mini App parity check). */
-export function helpSummaryPlain(userId: number): string[] {
-  return buildHelpSummaryLines(collectUserHelpFacts(userId));
-}
-
-/** @deprecated Используй {@link helpTextHtml}. */
-export const statusTextHtml = helpTextHtml;

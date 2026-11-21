@@ -13,11 +13,16 @@ export type OpsEventName =
   | 'day_draw_delivered'
   | 'ai_truncated'
   | 'reading_format_thin'
+  | 'rich_message_sent'
+  | 'rich_message_fallback'
+  | 'draft_stream_failed'
+  | 'delivery_error'
   | 'ai_error';
 
 type DayBucket = {
   counts: Partial<Record<OpsEventName, number>>;
   aiErrorsByContext: Record<string, number>;
+  deliveryErrorsByContext: Record<string, number>;
   aiLatencyMs: number[];
   aiLatencyByContext: Record<string, number[]>;
   aiSuccessByModel: Record<string, number>;
@@ -33,6 +38,7 @@ function freshBucket(): DayBucket {
   return {
     counts: {},
     aiErrorsByContext: {},
+    deliveryErrorsByContext: {},
     aiLatencyMs: [],
     aiLatencyByContext: {},
     aiSuccessByModel: {},
@@ -98,10 +104,22 @@ export function opsAiError(context: string, detail?: string): void {
   );
 }
 
+/** Сбой сборки фото или отправки в Telegram после успешного ИИ (не ошибка модели). */
+export function opsDeliveryError(context: string, detail?: string): void {
+  ensureDay();
+  bucket.counts.delivery_error = (bucket.counts.delivery_error ?? 0) + 1;
+  bucket.deliveryErrorsByContext[context] = (bucket.deliveryErrorsByContext[context] ?? 0) + 1;
+  const safe = detail?.replace(/\s/g, '_').slice(0, 80);
+  console.log(
+    `[ops] event=delivery_error day=${bucketDayKey} context=${context}${safe ? ` detail=${safe}` : ''}`,
+  );
+}
+
 export type OpsStatsSnapshot = {
   dayKey: string;
   counts: Record<string, number>;
   aiErrorsByContext: Record<string, number>;
+  deliveryErrorsByContext: Record<string, number>;
   aiLatencyP95Ms: number | null;
   aiLatencySampleCount: number;
   aiLatencyByContext: Record<string, { p95Ms: number | null; sampleCount: number }>;
@@ -134,6 +152,7 @@ export function getOpsStatsSnapshot(): OpsStatsSnapshot {
     dayKey: bucketDayKey,
     counts,
     aiErrorsByContext: { ...bucket.aiErrorsByContext },
+    deliveryErrorsByContext: { ...bucket.deliveryErrorsByContext },
     aiLatencyP95Ms: percentile(sorted, 95),
     aiLatencySampleCount: sorted.length,
     aiLatencyByContext,

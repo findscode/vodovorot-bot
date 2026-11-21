@@ -13,6 +13,7 @@ import {
   shouldTryNextOpenRouterModel,
 } from './openRouterFallback.js';
 import { withOpenRouterRateLimit } from './openRouterRequestGate.js';
+import { createSseAccumulator } from './openRouterStream.js';
 import { opsAiModelSuccess, opsEvent } from './opsLog.js';
 
 const OPENROUTER_CHAT_URL = 'https://openrouter.ai/api/v1/chat/completions';
@@ -23,6 +24,8 @@ export type ChatMessage = { role: 'system' | 'user'; content: string };
 export type ChatCompletionOpts = {
   max_tokens: number;
   temperature: number;
+  /** Если задан — запрос идёт в режиме stream, а текст ответа приходит по мере генерации. */
+  onProgress?: (partialText: string) => void;
 };
 
 export class OpenRouterChatError extends Error {
@@ -37,18 +40,77 @@ export class OpenRouterChatError extends Error {
   }
 }
 
-async function fetchCompletion(
-  apiKey: string,
-  model: string,
-  messages: ChatMessage[],
-  opts: ChatCompletionOpts,
-): Promise<{
+type CompletionResult = {
   status: number;
   bodyText: string;
   content: string | null;
   finishReason: string | null;
   retryAfterHeader: string | null;
-}> {
+};
+
+function safeProgress(onProgress: (text: string) => void, text: string): void {
+  try {
+    onProgress(text);
+  } catch (e) {
+    console.warn('[openrouter_stream] onProgress', e instanceof Error ? e.message : e);
+  }
+}
+
+/** Читает SSE-ответ; ошибка внутри потока превращается в 502, чтобы сработал fallback на следующую модель. */
+async function readStreamedCompletion(
+  res: Response,
+  model: string,
+  onProgress: (text: string) => void,
+): Promise<CompletionResult> {
+  const acc = createSseAccumulator();
+  const decoder = new TextDecoder();
+  try {
+    const reader = res.body!.getReader();
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      if (acc.push(decoder.decode(value, { stream: true }))) {
+        safeProgress(onProgress, acc.state.content);
+      }
+    }
+    acc.push(decoder.decode());
+    if (acc.flush()) safeProgress(onProgress, acc.state.content);
+  } catch (e) {
+    throw new OpenRouterChatError(
+      'Поток ответа ИИ оборвался',
+      undefined,
+      model,
+      e instanceof Error ? { cause: e } : undefined,
+    );
+  }
+
+  const { content, reasoning, finishReason, error } = acc.state;
+  if (error !== null || finishReason === 'error') {
+    return {
+      status: 502,
+      bodyText: JSON.stringify({ error: { message: error ?? 'stream_error' } }),
+      content: null,
+      finishReason,
+      retryAfterHeader: null,
+    };
+  }
+  // Как и в обычном режиме: если видимого ответа нет, берём рассуждения модели.
+  return {
+    status: res.status,
+    bodyText: '',
+    content: content.trim() || reasoning.trim() || null,
+    finishReason,
+    retryAfterHeader: null,
+  };
+}
+
+async function fetchCompletion(
+  apiKey: string,
+  model: string,
+  messages: ChatMessage[],
+  opts: ChatCompletionOpts,
+): Promise<CompletionResult> {
+  const onProgress = opts.onProgress;
   let res: Response;
   try {
     res = await withOpenRouterRateLimit(() =>
@@ -65,6 +127,7 @@ async function fetchCompletion(
           messages,
           max_tokens: opts.max_tokens,
           temperature: opts.temperature,
+          ...(onProgress ? { stream: true } : {}),
         }),
         signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
       }),
@@ -81,6 +144,15 @@ async function fetchCompletion(
       model,
       e instanceof Error ? { cause: e } : undefined,
     );
+  }
+
+  if (
+    onProgress &&
+    res.ok &&
+    res.body &&
+    (res.headers.get('content-type') ?? '').includes('text/event-stream')
+  ) {
+    return readStreamedCompletion(res, model, onProgress);
   }
 
   const bodyText = await res.text();

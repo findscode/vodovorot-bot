@@ -1,5 +1,4 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { AI_LONG_WAIT_MESSAGE } from './botCopy.js';
 import { withTypingWhile } from './typingIndicator.js';
 
 describe('withTypingWhile', () => {
@@ -7,40 +6,28 @@ describe('withTypingWhile', () => {
     vi.useRealTimers();
   });
 
-  it('does not send a wait notice for a fast task', async () => {
-    const sendMessage = vi.fn().mockResolvedValue(undefined);
-    const ctx = {
-      chat: { id: 10 },
-      telegram: {
-        sendChatAction: vi.fn().mockResolvedValue(undefined),
-        sendMessage,
-      },
-    };
-
-    await withTypingWhile(ctx as never, async () => 'ok');
-    expect(sendMessage).not.toHaveBeenCalled();
-  });
-
-  it('sends one notice when a task takes more than 20 seconds', async () => {
+  it('sends typing while the task runs and never posts a wait notice', async () => {
     vi.useFakeTimers();
     const sendMessage = vi.fn().mockResolvedValue(undefined);
-    const ctx = {
-      chat: { id: 11 },
-      telegram: {
-        sendChatAction: vi.fn().mockResolvedValue(undefined),
-        sendMessage,
-      },
-    };
+    const sendChatAction = vi.fn().mockResolvedValue(undefined);
+    const ctx = { chat: { id: 11 }, telegram: { sendChatAction, sendMessage } };
     let resolveTask!: (value: string) => void;
     const task = new Promise<string>((resolve) => {
       resolveTask = resolve;
     });
 
     const result = withTypingWhile(ctx as never, () => task);
-    await vi.advanceTimersByTimeAsync(20_000);
-    expect(sendMessage).toHaveBeenCalledOnce();
-    expect(sendMessage).toHaveBeenCalledWith(11, AI_LONG_WAIT_MESSAGE);
+    await vi.advanceTimersByTimeAsync(60_000);
+    expect(sendChatAction.mock.calls.length).toBeGreaterThan(5);
+    expect(sendChatAction).toHaveBeenCalledWith(11, 'typing');
+    expect(sendMessage).not.toHaveBeenCalled();
     resolveTask('ok');
     await expect(result).resolves.toBe('ok');
+  });
+
+  it('runs the task without chat id', async () => {
+    const ctx = { telegram: { sendChatAction: vi.fn() } };
+    await expect(withTypingWhile(ctx as never, async () => 'ok')).resolves.toBe('ok');
+    expect(ctx.telegram.sendChatAction).not.toHaveBeenCalled();
   });
 });

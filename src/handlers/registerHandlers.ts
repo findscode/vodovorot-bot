@@ -12,12 +12,14 @@ import { registerDayPushHandlers } from './registerDayPushHandlers.js';
 import { registerSpreadHandlers } from './registerSpreadHandlers.js';
 import { registerSpreadOrphanHandlers } from './registerSpreadOrphanHandlers.js';
 import { registerQuestionClarityHandlers } from './registerQuestionClarityHandlers.js';
-import { registerErrorHandler } from './registerErrorHandler.js';
+import { handleUnhandledBotError, registerErrorHandler } from './registerErrorHandler.js';
+import { registerDetachedUpdates } from './detachedUpdates.js';
 import { registerAdminHandlers } from './registerAdminHandlers.js';
 import { registerPromoHandlers } from './registerPromoHandlers.js';
 import { registerWebAppLaunchHandlers } from './registerWebAppLaunchHandlers.js';
 
 export function registerHandlers(bot: Telegraf): void {
+  registerDetachedUpdates(bot, handleUnhandledBotError);
   registerPrivateChatMiddleware(bot);
   registerWhatsNewTriggerMiddleware(bot);
   registerDeepSessionMiddleware(bot);

@@ -3,6 +3,7 @@ import type { Context } from 'telegraf';
 import { isFullDeepFinal, deepMaxTripletsForTier, resolveAccessTier } from '../accessTier.js';
 import {
   DEEP_AI_RETRY_MESSAGE,
+  DEEP_DELIVERY_RETRY_MESSAGE,
   DEEP_COLLAGE_HINT_MESSAGE,
   DEEP_CONTINUE_HINT_MESSAGE,
   DEEP_DONE_HINT,
@@ -29,17 +30,20 @@ import {
   endDeepSession,
   getDeepSession,
   isCurrentDeepSession,
+  pendingReadingFor,
   setDeepPhase,
   setPendingQuestion,
+  setPendingReading,
   startDeepSession,
   type DeepSession,
 } from './sessionStore.js';
 import { shuffledDeckIds } from './sessionDeck.js';
 import { TELEGRAM_HTML_PARSE } from '../readingTelegramHtml.js';
-import { sendPlainReadingChunksToChat, sendReadingChunksToChat } from '../readingChunksDelivery.js';
-import { withTypingWhile } from '../typingIndicator.js';
+import { sendReadingChunksToChat } from '../readingChunksDelivery.js';
+import { withReadingProgress } from '../typingIndicator.js';
 import { logHandlerError } from '../handlers/botHelpers.js';
-import { opsAiError, opsEvent } from '../opsLog.js';
+import { isAiFailure } from '../aiErrors.js';
+import { opsAiError, opsDeliveryError, opsEvent } from '../opsLog.js';
 
 const TG_CAPTION_MAX = 1024;
 const DEEP_MAX_QUESTION_CHARS = 900;
@@ -61,10 +65,12 @@ export async function deliverDeepTriplet(
 
   const stillCurrent = (): boolean => isCurrentDeepSession(userId, sessionId);
 
-  const { drawn, remaining } = drawTripletFromRemainingIds(session.deckRemaining);
+  // Повтор после сбоя доставки: те же карты, толкователь и текст ИИ (без нового запроса к модели).
+  const pending = pendingReadingFor(session, question);
+  const { drawn, remaining } = pending ?? drawTripletFromRemainingIds(session.deckRemaining);
   const tripletIndex = session.triplets.length;
   const questions = [...session.triplets.map((t) => t.question), question];
-  const voice = drawVoiceArchetype();
+  const voice = pending?.voice ?? drawVoiceArchetype();
   const captionHtml = deepReadingCaptionHtmlBounded(
     questions,
     tripletIndex,
@@ -97,12 +103,17 @@ export async function deliverDeepTriplet(
 
   try {
     // ИИ до фото: при сбое нет «осиротевшего» коллажа, шаг не засчитан.
-    const raw = await withTypingWhile(ctx, () =>
-      completeChat(deepTripletPrompt(question, drawn, priorSummaries, voice), {
-        opsContext: 'deep_triplet',
-      }),
-    );
+    const raw =
+      pending?.raw ??
+      (await withReadingProgress(ctx, 'triplet', (onProgress) =>
+        completeChat(deepTripletPrompt(question, drawn, priorSummaries, voice), {
+          opsContext: 'deep_triplet',
+          onProgress,
+        }),
+      ));
     if (!stillCurrent()) return 'aborted';
+    // До доставки: если фото или отправка упадут, повтор возьмёт этот ответ.
+    setPendingReading(userId, { question, raw, drawn, remaining, voice });
 
     const { userText, summary } = splitTripletModelOutput(raw);
 
@@ -131,7 +142,7 @@ export async function deliverDeepTriplet(
     }
     if (!stillCurrent()) return 'aborted';
 
-    await sendPlainReadingChunksToChat(ctx.telegram, userId, userText, faceMessageId, {
+    await sendReadingChunksToChat(ctx.telegram, userId, userText, faceMessageId, {
       shouldContinue: stillCurrent,
     });
     if (!stillCurrent()) return 'aborted';
@@ -164,9 +175,16 @@ export async function deliverDeepTriplet(
   } catch (e) {
     if (!stillCurrent()) return 'aborted';
     logHandlerError('deep_triplet', e);
-    opsAiError('deep_triplet', e instanceof Error ? e.message : String(e));
+    const detail = e instanceof Error ? e.message : String(e);
     setPendingQuestion(userId, question);
-    await ctx.reply(DEEP_AI_RETRY_MESSAGE, {
+    // Сбой модели и сбой сборки фото/отправки — разные причины: считаем и объясняем раздельно.
+    const aiFailed = isAiFailure(e);
+    if (aiFailed) {
+      opsAiError('deep_triplet', detail);
+    } else {
+      opsDeliveryError('deep_triplet', detail);
+    }
+    await ctx.reply(aiFailed ? DEEP_AI_RETRY_MESSAGE : DEEP_DELIVERY_RETRY_MESSAGE, {
       ...keyboardDeepInChain(),
       ...TELEGRAM_HTML_PARSE,
     });
@@ -196,10 +214,11 @@ export async function runDeepFinal(ctx: Context, userId: number): Promise<void> 
     : deepBasicFinalPrompt(questions, summaries);
 
   try {
-    const raw = await withTypingWhile(ctx, () =>
+    const raw = await withReadingProgress(ctx, 'reading', (onProgress) =>
       completeChat(prompt, {
         max_tokens: fullFinal ? 1200 : 550,
         opsContext: fullFinal ? 'deep_final' : 'deep_final_basic',
+        onProgress,
       }),
     );
     if (!stillCurrent()) return;
@@ -214,10 +233,13 @@ export async function runDeepFinal(ctx: Context, userId: number): Promise<void> 
   } catch (e) {
     if (!stillCurrent()) return;
     logHandlerError('deep_final', e);
-    opsAiError(
-      fullFinal ? 'deep_final' : 'deep_final_basic',
-      e instanceof Error ? e.message : String(e),
-    );
+    const finalContext = fullFinal ? 'deep_final' : 'deep_final_basic';
+    const detail = e instanceof Error ? e.message : String(e);
+    if (isAiFailure(e)) {
+      opsAiError(finalContext, detail);
+    } else {
+      opsDeliveryError(finalContext, detail);
+    }
     setDeepPhase(userId, 'awaiting_final_retry');
     await ctx.reply(DEEP_FINAL_RETRY_MESSAGE, {
       ...keyboardDeepInChain(),

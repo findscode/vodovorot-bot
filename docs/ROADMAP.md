@@ -1,4 +1,4 @@
-# Roadmap
+﻿# Roadmap
 
 **Версия продукта:** см. `package.json` и [CHANGELOG.md](../CHANGELOG.md). **Агентам:** [AGENTS.md](../AGENTS.md).
 
@@ -8,20 +8,20 @@
 
 ## В работе (4.x)
 
-| ID    | Issue                                                       | Эпик                                   | Волна  |
-| ----- | ----------------------------------------------------------- | -------------------------------------- | ------ |
-| v4-1  | [#53](https://github.com/findscode/vodovorot-bot/issues/53) | P1 — промпты: safety и тон             | 4.1 ✅ |
-| v4-2  | [#54](https://github.com/findscode/vodovorot-bot/issues/54) | P1 — уточнение вопроса (модель)        | 4.1 ✅ |
-| v4-6  | [#58](https://github.com/findscode/vodovorot-bot/issues/58) | P1 — fail-open при сбое clarity        | 4.1 ✅ |
-| v4-7  | [#59](https://github.com/findscode/vodovorot-bot/issues/59) | P1 — регрессия safety/disclaimer       | 4.1 ✅ |
-| v4-3  | [#55](https://github.com/findscode/vodovorot-bot/issues/55) | P2 — Mini App «Настройки» v1           | 4.2 ✅ |
-| v4-4  | [#56](https://github.com/findscode/vodovorot-bot/issues/56) | P2 — UX при потере deep/spread-сессии  | 4.2 ✅ |
-| v4-5  | [#57](https://github.com/findscode/vodovorot-bot/issues/57) | P2 — Mini App v2, один источник правды | 4.3 ✅ |
-| v4-8  | [#60](https://github.com/findscode/vodovorot-bot/issues/60) | P2 — deep: укороченный финал на basic  | 4.3 ✅ |
-| v4-9  | [#61](https://github.com/findscode/vodovorot-bot/issues/61) | P2 ops — логи и счётчики               | 4.3 ✅ |
-| v4-10 | [#62](https://github.com/findscode/vodovorot-bot/issues/62) | P2 ops — `/admin stats`                | 4.3 ✅ |
-| v4-11 | _TBD_                                                       | P2 — Mini App hub: запуск раскладов    | 4.4 ✅ |
-| v4-12 | _TBD_                                                       | P1 — качество ИИ и толкователь         | 4.5 🚧 |
+| ID    | Issue                                                       | Эпик                                    | Волна  |
+| ----- | ----------------------------------------------------------- | --------------------------------------- | ------ |
+| v4-1  | [#53](https://github.com/findscode/vodovorot-bot/issues/53) | P1 — промпты: safety и тон              | 4.1 ✅ |
+| v4-2  | [#54](https://github.com/findscode/vodovorot-bot/issues/54) | P1 — уточнение вопроса (модель)         | 4.1 ✅ |
+| v4-6  | [#58](https://github.com/findscode/vodovorot-bot/issues/58) | P1 — fail-open при сбое clarity         | 4.1 ✅ |
+| v4-7  | [#59](https://github.com/findscode/vodovorot-bot/issues/59) | P1 — регрессия safety/disclaimer        | 4.1 ✅ |
+| v4-3  | [#55](https://github.com/findscode/vodovorot-bot/issues/55) | P2 — Mini App «Настройки» v1            | 4.2 ✅ |
+| v4-4  | [#56](https://github.com/findscode/vodovorot-bot/issues/56) | P2 — UX при потере deep/spread-сессии   | 4.2 ✅ |
+| v4-5  | [#57](https://github.com/findscode/vodovorot-bot/issues/57) | P2 — Mini App v2, один источник правды  | 4.3 ✅ |
+| v4-8  | [#60](https://github.com/findscode/vodovorot-bot/issues/60) | P2 — deep: укороченный финал на basic   | 4.3 ✅ |
+| v4-9  | [#61](https://github.com/findscode/vodovorot-bot/issues/61) | P2 ops — логи и счётчики                | 4.3 ✅ |
+| v4-10 | [#62](https://github.com/findscode/vodovorot-bot/issues/62) | P2 ops — `/admin stats`                 | 4.3 ✅ |
+| v4-11 | _TBD_                                                       | P2 — Mini App hub: запуск раскладов     | 4.4 ✅ |
+| v4-12 | _TBD_                                                       | P1 — качество ИИ, доставка, толкователь | 4.5 ✅ |
 
 **Tier A «один фокус»** в intro — в scope [#53](https://github.com/findscode/vodovorot-bot/issues/53) (`tierDisplay.ts`), отдельный issue не нужен.
 
@@ -77,18 +77,34 @@ App → intro в чат → «Начать» → результат; после 
 
 ---
 
-## 4.5 — качество толкований и наблюдаемость
+## 4.5 — качество толкований, доставка и наблюдаемость
 
-**Статус:** 🚧 в работе.
+**Версия:** **4.5.0** (MINOR). **Статус:** ✅ в коде.
+
+**Толкования**
 
 - Явно показывать в подписи к картам случайного **толкователя** из старших арканов; его голос допустим в самом толковании.
 - Сжать и усилить промпты: один источник правил языка/тона, точный каркас ответа, без дублирующих инструкций.
+- **Вес — в выводе:** по отдельным картам 1–2 коротких предложения; ПНБ завершает метка **Итог**; шаг deep разбит на **Слева** / **В центре** / **Справа** и **Вывод** (раньше — один плотный абзац). → [BRAND-GUIDE §5–6.1](./BRAND-GUIDE.md)
 - Актуализировать fallback бесплатных OpenRouter-моделей; учитывать `finish_reason`, повторять обрезанный ответ один раз.
-- Проверять каркас «На день» и spread; один repair-pass при нарушении формата.
-- Сделать `/admin stats` читаемым: русские секции, причины сбоев clarity, модели, latency и показатели качества.
-- **Бесшовный UX при сбоях:** сохранять spread/deep-сессию; retry того же шага без Menu; ИИ → фото → текст; soft `bot.catch` (только in-flight).
+- Проверять каркас «На день» и ПНБ; один repair-pass при нарушении формата.
 
-**Код:** `readingVoice.ts`, `prompts.ts`, `brandFormat.ts`, `openRouterChat.ts`, `opsLog.ts`, `adminStatsCopy.ts`, delivery/caption раскладов, `spreadDelivery.ts`, `deepReadingDelivery.ts`, `registerErrorHandler.ts`.
+**Доставка**
+
+- **Карты и толкование одним сообщением** для «На день» и ПНБ: Rich Message (`sendRichMessage`, Bot API 10.1), фото первым блоком. Запасной путь — фото и текст отдельно; выключатель `RICH_MESSAGES_ENABLED=0`. Deep-триплеты остаются «фото + текст»: у каждого шага своя клавиатура и цепочка.
+- **Вопрос сразу** после запуска ПНБ или deep, без «Начать»; кнопка остаётся.
+- **Потоковый ответ:** `stream:true` у OpenRouter и черновик `sendMessageDraft` (Bot API 9.5) в личном чате; выключатель `DRAFT_STREAMING_ENABLED=0`. Telegraf 4.16 этих методов не знает — прямые вызовы в `telegramRawApi.ts`.
+- **Без сообщения «Толкование ещё готовится»:** вместо него «печатает…» и черновик.
+
+**Стабильность и наблюдаемость**
+
+- **Deep и ПНБ:** отдельные апдейты не блокируют друг друга (`detachedUpdates.ts`); лимит запросов к OpenRouter сдвигает старт, а не держит очередь; сбой доставки отделён от сбоя ИИ (`delivery_error` в `/admin stats`); deep сохраняет готовый шаг (`pendingReading`) для повтора без нового запроса к ИИ.
+- **Бесшовный UX при сбоях:** сохранять spread/deep-сессию; retry того же шага без Menu; ИИ → фото → текст; soft `bot.catch` (только in-flight).
+- `/admin stats` читаемый: русские секции, причины сбоев clarity, модели, latency, блок «Доставка».
+
+**Тексты:** тон «между эзотерикой и точностью» — без инженерных слов в сообщениях бота ([BRAND-GUIDE §1](./BRAND-GUIDE.md)). Термин **ПНБ** — в [GLOSSARY](./GLOSSARY.md).
+
+**Код:** `readingVoice.ts`, `prompts.ts`, `brandFormat.ts`, `openRouterChat.ts`, `opsLog.ts`, `adminStatsCopy.ts`, `richReading.ts`, `readingDraft.ts`, `telegramRawApi.ts`, `openRouterStream.ts`, `cardOfDayDelivery.ts`, `spreadDelivery.ts`, `deepReadingDelivery.ts`, `registerErrorHandler.ts`, `handlers/detachedUpdates.ts`, `openRouterRequestGate.ts`.
 
 ---
 

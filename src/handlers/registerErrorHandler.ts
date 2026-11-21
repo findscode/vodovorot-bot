@@ -1,4 +1,4 @@
-import type { Telegraf } from 'telegraf';
+import type { Context, Telegraf } from 'telegraf';
 import { UNHANDLED_BOT_ERROR_HTML } from '../botCopy.js';
 import { isDayInFlight, clearDayInFlight } from '../dayInFlight.js';
 import { isDeepInFlight, clearDeepInFlight } from '../deepInFlight.js';
@@ -18,26 +18,28 @@ export function shouldSuppressUnhandledDuringReading(userId: number | undefined)
  * Если расклад уже в полёте — только лог: иначе пользователь получит
  * «Что-то пошло не так» поверх ещё идущего ИИ и второй ответ об ошибке.
  */
+export async function handleUnhandledBotError(err: unknown, ctx: Context): Promise<void> {
+  const uid = ctx.from?.id;
+  if (shouldSuppressUnhandledDuringReading(uid)) {
+    logHandlerError('bot_suppressed_during_reading', err);
+    return;
+  }
+  logHandlerError('bot', err);
+  if (uid !== undefined) {
+    clearDeepInFlight(uid);
+    clearSpreadInFlight(uid);
+    clearDayInFlight(uid);
+  }
+  try {
+    await ctx.reply(UNHANDLED_BOT_ERROR_HTML, {
+      ...keyboardMainOrDayOnly(uid),
+      ...TELEGRAM_HTML_PARSE,
+    });
+  } catch {
+    /* ответ уже отправлен или чат недоступен */
+  }
+}
+
 export function registerErrorHandler(bot: Telegraf): void {
-  bot.catch(async (err, ctx) => {
-    const uid = ctx.from?.id;
-    if (shouldSuppressUnhandledDuringReading(uid)) {
-      logHandlerError('bot_suppressed_during_reading', err);
-      return;
-    }
-    logHandlerError('bot', err);
-    if (uid !== undefined) {
-      clearDeepInFlight(uid);
-      clearSpreadInFlight(uid);
-      clearDayInFlight(uid);
-    }
-    try {
-      await ctx.reply(UNHANDLED_BOT_ERROR_HTML, {
-        ...keyboardMainOrDayOnly(uid),
-        ...TELEGRAM_HTML_PARSE,
-      });
-    } catch {
-      /* ответ уже отправлен или чат недоступен */
-    }
-  });
+  bot.catch(handleUnhandledBotError);
 }

@@ -8,7 +8,6 @@ import {
   SPREAD_AI_RETRY_MESSAGE,
   SPREAD_CANCELLED_MESSAGE,
   SPREAD_IN_FLIGHT_MESSAGE,
-  SPREAD_INTRO_PRESS_START_MESSAGE,
   spreadLimitMessage,
 } from '../botCopy.js';
 import { launchSpreadIntro } from '../readingLaunch.js';
@@ -18,7 +17,6 @@ import {
   keyboardOpenMenuWebApp,
   keyboardSpreadAwaitingQuestion,
   keyboardSpreadClarification,
-  keyboardSpreadIntro,
 } from '../botKeyboards.js';
 import { TELEGRAM_HTML_PARSE } from '../readingTelegramHtml.js';
 import { normalizeDeepQuestion } from '../deepReading/deepReadingDelivery.js';
@@ -60,7 +58,9 @@ export function registerSpreadHandlers(bot: Telegraf): void {
     const uid = ctx.from?.id;
     if (uid === undefined) return;
     const session = getSpreadSession(uid);
-    if (!session || session.phase !== 'intro') {
+    // Вопрос уже написан без «Начать» — старая кнопка под intro ничего не меняет.
+    if (session && session.phase !== 'intro') return;
+    if (!session) {
       await ctx.reply(staleSessionButtonMessageHtml(), {
         ...keyboardOpenMenuWebApp(),
         ...TELEGRAM_HTML_PARSE,
@@ -133,11 +133,17 @@ export function registerSpreadHandlers(bot: Telegraf): void {
     if (text.startsWith('/')) return next();
 
     if (session.phase === 'intro') {
-      await ctx.reply(SPREAD_INTRO_PRESS_START_MESSAGE, {
-        ...keyboardSpreadIntro(),
-        ...TELEGRAM_HTML_PARSE,
-      });
-      return;
+      // Вопрос можно написать сразу, без «Начать» — тот же путь, что после кнопки.
+      if (!canUseSpread(uid)) {
+        opsEvent('spread_limit_hit');
+        endSpreadSession(uid);
+        await ctx.reply(spreadLimitMessage(), {
+          ...keyboardMainOrDayOnly(uid),
+          ...TELEGRAM_HTML_PARSE,
+        });
+        return;
+      }
+      setSpreadPhase(uid, 'awaiting_question');
     }
 
     if (session.phase === 'awaiting_clarification') {

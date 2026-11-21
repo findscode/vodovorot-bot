@@ -1,5 +1,4 @@
 import sharp from 'sharp';
-import { Input } from 'telegraf';
 import { compositeLayersOnBlack } from './compositeBackground.js';
 import { rasterCardForStrip } from './cardImageRaster.js';
 import type { DrawnCard } from './deck.js';
@@ -7,8 +6,6 @@ import type { DrawnCard } from './deck.js';
 export const STRIP_GAP_PX = 14;
 /** Высота карты на полосе (нормализованные PNG дают одинаковую ширину слота). */
 export const STRIP_CARD_HEIGHT = 320;
-
-type PhotoInput = ReturnType<typeof Input.fromBuffer>;
 
 /** Полоса или кадр коллажа: PNG на чёрном фоне (карты с альфой поверх). */
 export type TripletStripFrame = { png: Buffer; width: number; height: number };
@@ -34,13 +31,12 @@ export function middleStripSlotLeft(slotWidth: number): number {
  * «Карта дня»: та же геометрия полосы, что у трёх карт — чёрный фон,
  * одна вертикальная карта в среднем слоте.
  */
-export async function dayCardStripPhotoInput(drawn: DrawnCard): Promise<PhotoInput> {
+export async function dayCardStripPng(drawn: DrawnCard): Promise<Buffer> {
   const card = await rasterCardForStrip(drawn, STRIP_CARD_HEIGHT);
   const { width: canvasW, height: canvasH } = tripleStripCanvasDimensions(card.width, card.height);
   const left = middleStripSlotLeft(card.width);
   const top = Math.round((canvasH - card.height) / 2);
-  const out = await compositeLayersOnBlack(canvasW, canvasH, [{ input: card.buffer, left, top }]);
-  return Input.fromBuffer(out, 'spread-day-card.png');
+  return compositeLayersOnBlack(canvasW, canvasH, [{ input: card.buffer, left, top }]);
 }
 
 /** PNG полосы из трёх карт — общая сборка для spread и 1-го триплета deep. */
@@ -69,11 +65,4 @@ export async function tripletStripJpegBuffer(
 ): Promise<{ buffer: Buffer; width: number; height: number }> {
   const { png, width, height } = await tripletStripFrame(drawn);
   return { buffer: png, width, height };
-}
-
-export async function spreadCompositePhotoInput(
-  drawn: [DrawnCard, DrawnCard, DrawnCard],
-): Promise<PhotoInput> {
-  const { png } = await tripletStripFrame(drawn);
-  return Input.fromBuffer(png, 'spread-past-present-future.png');
 }

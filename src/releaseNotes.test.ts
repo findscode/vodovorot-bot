@@ -13,7 +13,7 @@ describe('releaseNotes', () => {
     expect(html).toContain('<b>Что нового</b>');
     expect(html).toContain('На день');
     expect(html).toContain('Понятно');
-    expect(html).toContain('рассылка');
+    expect(html).toContain('одним сообщением');
     expect(html.match(/^• /gm)).toHaveLength(3);
   });
 });

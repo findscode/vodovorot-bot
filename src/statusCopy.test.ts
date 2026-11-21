@@ -56,7 +56,7 @@ describe('statusCopy / help', () => {
     setDayPushEnabled(4, true, 'Europe/Moscow', '09:00');
     vi.stubEnv('DAY_PUSH_ENABLED', '0');
     const html = helpTextHtml(4);
-    expect(html).toContain('временно недоступна');
+    expect(html).toContain('пока на паузе');
     expect(html).not.toContain('Рассылка</b>: включена');
   });
 });

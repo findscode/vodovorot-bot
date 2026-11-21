@@ -2,10 +2,10 @@ import 'dotenv/config';
 import { textLooksNonRussianDominant } from './aiRussianGate.js';
 import { sanitizeReadingModelText } from './brandFormat.js';
 import { opsAiError, opsAiRequest, opsEvent } from './opsLog.js';
-import { completeChatWithModelFallback } from './openRouterChat.js';
+import { completeChatWithModelFallback, type ChatCompletionOpts } from './openRouterChat.js';
 
 const SYSTEM_PROMPT =
-  'Ты пишешь толкования Таро для Водоворота. Выводи только готовый текст на грамотном естественном русском языке, без латиницы и переводных оборотов. Строго соблюдай каркас из запроса: не переименовывай метки, не добавляй вступление и не повторяй инструкции. Пиши короткими и средними предложениями; тон спокойный, взрослый и ясный, без лести, запугивания, морализаторства и энциклопедичности. Не упоминай программы, модели и другую технику. Правила безопасности из запроса обязательны.';
+  'Ты пишешь толкования Таро для Водоворота. Выводи только готовый текст на грамотном естественном русском языке, без латиницы и переводных оборотов. Строго соблюдай каркас из запроса: не переименовывай метки, не добавляй вступление и не повторяй инструкции. Пиши короткими и средними предложениями; тон спокойный, взрослый и ясный, с лёгким образным оттенком: без канцелярита и сухих формулировок, но и без пафоса, лести, запугивания, морализаторства и энциклопедичности. Главное в ответе — вывод: по отдельным картам пиши коротко. Не упоминай программы, модели и другую технику. Правила безопасности из запроса обязательны.';
 
 /** Второй прогон: выровнять язык, не меняя структуру блоков из первого ответа. */
 const RUSSIAN_POLISH_SYSTEM_PROMPT =
@@ -16,12 +16,14 @@ const FORMAT_REPAIR_SYSTEM_PROMPT =
 
 const REQUIRED_LABELS_BY_CONTEXT: Record<string, readonly string[]> = {
   day: ['О чём здесь речь', 'Коротко о дне'],
-  spread: ['Прошлое', 'Настоящее', 'Будущее', 'Как это сходится'],
+  spread: ['Прошлое', 'Настоящее', 'Будущее', 'Как это сходится', 'Итог'],
 };
 
 export type CompleteChatOpts = {
   max_tokens?: number;
   opsContext?: string;
+  /** Текст первого прохода по мере генерации (для потокового черновика). */
+  onProgress?: (partialText: string) => void;
 };
 
 function polishUserPayload(firstPass: string): string {
@@ -81,7 +83,7 @@ function requireOpenRouterApiKey(): string {
 async function timedFallback(
   apiKey: string,
   messages: { role: 'system' | 'user'; content: string }[],
-  opts: { max_tokens: number; temperature: number },
+  opts: ChatCompletionOpts,
   opsContext: string,
 ): Promise<string> {
   const started = Date.now();
@@ -121,7 +123,7 @@ export async function completeChat(userPrompt: string, opts?: CompleteChatOpts):
       { role: 'system', content: SYSTEM_PROMPT },
       { role: 'user', content: userPrompt },
     ],
-    { max_tokens: maxTokens, temperature: 0.72 },
+    { max_tokens: maxTokens, temperature: 0.72, onProgress: opts?.onProgress },
     opsContext,
   );
 

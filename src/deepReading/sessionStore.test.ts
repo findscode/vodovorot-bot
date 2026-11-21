@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { DECK } from '../deck.js';
+import { DECK, drawVoiceArchetype, type DrawnCard } from '../deck.js';
 import { DEEP_MAX_TRIPLETS_BASIC, DEEP_MAX_TRIPLETS_PREMIUM } from './constants.js';
 import {
   appendTriplet,
@@ -7,8 +7,10 @@ import {
   endDeepSession,
   getDeepSession,
   hasActiveDeepSession,
+  pendingReadingFor,
   setDeepPhase,
   setPendingQuestion,
+  setPendingReading,
   startDeepSession,
 } from './sessionStore.js';
 
@@ -76,6 +78,33 @@ describe('sessionStore', () => {
     expect(getDeepSession(uid)?.phase).toBe('in_chain');
     setPendingQuestion(uid, null);
     expect(getDeepSession(uid)?.pendingQuestion).toBeNull();
+  });
+
+  it('pendingReading is reused only for the same question and cleared by appendTriplet', () => {
+    startDeepSession(uid, uid, [0, 1, 2, 3, 4, 5]);
+    const drawn: [DrawnCard, DrawnCard, DrawnCard] = [
+      { card: DECK[0]!, reversed: false },
+      { card: DECK[1]!, reversed: false },
+      { card: DECK[2]!, reversed: false },
+    ];
+    const voice = drawVoiceArchetype();
+    setPendingReading(uid, {
+      question: 'Что дальше?',
+      raw: 'текст',
+      drawn,
+      remaining: [3, 4, 5],
+      voice,
+    });
+    const s = getDeepSession(uid)!;
+    expect(pendingReadingFor(s, 'Что дальше?')?.raw).toBe('текст');
+    expect(pendingReadingFor(s, 'Другой вопрос')).toBeNull();
+
+    appendTriplet(uid, { question: 'Что дальше?', cards: drawn, summary: 's' }, [3, 4, 5], {
+      png: fakePng,
+      width: 10,
+      height: 10,
+    });
+    expect(getDeepSession(uid)?.pendingReading).toBeNull();
   });
 
   it('awaiting_final_retry keeps triplets for retry', () => {

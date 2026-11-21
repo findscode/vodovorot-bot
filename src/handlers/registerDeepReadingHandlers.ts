@@ -1,20 +1,17 @@
 import type { Telegraf } from 'telegraf';
 import {
-  AI_TEXT_UNAVAILABLE_MESSAGE,
   DEEP_CANCELLED_MESSAGE,
   DEEP_CANCELLED_WITHOUT_FINAL_MESSAGE,
   DEEP_EMPTY_QUESTION_MESSAGE,
-  DEEP_AI_RETRY_MESSAGE,
   DEEP_FINAL_RETRY_MESSAGE,
   DEEP_IN_FLIGHT_MESSAGE,
-  DEEP_INTRO_PRESS_START_MESSAGE,
   DEEP_QUESTION_TOO_LONG_MESSAGE,
+  DEEP_STEP_FAILED_MESSAGE,
   QUESTION_CLARITY_AWAITING_MESSAGE,
 } from '../botCopy.js';
 import {
   keyboardDeepAwaitingFirst,
   keyboardDeepClarification,
-  keyboardDeepIntro,
   keyboardDeepInChain,
   keyboardMainOrDayOnly,
   keyboardOpenMenuWebApp,
@@ -40,6 +37,7 @@ import { clearDeepInFlight, tryMarkDeepInFlight } from '../deepInFlight.js';
 import { resolveAccessTier } from '../accessTier.js';
 import { deepIntroReadyHtml } from '../tierDisplay.js';
 import { answerCbQuerySafe, logHandlerError } from './botHelpers.js';
+import { opsDeliveryError } from '../opsLog.js';
 import { staleSessionButtonMessageHtml } from '../sessionRecoveryCopy.js';
 
 export function registerDeepReadingHandlers(bot: Telegraf): void {
@@ -57,7 +55,9 @@ export function registerDeepReadingHandlers(bot: Telegraf): void {
     const uid = ctx.from?.id;
     if (uid === undefined) return;
     const session = getDeepSession(uid);
-    if (!session || session.phase !== 'intro') {
+    // Вопрос уже написан без «Начать» — старая кнопка под intro ничего не меняет.
+    if (session && session.phase !== 'intro') return;
+    if (!session) {
       await ctx.reply(staleSessionButtonMessageHtml(), {
         ...keyboardOpenMenuWebApp(),
         ...TELEGRAM_HTML_PARSE,
@@ -152,11 +152,8 @@ export function registerDeepReadingHandlers(bot: Telegraf): void {
     if (text.startsWith('/')) return next();
 
     if (session.phase === 'intro') {
-      await ctx.reply(DEEP_INTRO_PRESS_START_MESSAGE, {
-        ...keyboardDeepIntro(),
-        ...TELEGRAM_HTML_PARSE,
-      });
-      return;
+      // Вопрос можно написать сразу, без «Начать» — тот же путь, что после кнопки.
+      setDeepPhase(uid, 'awaiting_first_question');
     }
 
     if (session.phase === 'awaiting_clarification') {
@@ -206,7 +203,8 @@ export function registerDeepReadingHandlers(bot: Telegraf): void {
       }
     } catch (e) {
       logHandlerError('deep_text', e);
-      await ctx.reply(`${AI_TEXT_UNAVAILABLE_MESSAGE}\n\n${DEEP_AI_RETRY_MESSAGE}`, {
+      opsDeliveryError('deep_step', e instanceof Error ? e.message : String(e));
+      await ctx.reply(DEEP_STEP_FAILED_MESSAGE, {
         ...keyboardDeepInChain(),
         ...TELEGRAM_HTML_PARSE,
       });

@@ -52,6 +52,31 @@ describe('DISCLAIMER_HELP alignment', () => {
   });
 });
 
+describe('reading format: groups and conclusion', () => {
+  const cards = [stubCard('Маг', 1), stubCard('Луна', 18), stubCard('Солнце', 19)] as [
+    DrawnCard,
+    DrawnCard,
+    DrawnCard,
+  ];
+  const voice = { id: 5, name: 'Иерофант' };
+
+  it('deep triplet asks for labeled cards, a conclusion and the hidden summary', () => {
+    const prompt = deepTripletPrompt('Тест?', cards, [], voice);
+    for (const label of ['Слева', 'В центре', 'Справа', 'Вывод']) {
+      expect(prompt).toContain(`\n${label}\n`);
+    }
+    expect(prompt).toContain('РЕЗЮМЕ:');
+    expect(prompt).toMatch(/Вес ответа — в выводе/);
+    expect(prompt).toContain('названия карт — нет');
+  });
+
+  it('spread ends with a labeled conclusion and keeps cards short', () => {
+    const prompt = pastPresentFuturePrompt(cards, voice, 'Тест?');
+    expect(prompt).toContain('\nИтог\n');
+    expect(prompt).toContain('1–2 коротких предложения');
+  });
+});
+
 describe('pastPresentFuturePrompt', () => {
   it('includes user question verbatim', () => {
     const cards = [stubCard('Маг', 1), stubCard('Луна', 18), stubCard('Солнце', 19)] as [

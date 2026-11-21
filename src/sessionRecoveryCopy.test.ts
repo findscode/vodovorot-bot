@@ -6,12 +6,12 @@ import {
 
 describe('sessionRecoveryCopy', () => {
   it('stale callback points to Menu', () => {
-    expect(staleSessionButtonMessageHtml()).toContain('устарела');
+    expect(staleSessionButtonMessageHtml()).toContain('уже не работает');
     expect(staleSessionButtonMessageHtml()).toContain('Меню');
   });
 
   it('text without active session explains how to restart', () => {
-    expect(inactiveSessionTextMessageHtml()).toContain('не вижу активного гадания');
+    expect(inactiveSessionTextMessageHtml()).toContain('нет открытого гадания');
     expect(inactiveSessionTextMessageHtml()).toContain('Меню');
   });
 });

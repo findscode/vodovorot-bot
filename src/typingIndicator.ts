@@ -1,5 +1,10 @@
 import type { Telegraf } from 'telegraf';
-import { AI_LONG_WAIT_MESSAGE } from './botCopy.js';
+import {
+  createTelegramDraftStreamer,
+  noopProgress,
+  type DraftMode,
+  type ReadingProgress,
+} from './readingDraft.js';
 
 type MinimalCtx = {
   telegram: Telegraf['telegram'];
@@ -7,16 +12,6 @@ type MinimalCtx = {
 };
 
 const TYPING_INTERVAL_MS = 4500;
-const LONG_WAIT_NOTICE_MS = 20_000;
-
-function scheduleLongWaitNotice(
-  telegram: Telegraf['telegram'],
-  chatId: number,
-): ReturnType<typeof setTimeout> {
-  return setTimeout(() => {
-    void telegram.sendMessage(chatId, AI_LONG_WAIT_MESSAGE).catch(() => {});
-  }, LONG_WAIT_NOTICE_MS);
-}
 
 /**
  * Пока выполняется `fn`, периодически шлёт chat action «печатает…» (лимит Telegram ~5 с на действие).
@@ -31,16 +26,38 @@ export async function withTypingWhile<T>(ctx: MinimalCtx, fn: () => Promise<T>):
   };
   tick();
   const interval = setInterval(tick, TYPING_INTERVAL_MS);
-  const notice = scheduleLongWaitNotice(ctx.telegram, chatId);
   try {
     return await fn();
   } finally {
     clearInterval(interval);
-    clearTimeout(notice);
   }
 }
 
-/** Для рассылки без `ctx` (например «карта дня» по подписке). */
+/**
+ * «Печатает…» и потоковый черновик ответа: пока ИИ пишет толкование, пользователь видит текст.
+ * Если черновики недоступны, остаётся только «печатает…».
+ */
+export async function withReadingProgress(
+  ctx: MinimalCtx,
+  mode: DraftMode,
+  task: (onProgress: ReadingProgress) => Promise<string>,
+): Promise<string> {
+  const chatId = ctx.chat?.id;
+  if (chatId === undefined) {
+    return task(noopProgress);
+  }
+  return withTypingWhile(ctx, async () => {
+    const streamer = createTelegramDraftStreamer(ctx.telegram, chatId, mode);
+    streamer?.start();
+    try {
+      return await task((raw) => streamer?.push(raw));
+    } finally {
+      streamer?.stop();
+    }
+  });
+}
+
+/** Для рассылки без `ctx` (например «карта дня» по подписке): без черновика, человек не ждёт у экрана. */
 export async function withTelegramTypingWhile<T>(
   telegram: Telegraf['telegram'],
   chatId: number,
@@ -51,11 +68,9 @@ export async function withTelegramTypingWhile<T>(
   };
   tick();
   const interval = setInterval(tick, TYPING_INTERVAL_MS);
-  const notice = scheduleLongWaitNotice(telegram, chatId);
   try {
     return await fn();
   } finally {
     clearInterval(interval);
-    clearTimeout(notice);
   }
 }

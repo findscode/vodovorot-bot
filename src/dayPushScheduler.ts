@@ -15,6 +15,7 @@ import { clearDayInFlight, tryMarkDayInFlight } from './dayInFlight.js';
 import { dayDrawCalendarDate, getDayDrawTimezone } from './dayDrawState.js';
 import { decideDayPushTick, type DayPushTickDecision } from './dayPushTickLogic.js';
 import { isAtOrPastLocalHm } from './pushSchedule.js';
+import { noopProgress } from './readingDraft.js';
 import { withTelegramTypingWhile } from './typingIndicator.js';
 import { DAY_PUSH_CONFIG_ERROR_MESSAGE } from './botCopy.js';
 import { TELEGRAM_HTML_PARSE } from './readingTelegramHtml.js';
@@ -88,7 +89,7 @@ async function processSubscriber(
     const result = await deliverCardOfDayReading(
       bot.telegram,
       uid,
-      (task) => withTelegramTypingWhile(bot.telegram, uid, task),
+      (_mode, task) => withTelegramTypingWhile(bot.telegram, uid, () => task(noopProgress)),
       { at: now },
     );
     await applyDayPushDeliveryResult({ bot, userId: uid, todayKey, result });

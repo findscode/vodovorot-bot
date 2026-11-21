@@ -4,6 +4,7 @@ import {
   opsAiError,
   opsAiModelSuccess,
   opsAiRequest,
+  opsDeliveryError,
   opsEvent,
   resetOpsStatsForTests,
 } from './opsLog.js';
@@ -41,6 +42,16 @@ describe('opsLog', () => {
     expect(snap.counts.ai_error).toBe(3);
     expect(snap.aiErrorsByContext.spread).toBe(2);
     expect(snap.aiErrorsByContext.day).toBe(1);
+  });
+
+  it('aggregates delivery errors separately from ai errors', () => {
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    opsDeliveryError('spread', 'sharp failed');
+    opsDeliveryError('deep_triplet');
+    const snap = getOpsStatsSnapshot();
+    expect(snap.counts.delivery_error).toBe(2);
+    expect(snap.counts.ai_error ?? 0).toBe(0);
+    expect(snap.deliveryErrorsByContext).toEqual({ spread: 1, deep_triplet: 1 });
   });
 
   it('aggregates clarity reasons and successful models', () => {

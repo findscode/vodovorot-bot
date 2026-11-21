@@ -21,7 +21,7 @@ import { beginSpreadSession } from './spreadSessionStore.js';
 import { clearDayInFlight, tryMarkDayInFlight } from './dayInFlight.js';
 import { isSpreadInFlight } from './spreadInFlight.js';
 import { deepIntroHtml, spreadIntroHtml } from './tierDisplay.js';
-import { withTypingWhile } from './typingIndicator.js';
+import { withReadingProgress } from './typingIndicator.js';
 import { logHandlerError } from './handlers/botHelpers.js';
 import type { WebAppLaunchAction } from './webapp/webappLaunchPayload.js';
 
@@ -60,7 +60,7 @@ export async function launchDayReading(ctx: ReadingLaunchContext, userId: number
     const result = await deliverCardOfDayReading(
       ctx.telegram,
       userId,
-      (task) => withTypingWhile(ctx, task),
+      (mode, task) => withReadingProgress(ctx, mode, task),
       { at },
     );
     if (result === 'ai_error') {

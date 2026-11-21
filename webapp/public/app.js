@@ -50,11 +50,11 @@
 
   function settingsErrorMessage(code) {
     if (code === 'push_paused') {
-      return 'Рассылка сейчас недоступна на сервере. Карту дня можно взять кнопкой расклада в Меню.';
+      return 'Рассылка пока на паузе. Карту дня можно взять кнопкой расклада в Меню.';
     }
     if (code === 'push_disabled') return 'Сначала включи «Присылать каждый день».';
     if (code === 'invalid_hhmm') return 'Это время недоступно.';
-    return code || 'Не удалось сохранить';
+    return code || 'Не получилось сохранить';
   }
 
   async function launchSpread(action) {
@@ -67,7 +67,7 @@
       });
       if (tg?.close) tg.close();
     } catch (e) {
-      setStatus(e.message || 'Не удалось запустить расклад', true);
+      setStatus(e.message || 'Расклад не запустился', true);
     }
   }
 
@@ -130,7 +130,7 @@
     const pushAvailable = data.dayPush.available !== false;
     pushTz.textContent = pushAvailable
       ? `Часовой пояс: ${data.dayPush.timezone}`
-      : 'Рассылка «На день» сейчас недоступна на сервере.';
+      : 'Рассылка «На день» пока на паузе.';
     pushEnabled.disabled = saving || !pushAvailable;
 
     helpList.innerHTML = '';

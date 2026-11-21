@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { sendPlainReadingChunksToChat, sendReadingChunksToChat } from './readingChunksDelivery.js';
+import { sendReadingChunksToChat } from './readingChunksDelivery.js';
 
 describe('readingChunksDelivery', () => {
   it('sendReadingChunksToChat stops when shouldContinue returns false', async () => {
@@ -16,12 +16,25 @@ describe('readingChunksDelivery', () => {
     expect(sendMessage.mock.calls.length).toBeLessThan(3);
   });
 
-  it('sendPlainReadingChunksToChat respects shouldContinue', async () => {
+  it('sends nothing when shouldContinue is false from the start', async () => {
     const sendMessage = vi.fn().mockResolvedValue({ message_id: 1 });
-    const telegram = { sendMessage } as never;
-    await sendPlainReadingChunksToChat(telegram, 1, 'короткий текст', 10, {
+    await sendReadingChunksToChat({ sendMessage } as never, 1, 'короткий текст', 10, {
       shouldContinue: () => false,
     });
     expect(sendMessage).not.toHaveBeenCalled();
+  });
+
+  it('bolds deep triplet labels and keeps the text escaped', async () => {
+    const sendMessage = vi.fn().mockResolvedValue({ message_id: 1 });
+    await sendReadingChunksToChat(
+      { sendMessage } as never,
+      1,
+      'Слева\nОбраз <один>.\n\nВывод\nГлавное.',
+      10,
+    );
+    const html = sendMessage.mock.calls[0]![1] as string;
+    expect(html).toContain('<b>Слева</b>');
+    expect(html).toContain('<b>Вывод</b>');
+    expect(html).toContain('&lt;один&gt;');
   });
 });

@@ -64,6 +64,13 @@ export function tierLabelWithEmojiForAdmin(tier: AccessTier): string {
   return `${tierEmoji(tier)} ${tier}`;
 }
 
+/** Как начать расклад: сразу текстом или кнопкой (кнопка осталась для привычки). */
+const SPREAD_START_HINT_HTML =
+  'Можно сразу написать вопрос или тему одним сообщением в чат. Или нажми <b>Начать</b> — когда будешь готов.';
+
+const DEEP_START_HINT_HTML =
+  'Можно сразу написать первый вопрос или утверждение одним сообщением в чат. Или нажми <b>Начать</b> — когда будешь готов.';
+
 /** Вступление к глубинной диагностике с учётом tier. */
 export function deepIntroHtml(tier: AccessTier): string {
   const premiumDeep = isFullDeepFinal(tier);
@@ -72,7 +79,7 @@ export function deepIntroHtml(tier: AccessTier): string {
   const body = premiumDeep
     ? 'До семи вопросов подряд — на каждый три карты и короткое толкование. В конце — полный общий вывод.'
     : `До трёх вопросов за одно гадание — на каждый три карты и толкование. В конце — короткий общий вывод. Семь вопросов и полный финал — ${premiumFeaturePrefix()}Premium.`;
-  return `${heading}\n\n${body}\n\n${SESSION_RECOVERY_HINT_HTML}\n\nНажми <b>Начать</b>, когда будешь готов.`;
+  return `${heading}\n\n${body}\n\n${SESSION_RECOVERY_HINT_HTML}\n\n${DEEP_START_HINT_HTML}`;
 }
 
 export function deepIntroReadyHtml(tier: AccessTier): string {
@@ -87,11 +94,11 @@ export function spreadIntroHtml(tier: AccessTier): string {
   const prefix = isPremiumTier(tier) ? premiumFeaturePrefix() : basicLevelPrefix();
   const heading = `${prefix}<b>${quotedSpreadLabel(SPREAD_BUTTON_LABEL.spread)}</b>`;
   const howItWorks =
-    'Три карты по позициям: <b>прошлое</b>, <b>настоящее</b> и <b>будущее</b> — вокруг твоего вопроса или темы. Сначала сформулируешь запрос, потом вытащим карты и свяжем их в одно толкование.';
+    'Три карты по позициям: <b>прошлое</b>, <b>настоящее</b> и <b>будущее</b> — вокруг твоего вопроса или темы. Расскажи, что тебя волнует, — я вытяну карты и сведу их в одно толкование.';
   const limitNote = spreadUnlimitedForTier(tier)
     ? 'На ⭐️ Premium — без лимита.'
     : `На базовом уровне — ${SPREAD_MAX_FOR_BASIC} таких расклада за ${dayDrawPhrasesForServer().dayLimitCalendar}. Без лимита — ${premiumFeaturePrefix()}Premium.`;
-  return `${heading}\n\n${howItWorks}\n\n${limitNote}\n\n${SESSION_RECOVERY_HINT_HTML}\n\nНажми <b>Начать</b>, когда будешь готов.`;
+  return `${heading}\n\n${howItWorks}\n\n${limitNote}\n\n${SESSION_RECOVERY_HINT_HTML}\n\n${SPREAD_START_HINT_HTML}`;
 }
 
 export function spreadIntroReadyHtml(tier: AccessTier): string {

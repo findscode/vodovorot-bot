@@ -1,21 +1,13 @@
 import {
   brandFormatDeepBasicFinalPromptBlock,
   brandFormatDeepFinalPromptBlock,
+  brandFormatDeepTripletPromptBlock,
 } from '../brandFormat.js';
 import type { DrawnCard, TarotCard } from '../deck.js';
 import { formatDrawnLine } from '../deck.js';
 import { ORIENTATION_HINT } from '../readingPromptRules.js';
 import { promptVoiceArchetypeBlock } from '../readingVoice.js';
 import { SAFETY_HINT } from '../safetyHint.js';
-
-const TRIPLET_FORMAT = `ФОРМАТ ОТВЕТА:
-1–2 абзаца, в каждом 2–4 предложения — плотно и по делу, без «воды».
-Слева направо: на каждую карту — один яркий образ с картинки (жест, фигура, ключевой символ) и одна мягкая подсказка к вопросу; не перечисляй всё подряд. Символы и номиналы — только если сразу проясняют смысл, короткой фразой.
-Завершение: одна-две фразы, как три образа вместе отвечают на вопрос.
-Без имён позиций «прошлое/настоящее», без заголовков, #, списков и без меток вроде «О чём здесь речь».
-Тон: конкретно, но бережно; без приговоров, давления и опасных императивов.
-В самом конце ответа (после пустой строки) добавь служебную строку, начинающуюся ровно с: РЕЗЮМЕ:
-После «РЕЗЮМЕ:» — 2–3 коротких предложения для внутреннего контекста следующих шагов (пользователь эту часть не увидит).`;
 
 export function deepTripletPrompt(
   question: string,
@@ -40,7 +32,7 @@ ${promptVoiceArchetypeBlock(voice)}
 
 ${SAFETY_HINT}
 
-${TRIPLET_FORMAT}`;
+${brandFormatDeepTripletPromptBlock()}`;
 }
 
 function deepFinalStepsBlock(questions: string[], summaries: string[]): string {

@@ -18,16 +18,17 @@ import {
   setSpreadPhase,
 } from '../spreadSessionStore.js';
 import { resolveAccessTier } from '../accessTier.js';
-import { opsEvent } from '../opsLog.js';
-import { withTypingWhile } from '../typingIndicator.js';
+import { opsDeliveryError, opsEvent } from '../opsLog.js';
+import { withReadingProgress, withTypingWhile } from '../typingIndicator.js';
 import { answerCbQuerySafe, logHandlerError } from './botHelpers.js';
 import { clearSpreadInFlight, tryMarkSpreadInFlight } from '../spreadInFlight.js';
 import {
   AI_TEXT_UNAVAILABLE_MESSAGE,
-  DEEP_AI_RETRY_MESSAGE,
   DEEP_IN_FLIGHT_MESSAGE,
+  DEEP_STEP_FAILED_MESSAGE,
   QUESTION_CLARITY_REFINE_MESSAGE,
   SPREAD_AI_RETRY_MESSAGE,
+  SPREAD_DELIVERY_RETRY_MESSAGE,
   SPREAD_IN_FLIGHT_MESSAGE,
   questionClarityMessageHtml,
   spreadLimitMessage,
@@ -51,12 +52,17 @@ export async function runSpreadReadingForUser(
   question: string,
 ): Promise<void> {
   const tier = resolveAccessTier(uid);
-  const result = await deliverSpreadReading(ctx.telegram, uid, uid, question, tier, (task) =>
-    withTypingWhile(ctx, task),
+  const result = await deliverSpreadReading(ctx.telegram, uid, uid, question, tier, (mode, task) =>
+    withReadingProgress(ctx, mode, task),
   );
   try {
-    if (result === 'ai_error' || result === 'delivery_error') {
+    if (result === 'ai_error') {
       await ctx.reply(`${AI_TEXT_UNAVAILABLE_MESSAGE}\n\n${SPREAD_AI_RETRY_MESSAGE}`, {
+        ...keyboardSpreadAwaitingQuestion(),
+        ...TELEGRAM_HTML_PARSE,
+      });
+    } else if (result === 'delivery_error') {
+      await ctx.reply(SPREAD_DELIVERY_RETRY_MESSAGE, {
         ...keyboardSpreadAwaitingQuestion(),
         ...TELEGRAM_HTML_PARSE,
       });
@@ -212,7 +218,8 @@ export function registerQuestionClarityHandlers(bot: Telegraf): void {
         }
       } catch (e) {
         logHandlerError('deep_clarity_keep', e);
-        await ctx.reply(`${AI_TEXT_UNAVAILABLE_MESSAGE}\n\n${DEEP_AI_RETRY_MESSAGE}`, {
+        opsDeliveryError('deep_step', e instanceof Error ? e.message : String(e));
+        await ctx.reply(DEEP_STEP_FAILED_MESSAGE, {
           ...keyboardDeepInChain(),
           ...TELEGRAM_HTML_PARSE,
         });

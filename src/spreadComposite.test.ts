@@ -2,6 +2,7 @@ import sharp from 'sharp';
 import { describe, expect, it } from 'vitest';
 import { DECK } from './deck.js';
 import {
+  dayCardStripPng,
   middleStripSlotLeft,
   STRIP_GAP_PX,
   tripleStripCanvasDimensions,
@@ -20,6 +21,13 @@ describe('spreadComposite layout', () => {
 
   it('middleStripSlotLeft is center slot offset', () => {
     expect(middleStripSlotLeft(400)).toBe(400 + STRIP_GAP_PX);
+  });
+
+  it('dayCardStripPng renders one card on the same canvas as the triple strip', async () => {
+    const png = await dayCardStripPng({ card: DECK[0]!, reversed: false });
+    const meta = await sharp(png).metadata();
+    expect(meta.format).toBe('png');
+    expect(meta.width! / meta.height!).toBeGreaterThan(1);
   });
 
   it('tripletStripFrame renders three cards on black RGB canvas', async () => {

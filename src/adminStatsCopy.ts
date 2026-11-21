@@ -12,6 +12,7 @@ const AI_CONTEXT_LABELS: Record<string, string> = {
   deep_triplet: 'deep-триплет',
   deep_final: 'deep-финал',
   deep_final_basic: 'deep-финал basic',
+  deep_step: 'deep-шаг (не ИИ)',
 };
 
 function formatDayKeyRu(dayKey: string): string {
@@ -107,6 +108,12 @@ export function adminStatsHtml(): string {
     `Модели: ${formatMap(ops.aiSuccessByModel, modelLabel)}`,
     `Время ответа p95: ${latency}`,
     `По операциям p95: ${formatLatencyByContext(ops.aiLatencyByContext)}`,
+    '',
+    '<b>📨 Доставка</b>',
+    `Сбоев после ответа ИИ (фото, Telegram): <b>${c.delivery_error ?? 0}</b>`,
+    `По операциям: ${formatMap(ops.deliveryErrorsByContext, contextLabel)}`,
+    `Карты и толкование одним сообщением: <b>${c.rich_message_sent ?? 0}</b>, запасной путь — <b>${c.rich_message_fallback ?? 0}</b>`,
+    `Сбоев потокового черновика: <b>${c.draft_stream_failed ?? 0}</b>`,
   ];
   return lines.join('\n');
 }
