@@ -1,4 +1,6 @@
+import type { Telegraf } from 'telegraf';
 import { SPREAD_SESSION_TTL_MS } from './spreadConstants.js';
+import { deleteMessagesQuiet } from './telegramDelete.js';
 
 /** Сколько после TTL spread ждём «осиротевший» вопрос пользователя (#56). */
 export const SPREAD_ORPHAN_HINT_TTL_MS = 30 * 60 * 1000;
@@ -14,6 +16,8 @@ export type SpreadSession = {
   clarityQuestion: string | null;
   /** Следующий текст вопроса без повторной проверки clarity. */
   claritySkipNext: boolean;
+  /** Служебные подсказки сессии; удаляем, когда действие из текста уже сделано. */
+  serviceMessageIds: number[];
   updatedAt: number;
 };
 
@@ -91,8 +95,28 @@ export function beginSpreadSession(userId: number, chatId: number): void {
     phase: 'intro',
     clarityQuestion: null,
     claritySkipNext: false,
+    serviceMessageIds: [],
     updatedAt: now(),
   });
+}
+
+export function trackSpreadServiceMessage(userId: number, messageId: number): void {
+  const s = sessions.get(userId);
+  if (!s) return;
+  s.serviceMessageIds.push(messageId);
+  s.updatedAt = now();
+}
+
+/** Удаляет накопленные служебные сообщения spread-сессии. */
+export async function flushSpreadServiceMessages(
+  telegram: Telegraf['telegram'],
+  userId: number,
+): Promise<void> {
+  const s = sessions.get(userId);
+  if (!s || s.serviceMessageIds.length === 0) return;
+  const ids = s.serviceMessageIds.splice(0, s.serviceMessageIds.length);
+  s.updatedAt = now();
+  await deleteMessagesQuiet(telegram, s.chatId, ids);
 }
 
 export function setSpreadPhase(userId: number, phase: SpreadSessionPhase): void {

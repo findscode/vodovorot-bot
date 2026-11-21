@@ -16,6 +16,7 @@ import { answerCbQuerySafe } from './botHelpers.js';
 import {
   getDeepSession,
   hasActiveDeepSession,
+  trackDeepServiceMessage,
   type DeepSession,
 } from '../deepReading/sessionStore.js';
 import {
@@ -66,15 +67,17 @@ export function registerDeepSessionMiddleware(bot: Telegraf): void {
       }
       await answerCbQuerySafe(ctx);
       if (d === DEEP_CALLBACK) {
-        await ctx.reply(DEEP_ALREADY_ACTIVE_MESSAGE, {
+        const msg = await ctx.reply(DEEP_ALREADY_ACTIVE_MESSAGE, {
           ...blockedKeyboard,
           ...TELEGRAM_HTML_PARSE,
         });
+        trackDeepServiceMessage(uid, msg.message_id);
       } else {
-        await ctx.reply(blockedHtml, {
+        const msg = await ctx.reply(blockedHtml, {
           ...blockedKeyboard,
           ...TELEGRAM_HTML_PARSE,
         });
+        trackDeepServiceMessage(uid, msg.message_id);
       }
       return;
     }
@@ -83,10 +86,11 @@ export function registerDeepSessionMiddleware(bot: Telegraf): void {
       const text = ctx.message.text.trim();
       if (text.startsWith('/')) {
         if (isPublicEntryCommand(text)) return next();
-        await ctx.reply(blockedHtml, {
+        const msg = await ctx.reply(blockedHtml, {
           ...blockedKeyboard,
           ...TELEGRAM_HTML_PARSE,
         });
+        trackDeepServiceMessage(uid, msg.message_id);
         return;
       }
     }

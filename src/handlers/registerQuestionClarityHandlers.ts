@@ -1,9 +1,11 @@
 import { deliverDeepTriplet, runDeepFinal } from '../deepReading/deepReadingDelivery.js';
 import {
+  flushDeepServiceMessages,
   getDeepSession,
   setDeepClarityQuestion,
   setDeepClaritySkipNext,
   setDeepPhase,
+  trackDeepServiceMessage,
 } from '../deepReading/sessionStore.js';
 import { clearDeepInFlight, tryMarkDeepInFlight } from '../deepInFlight.js';
 import { TELEGRAM_HTML_PARSE } from '../readingTelegramHtml.js';
@@ -12,10 +14,12 @@ import { CLARITY_KEEP_CALLBACK, CLARITY_REFINE_CALLBACK } from '../questionClari
 import { deliverSpreadReading } from '../spreadDelivery.js';
 import {
   endSpreadSession,
+  flushSpreadServiceMessages,
   getSpreadSession,
   setSpreadClarityQuestion,
   setSpreadClaritySkipNext,
   setSpreadPhase,
+  trackSpreadServiceMessage,
 } from '../spreadSessionStore.js';
 import { resolveAccessTier } from '../accessTier.js';
 import { opsDeliveryError, opsEvent } from '../opsLog.js';
@@ -51,23 +55,27 @@ export async function runSpreadReadingForUser(
   uid: number,
   question: string,
 ): Promise<void> {
+  await flushSpreadServiceMessages(ctx.telegram, uid);
   const tier = resolveAccessTier(uid);
   const result = await deliverSpreadReading(ctx.telegram, uid, uid, question, tier, (mode, task) =>
     withReadingProgress(ctx, mode, task),
   );
   try {
     if (result === 'ai_error') {
-      await ctx.reply(`${AI_TEXT_UNAVAILABLE_MESSAGE}\n\n${SPREAD_AI_RETRY_MESSAGE}`, {
+      const msg = await ctx.reply(`${AI_TEXT_UNAVAILABLE_MESSAGE}\n\n${SPREAD_AI_RETRY_MESSAGE}`, {
         ...keyboardSpreadAwaitingQuestion(),
         ...TELEGRAM_HTML_PARSE,
       });
+      trackSpreadServiceMessage(uid, msg.message_id);
     } else if (result === 'delivery_error') {
-      await ctx.reply(SPREAD_DELIVERY_RETRY_MESSAGE, {
+      const msg = await ctx.reply(SPREAD_DELIVERY_RETRY_MESSAGE, {
         ...keyboardSpreadAwaitingQuestion(),
         ...TELEGRAM_HTML_PARSE,
       });
+      trackSpreadServiceMessage(uid, msg.message_id);
     } else if (result === 'limit_reached') {
       opsEvent('spread_limit_hit');
+      await flushSpreadServiceMessages(ctx.telegram, uid);
       endSpreadSession(uid);
       await ctx.reply(spreadLimitMessage(), {
         ...keyboardMainOrDayOnly(uid),
@@ -96,10 +104,11 @@ export async function maybeClarifySpreadQuestion(
   if (clarity.action === 'clarify') {
     setSpreadClarityQuestion(uid, question);
     setSpreadPhase(uid, 'awaiting_clarification');
-    await ctx.reply(questionClarityMessageHtml(clarity.hint), {
+    const msg = await ctx.reply(questionClarityMessageHtml(clarity.hint), {
       ...keyboardSpreadClarification(),
       ...TELEGRAM_HTML_PARSE,
     });
+    trackSpreadServiceMessage(uid, msg.message_id);
     return 'clarify_shown';
   }
   return 'proceed';
@@ -122,10 +131,11 @@ export async function maybeClarifyDeepFirstQuestion(
   if (clarity.action === 'clarify') {
     setDeepClarityQuestion(uid, question);
     setDeepPhase(uid, 'awaiting_clarification');
-    await ctx.reply(questionClarityMessageHtml(clarity.hint), {
+    const msg = await ctx.reply(questionClarityMessageHtml(clarity.hint), {
       ...keyboardDeepClarification(),
       ...TELEGRAM_HTML_PARSE,
     });
+    trackDeepServiceMessage(uid, msg.message_id);
     return 'clarify_shown';
   }
   return 'proceed';
@@ -139,25 +149,29 @@ export function registerQuestionClarityHandlers(bot: Telegraf): void {
 
     const spread = getSpreadSession(uid);
     if (spread?.phase === 'awaiting_clarification') {
+      await flushSpreadServiceMessages(ctx.telegram, uid);
       setSpreadPhase(uid, 'awaiting_question');
       setSpreadClarityQuestion(uid, null);
       setSpreadClaritySkipNext(uid, true);
-      await ctx.reply(QUESTION_CLARITY_REFINE_MESSAGE, {
+      const msg = await ctx.reply(QUESTION_CLARITY_REFINE_MESSAGE, {
         ...keyboardSpreadAwaitingQuestion(),
         ...TELEGRAM_HTML_PARSE,
       });
+      trackSpreadServiceMessage(uid, msg.message_id);
       return;
     }
 
     const deep = getDeepSession(uid);
     if (deep?.phase === 'awaiting_clarification') {
+      await flushDeepServiceMessages(ctx.telegram, uid);
       setDeepPhase(uid, 'awaiting_first_question');
       setDeepClarityQuestion(uid, null);
       setDeepClaritySkipNext(uid, true);
-      await ctx.reply(QUESTION_CLARITY_REFINE_MESSAGE, {
+      const msg = await ctx.reply(QUESTION_CLARITY_REFINE_MESSAGE, {
         ...keyboardDeepAwaitingFirst(),
         ...TELEGRAM_HTML_PARSE,
       });
+      trackDeepServiceMessage(uid, msg.message_id);
       return;
     }
 
@@ -176,22 +190,28 @@ export function registerQuestionClarityHandlers(bot: Telegraf): void {
     if (spread?.phase === 'awaiting_clarification' && spread.clarityQuestion) {
       const question = spread.clarityQuestion;
       if (!tryMarkSpreadInFlight(uid)) {
-        await ctx.reply(SPREAD_IN_FLIGHT_MESSAGE, {
+        const busy = await ctx.reply(SPREAD_IN_FLIGHT_MESSAGE, {
           ...keyboardSpreadClarification(),
           ...TELEGRAM_HTML_PARSE,
         });
+        trackSpreadServiceMessage(uid, busy.message_id);
         return;
       }
       setSpreadClarityQuestion(uid, null);
       setSpreadPhase(uid, 'awaiting_question');
       try {
+        // flush внутри runSpreadReadingForUser уберёт подсказку clarity.
         await runSpreadReadingForUser(ctx, uid, question);
       } catch (e) {
         logHandlerError('spread_clarity_keep', e);
-        await ctx.reply(`${AI_TEXT_UNAVAILABLE_MESSAGE}\n\n${SPREAD_AI_RETRY_MESSAGE}`, {
-          ...keyboardSpreadAwaitingQuestion(),
-          ...TELEGRAM_HTML_PARSE,
-        });
+        const msg = await ctx.reply(
+          `${AI_TEXT_UNAVAILABLE_MESSAGE}\n\n${SPREAD_AI_RETRY_MESSAGE}`,
+          {
+            ...keyboardSpreadAwaitingQuestion(),
+            ...TELEGRAM_HTML_PARSE,
+          },
+        );
+        trackSpreadServiceMessage(uid, msg.message_id);
       } finally {
         clearSpreadInFlight(uid);
       }
@@ -202,10 +222,11 @@ export function registerQuestionClarityHandlers(bot: Telegraf): void {
     if (deep?.phase === 'awaiting_clarification' && deep.clarityQuestion) {
       const question = deep.clarityQuestion;
       if (!tryMarkDeepInFlight(uid)) {
-        await ctx.reply(DEEP_IN_FLIGHT_MESSAGE, {
+        const busy = await ctx.reply(DEEP_IN_FLIGHT_MESSAGE, {
           ...keyboardDeepClarification(),
           ...TELEGRAM_HTML_PARSE,
         });
+        trackDeepServiceMessage(uid, busy.message_id);
         return;
       }
       setDeepClarityQuestion(uid, null);
@@ -219,10 +240,11 @@ export function registerQuestionClarityHandlers(bot: Telegraf): void {
       } catch (e) {
         logHandlerError('deep_clarity_keep', e);
         opsDeliveryError('deep_step', e instanceof Error ? e.message : String(e));
-        await ctx.reply(DEEP_STEP_FAILED_MESSAGE, {
+        const msg = await ctx.reply(DEEP_STEP_FAILED_MESSAGE, {
           ...keyboardDeepInChain(),
           ...TELEGRAM_HTML_PARSE,
         });
+        trackDeepServiceMessage(uid, msg.message_id);
       } finally {
         clearDeepInFlight(uid);
       }

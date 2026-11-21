@@ -32,7 +32,13 @@ import {
   DEEP_END_CALLBACK,
   DEEP_START_CALLBACK,
 } from '../deepReading/constants.js';
-import { endDeepSession, getDeepSession, setDeepPhase } from '../deepReading/sessionStore.js';
+import {
+  endDeepSession,
+  flushDeepServiceMessages,
+  getDeepSession,
+  setDeepPhase,
+  trackDeepServiceMessage,
+} from '../deepReading/sessionStore.js';
 import { clearDeepInFlight, tryMarkDeepInFlight } from '../deepInFlight.js';
 import { resolveAccessTier } from '../accessTier.js';
 import { deepIntroReadyHtml } from '../tierDisplay.js';
@@ -104,6 +110,7 @@ export function registerDeepReadingHandlers(bot: Telegraf): void {
     }
     const cancelledMessage =
       session.triplets.length > 0 ? DEEP_CANCELLED_WITHOUT_FINAL_MESSAGE : DEEP_CANCELLED_MESSAGE;
+    await flushDeepServiceMessages(ctx.telegram, uid);
     endDeepSession(uid);
     clearDeepInFlight(uid);
     await ctx.reply(cancelledMessage, {
@@ -129,10 +136,11 @@ export function registerDeepReadingHandlers(bot: Telegraf): void {
       return;
     }
     if (!tryMarkDeepInFlight(uid)) {
-      await ctx.reply(DEEP_IN_FLIGHT_MESSAGE, {
+      const busy = await ctx.reply(DEEP_IN_FLIGHT_MESSAGE, {
         ...keyboardDeepInChain(),
         ...TELEGRAM_HTML_PARSE,
       });
+      trackDeepServiceMessage(uid, busy.message_id);
       return;
     }
     try {
@@ -157,18 +165,20 @@ export function registerDeepReadingHandlers(bot: Telegraf): void {
     }
 
     if (session.phase === 'awaiting_clarification') {
-      await ctx.reply(QUESTION_CLARITY_AWAITING_MESSAGE, {
+      const msg = await ctx.reply(QUESTION_CLARITY_AWAITING_MESSAGE, {
         ...keyboardDeepClarification(),
         ...TELEGRAM_HTML_PARSE,
       });
+      trackDeepServiceMessage(uid, msg.message_id);
       return;
     }
 
     if (session.phase === 'awaiting_final_retry') {
-      await ctx.reply(DEEP_FINAL_RETRY_MESSAGE, {
+      const msg = await ctx.reply(DEEP_FINAL_RETRY_MESSAGE, {
         ...keyboardDeepInChain(),
         ...TELEGRAM_HTML_PARSE,
       });
+      trackDeepServiceMessage(uid, msg.message_id);
       return;
     }
 
@@ -177,18 +187,20 @@ export function registerDeepReadingHandlers(bot: Telegraf): void {
     const question = normalizeDeepQuestion(text);
     if (question === null) {
       const raw = text.trim();
-      await ctx.reply(
+      const msg = await ctx.reply(
         raw.length === 0 ? DEEP_EMPTY_QUESTION_MESSAGE : DEEP_QUESTION_TOO_LONG_MESSAGE,
         { ...keyboardDeepInChain(), ...TELEGRAM_HTML_PARSE },
       );
+      trackDeepServiceMessage(uid, msg.message_id);
       return;
     }
 
     if (!tryMarkDeepInFlight(uid)) {
-      await ctx.reply(DEEP_IN_FLIGHT_MESSAGE, {
+      const busy = await ctx.reply(DEEP_IN_FLIGHT_MESSAGE, {
         ...keyboardDeepInChain(),
         ...TELEGRAM_HTML_PARSE,
       });
+      trackDeepServiceMessage(uid, busy.message_id);
       return;
     }
 
@@ -204,10 +216,11 @@ export function registerDeepReadingHandlers(bot: Telegraf): void {
     } catch (e) {
       logHandlerError('deep_text', e);
       opsDeliveryError('deep_step', e instanceof Error ? e.message : String(e));
-      await ctx.reply(DEEP_STEP_FAILED_MESSAGE, {
+      const msg = await ctx.reply(DEEP_STEP_FAILED_MESSAGE, {
         ...keyboardDeepInChain(),
         ...TELEGRAM_HTML_PARSE,
       });
+      trackDeepServiceMessage(uid, msg.message_id);
     } finally {
       clearDeepInFlight(uid);
     }

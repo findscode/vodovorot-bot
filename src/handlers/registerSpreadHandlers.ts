@@ -27,9 +27,11 @@ import {
 } from './registerQuestionClarityHandlers.js';
 import {
   endSpreadSession,
+  flushSpreadServiceMessages,
   getSpreadSession,
   hasActiveSpreadSession,
   setSpreadPhase,
+  trackSpreadServiceMessage,
 } from '../spreadSessionStore.js';
 import {
   SPREAD_CALLBACK,
@@ -114,6 +116,7 @@ export function registerSpreadHandlers(bot: Telegraf): void {
       });
       return;
     }
+    await flushSpreadServiceMessages(ctx.telegram, uid);
     endSpreadSession(uid);
     clearSpreadInFlight(uid);
     await ctx.reply(SPREAD_CANCELLED_MESSAGE, {
@@ -147,28 +150,31 @@ export function registerSpreadHandlers(bot: Telegraf): void {
     }
 
     if (session.phase === 'awaiting_clarification') {
-      await ctx.reply(QUESTION_CLARITY_AWAITING_MESSAGE, {
+      const msg = await ctx.reply(QUESTION_CLARITY_AWAITING_MESSAGE, {
         ...keyboardSpreadClarification(),
         ...TELEGRAM_HTML_PARSE,
       });
+      trackSpreadServiceMessage(uid, msg.message_id);
       return;
     }
 
     const question = normalizeDeepQuestion(text);
     if (question === null) {
       const raw = text.trim();
-      await ctx.reply(
+      const msg = await ctx.reply(
         raw.length === 0 ? DEEP_EMPTY_QUESTION_MESSAGE : DEEP_QUESTION_TOO_LONG_MESSAGE,
         { ...keyboardSpreadAwaitingQuestion(), ...TELEGRAM_HTML_PARSE },
       );
+      trackSpreadServiceMessage(uid, msg.message_id);
       return;
     }
 
     if (!tryMarkSpreadInFlight(uid)) {
-      await ctx.reply(SPREAD_IN_FLIGHT_MESSAGE, {
+      const busy = await ctx.reply(SPREAD_IN_FLIGHT_MESSAGE, {
         ...keyboardSpreadAwaitingQuestion(),
         ...TELEGRAM_HTML_PARSE,
       });
+      trackSpreadServiceMessage(uid, busy.message_id);
       return;
     }
 

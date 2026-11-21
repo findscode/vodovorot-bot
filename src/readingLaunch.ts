@@ -15,7 +15,7 @@ import { deliverCardOfDayReading } from './cardOfDayDelivery.js';
 import { beginDeepSession } from './deepReading/deepReadingDelivery.js';
 import { dayDrawCalendarDate, hasDayDrawSlotUsed } from './dayDrawState.js';
 import { TELEGRAM_HTML_PARSE } from './readingTelegramHtml.js';
-import { abortActiveReadingsSync } from './readingAbort.js';
+import { abortActiveReadings } from './readingAbort.js';
 import { opsEvent } from './opsLog.js';
 import { beginSpreadSession } from './spreadSessionStore.js';
 import { clearDayInFlight, tryMarkDayInFlight } from './dayInFlight.js';
@@ -29,7 +29,7 @@ const DAY_ACTION_DEBOUNCE_MS = 2500;
 const dayLastTap = new Map<number, number>();
 
 async function replyAbortNotice(ctx: ReadingLaunchContext, userId: number): Promise<void> {
-  const { noticeHtml } = abortActiveReadingsSync(userId);
+  const { noticeHtml } = await abortActiveReadings(userId, ctx.telegram);
   if (noticeHtml) {
     await ctx.reply(noticeHtml, TELEGRAM_HTML_PARSE);
   }

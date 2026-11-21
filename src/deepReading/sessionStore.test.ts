@@ -1,17 +1,20 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DECK, drawVoiceArchetype, type DrawnCard } from '../deck.js';
 import { DEEP_MAX_TRIPLETS_BASIC, DEEP_MAX_TRIPLETS_PREMIUM } from './constants.js';
 import {
   appendTriplet,
   canAddTriplet,
   endDeepSession,
+  flushDeepServiceMessages,
   getDeepSession,
   hasActiveDeepSession,
   pendingReadingFor,
+  setDeepLastFaceMessageId,
   setDeepPhase,
   setPendingQuestion,
   setPendingReading,
   startDeepSession,
+  trackDeepServiceMessage,
 } from './sessionStore.js';
 
 describe('sessionStore', () => {
@@ -123,6 +126,20 @@ describe('sessionStore', () => {
     const s = getDeepSession(uid);
     expect(s?.phase).toBe('awaiting_final_retry');
     expect(s?.triplets).toHaveLength(1);
+  });
+
+  it('tracks face message id and flushes service messages', async () => {
+    startDeepSession(uid, uid, [0, 1, 2]);
+    setDeepLastFaceMessageId(uid, 55);
+    trackDeepServiceMessage(uid, 101);
+    trackDeepServiceMessage(uid, 102);
+    expect(getDeepSession(uid)?.lastFaceMessageId).toBe(55);
+    expect(getDeepSession(uid)?.serviceMessageIds).toEqual([101, 102]);
+
+    const deleteMessage = vi.fn().mockResolvedValue(true);
+    await flushDeepServiceMessages({ deleteMessage } as never, uid);
+    expect(deleteMessage).toHaveBeenCalledTimes(2);
+    expect(getDeepSession(uid)?.serviceMessageIds).toEqual([]);
   });
 });
 

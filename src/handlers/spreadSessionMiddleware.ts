@@ -8,7 +8,11 @@ import {
 } from '../botKeyboards.js';
 import { TELEGRAM_HTML_PARSE } from '../readingTelegramHtml.js';
 import { answerCbQuerySafe } from './botHelpers.js';
-import { getSpreadSession, hasActiveSpreadSession } from '../spreadSessionStore.js';
+import {
+  getSpreadSession,
+  hasActiveSpreadSession,
+  trackSpreadServiceMessage,
+} from '../spreadSessionStore.js';
 import { SPREAD_CANCEL_CALLBACK, SPREAD_START_CALLBACK } from '../spreadConstants.js';
 import { CLARITY_KEEP_CALLBACK, CLARITY_REFINE_CALLBACK } from '../questionClarityConstants.js';
 import { RELEASE_NOTES_OK_CALLBACK } from '../releaseNotes.js';
@@ -43,10 +47,11 @@ export function registerSpreadSessionMiddleware(bot: Telegraf): void {
         return next();
       }
       await answerCbQuerySafe(ctx);
-      await ctx.reply(blockedHtml, {
+      const msg = await ctx.reply(blockedHtml, {
         ...blockedKeyboard,
         ...TELEGRAM_HTML_PARSE,
       });
+      trackSpreadServiceMessage(uid, msg.message_id);
       return;
     }
 
@@ -54,10 +59,11 @@ export function registerSpreadSessionMiddleware(bot: Telegraf): void {
       const text = ctx.message.text.trim();
       if (text.startsWith('/')) {
         if (isPublicEntryCommand(text)) return next();
-        await ctx.reply(blockedHtml, {
+        const msg = await ctx.reply(blockedHtml, {
           ...blockedKeyboard,
           ...TELEGRAM_HTML_PARSE,
         });
+        trackSpreadServiceMessage(uid, msg.message_id);
         return;
       }
     }

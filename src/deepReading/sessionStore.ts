@@ -1,4 +1,6 @@
+import type { Telegraf } from 'telegraf';
 import type { DrawnCard, TarotCard } from '../deck.js';
+import { deleteMessagesQuiet } from '../telegramDelete.js';
 import { DEEP_MAX_TRIPLETS_PREMIUM, DEEP_SESSION_TTL_MS } from './constants.js';
 
 export type DeepSessionPhase =
@@ -43,6 +45,10 @@ export type DeepSession = {
   lastCompositePng: Buffer | null;
   lastCompositeWidth: number;
   lastCompositeHeight: number;
+  /** Id сообщения с коллажем/подписью (вопросы + толкователь) — к нему reply общего вывода. */
+  lastFaceMessageId: number | null;
+  /** Служебные подсказки сессии; удаляем, когда действие из текста уже сделано. */
+  serviceMessageIds: number[];
   updatedAt: number;
 };
 
@@ -91,8 +97,36 @@ export function startDeepSession(userId: number, chatId: number, deckIds: number
     lastCompositePng: null,
     lastCompositeWidth: 0,
     lastCompositeHeight: 0,
+    lastFaceMessageId: null,
+    serviceMessageIds: [],
     updatedAt: now(),
   });
+}
+
+export function trackDeepServiceMessage(userId: number, messageId: number): void {
+  const s = sessions.get(userId);
+  if (!s) return;
+  s.serviceMessageIds.push(messageId);
+  s.updatedAt = now();
+}
+
+export function setDeepLastFaceMessageId(userId: number, messageId: number): void {
+  const s = sessions.get(userId);
+  if (!s) return;
+  s.lastFaceMessageId = messageId;
+  s.updatedAt = now();
+}
+
+/** Удаляет накопленные служебные сообщения deep-сессии. */
+export async function flushDeepServiceMessages(
+  telegram: Telegraf['telegram'],
+  userId: number,
+): Promise<void> {
+  const s = sessions.get(userId);
+  if (!s || s.serviceMessageIds.length === 0) return;
+  const ids = s.serviceMessageIds.splice(0, s.serviceMessageIds.length);
+  s.updatedAt = now();
+  await deleteMessagesQuiet(telegram, s.chatId, ids);
 }
 
 export function endDeepSession(userId: number): void {

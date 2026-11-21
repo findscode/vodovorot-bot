@@ -12,8 +12,8 @@ describe('releaseNotes', () => {
     const html = whatsNewHtml();
     expect(html).toContain('<b>Что нового</b>');
     expect(html).toContain('Понятно');
-    expect(html).toContain('Сначала карты');
-    expect(html).toContain('без дубля');
+    expect(html).toContain('коллаж');
+    expect(html).toContain('Подсказки');
     expect(html.match(/^• /gm)).toHaveLength(3);
   });
 });

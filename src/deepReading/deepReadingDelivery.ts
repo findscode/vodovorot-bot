@@ -28,13 +28,16 @@ import {
   appendTriplet,
   canAddTriplet,
   endDeepSession,
+  flushDeepServiceMessages,
   getDeepSession,
   isCurrentDeepSession,
   pendingReadingFor,
+  setDeepLastFaceMessageId,
   setDeepPhase,
   setPendingQuestion,
   setPendingReading,
   startDeepSession,
+  trackDeepServiceMessage,
   type DeepSession,
 } from './sessionStore.js';
 import { shuffledDeckIds } from './sessionDeck.js';
@@ -46,6 +49,17 @@ import { withReadingProgress } from '../typingIndicator.js';
 import { logHandlerError } from '../handlers/botHelpers.js';
 import { isAiFailure } from '../aiErrors.js';
 import { opsAiError, opsDeliveryError, opsEvent } from '../opsLog.js';
+
+async function replyDeepService(
+  ctx: Context,
+  userId: number,
+  text: string,
+  extra: Record<string, unknown> = {},
+): Promise<{ message_id: number }> {
+  const msg = await ctx.reply(text, { ...extra, ...TELEGRAM_HTML_PARSE });
+  trackDeepServiceMessage(userId, msg.message_id);
+  return msg;
+}
 
 const TG_CAPTION_MAX = 1024;
 const DEEP_MAX_QUESTION_CHARS = 900;
@@ -66,6 +80,10 @@ export async function deliverDeepTriplet(
   const sessionId = session.id;
 
   const stillCurrent = (): boolean => isCurrentDeepSession(userId, sessionId);
+
+  // Убираем «Можешь задать ещё…» и другие подсказки прошлого шага.
+  await flushDeepServiceMessages(ctx.telegram, userId);
+  if (!stillCurrent()) return 'aborted';
 
   // Повтор после сбоя доставки: те же карты, толкователь и текст ИИ (без нового запроса к модели).
   const pending = pendingReadingFor(session, question);
@@ -114,7 +132,7 @@ export async function deliverDeepTriplet(
     }
 
     if (tripletIndex >= 4) {
-      await ctx.reply(DEEP_COLLAGE_HINT_MESSAGE, TELEGRAM_HTML_PARSE);
+      await replyDeepService(ctx, userId, DEEP_COLLAGE_HINT_MESSAGE);
       if (!stillCurrent()) {
         if (aiPromise) void aiPromise.catch(() => {});
         return 'aborted';
@@ -136,6 +154,7 @@ export async function deliverDeepTriplet(
       );
       faceMessageId = faceMsg.message_id;
     }
+    setDeepLastFaceMessageId(userId, faceMessageId);
     if (!stillCurrent()) {
       if (aiPromise) void aiPromise.catch(() => {});
       return 'aborted';
@@ -179,19 +198,18 @@ export async function deliverDeepTriplet(
     const updated = getDeepSession(userId);
     if (updated && updated.triplets.length >= maxTriplets) {
       if (isFullDeepFinal(tier)) {
-        await ctx.reply(DEEP_MAX_TRIPLETS_MESSAGE, TELEGRAM_HTML_PARSE);
+        await replyDeepService(ctx, userId, DEEP_MAX_TRIPLETS_MESSAGE);
       } else {
         opsEvent('deep_triplet_limit_hit');
-        await ctx.reply(DEEP_BASIC_TRIPLET_CAP_MESSAGE, TELEGRAM_HTML_PARSE);
+        await replyDeepService(ctx, userId, DEEP_BASIC_TRIPLET_CAP_MESSAGE);
       }
       if (!stillCurrent()) return 'aborted';
       await runDeepFinal(ctx, userId);
       return 'ok';
     }
 
-    await ctx.reply(DEEP_CONTINUE_HINT_MESSAGE, {
+    await replyDeepService(ctx, userId, DEEP_CONTINUE_HINT_MESSAGE, {
       ...keyboardDeepInChain(),
-      ...TELEGRAM_HTML_PARSE,
     });
     return 'ok';
   } catch (e) {
@@ -207,10 +225,12 @@ export async function deliverDeepTriplet(
     } else {
       opsDeliveryError('deep_triplet', detail);
     }
-    await ctx.reply(aiFailed ? DEEP_AI_RETRY_MESSAGE : DEEP_DELIVERY_RETRY_MESSAGE, {
-      ...keyboardDeepInChain(),
-      ...TELEGRAM_HTML_PARSE,
-    });
+    await replyDeepService(
+      ctx,
+      userId,
+      aiFailed ? DEEP_AI_RETRY_MESSAGE : DEEP_DELIVERY_RETRY_MESSAGE,
+      { ...keyboardDeepInChain() },
+    );
     return 'ai_error';
   }
 }
@@ -224,10 +244,14 @@ export async function runDeepFinal(ctx: Context, userId: number): Promise<void> 
   const sessionId = session.id;
   const stillCurrent = (): boolean => isCurrentDeepSession(userId, sessionId);
 
+  await flushDeepServiceMessages(ctx.telegram, userId);
+  if (!stillCurrent()) return;
+
+  const faceMessageId = getDeepSession(userId)?.lastFaceMessageId ?? null;
   const tier = resolveAccessTier(userId);
   const fullFinal = isFullDeepFinal(tier);
   const introText = fullFinal ? DEEP_FINAL_INTRO_MESSAGE : DEEP_BASIC_FINAL_INTRO_MESSAGE;
-  const intro = await ctx.reply(introText, TELEGRAM_HTML_PARSE);
+  const intro = await replyDeepService(ctx, userId, introText);
   if (!stillCurrent()) return;
 
   const questions = session.triplets.map((t) => t.question);
@@ -249,12 +273,15 @@ export async function runDeepFinal(ctx: Context, userId: number): Promise<void> 
       { thinkingPlaceholder: true },
     );
     if (!stillCurrent()) return;
-    await sendReadingChunksToChat(ctx.telegram, userId, raw, intro.message_id, {
+    // Общий вывод — ответ на коллаж с вопросами и толкователем; intro «Свожу…» убираем.
+    const replyTo = faceMessageId ?? intro.message_id;
+    await sendReadingChunksToChat(ctx.telegram, userId, raw, replyTo, {
       lastChunkSuffix: fullFinal ? DEEP_DONE_HINT : DEEP_BASIC_FINAL_UPSELL,
       lastChunkExtra: keyboardMainOrDayOnly(userId),
       shouldContinue: stillCurrent,
     });
     if (!stillCurrent()) return;
+    await flushDeepServiceMessages(ctx.telegram, userId);
     opsEvent(fullFinal ? 'deep_final_full' : 'deep_final_basic');
     endDeepSession(userId);
   } catch (e) {
@@ -268,9 +295,8 @@ export async function runDeepFinal(ctx: Context, userId: number): Promise<void> 
       opsDeliveryError(finalContext, detail);
     }
     setDeepPhase(userId, 'awaiting_final_retry');
-    await ctx.reply(DEEP_FINAL_RETRY_MESSAGE, {
+    await replyDeepService(ctx, userId, DEEP_FINAL_RETRY_MESSAGE, {
       ...keyboardDeepInChain(),
-      ...TELEGRAM_HTML_PARSE,
     });
   }
 }
