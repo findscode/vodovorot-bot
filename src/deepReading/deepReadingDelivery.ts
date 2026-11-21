@@ -40,6 +40,8 @@ import {
 import { shuffledDeckIds } from './sessionDeck.js';
 import { TELEGRAM_HTML_PARSE } from '../readingTelegramHtml.js';
 import { sendReadingChunksToChat } from '../readingChunksDelivery.js';
+import { settleAfterFaceBeforeDraft } from '../readingFaceGate.js';
+import { createReadingProgressMux } from '../readingProgressMux.js';
 import { withReadingProgress } from '../typingIndicator.js';
 import { logHandlerError } from '../handlers/botHelpers.js';
 import { isAiFailure } from '../aiErrors.js';
@@ -90,18 +92,33 @@ export async function deliverDeepTriplet(
         }
       : null;
 
+  const mux = createReadingProgressMux();
+  const aiPromise =
+    pending !== undefined
+      ? null
+      : completeChat(deepTripletPrompt(question, drawn, priorSummaries, voice), {
+          opsContext: 'deep_triplet',
+          onProgress: mux.push,
+        });
+
   try {
-    // Коллаж сначала, затем поток толкования: черновик не пересекается с фото+текстом в одном сообщении.
+    // Коллаж уходит в чат до любого sendMessageDraft; ИИ без pending может идти параллельно.
     const newStrip = await tripletStripFrame(drawn);
     const frame = previous
       ? await stackTripletOnPrevious(previous, newStrip, tripletIndex)
       : newStrip;
     const png = allExist ? await fitCompositeForTelegram(frame) : null;
-    if (!stillCurrent()) return 'aborted';
+    if (!stillCurrent()) {
+      if (aiPromise) void aiPromise.catch(() => {});
+      return 'aborted';
+    }
 
     if (tripletIndex >= 4) {
       await ctx.reply(DEEP_COLLAGE_HINT_MESSAGE, TELEGRAM_HTML_PARSE);
-      if (!stillCurrent()) return 'aborted';
+      if (!stillCurrent()) {
+        if (aiPromise) void aiPromise.catch(() => {});
+        return 'aborted';
+      }
     }
 
     let faceMessageId: number;
@@ -119,16 +136,27 @@ export async function deliverDeepTriplet(
       );
       faceMessageId = faceMsg.message_id;
     }
-    if (!stillCurrent()) return 'aborted';
+    if (!stillCurrent()) {
+      if (aiPromise) void aiPromise.catch(() => {});
+      return 'aborted';
+    }
+
+    await settleAfterFaceBeforeDraft();
+    if (!stillCurrent()) {
+      if (aiPromise) void aiPromise.catch(() => {});
+      return 'aborted';
+    }
 
     const raw =
       pending?.raw ??
-      (await withReadingProgress(ctx, 'triplet', (onProgress) =>
-        completeChat(deepTripletPrompt(question, drawn, priorSummaries, voice), {
-          opsContext: 'deep_triplet',
-          onProgress,
-        }),
-      ));
+      (await withReadingProgress(ctx, 'triplet', async (onProgress) => {
+        const unbind = mux.bind(onProgress);
+        try {
+          return await aiPromise!;
+        } finally {
+          unbind();
+        }
+      }));
     if (!stillCurrent()) return 'aborted';
     // До доставки текста: если чанки упадут, повтор возьмёт этот ответ без нового запроса к модели.
     setPendingReading(userId, { question, raw, drawn, remaining, voice });
@@ -167,6 +195,7 @@ export async function deliverDeepTriplet(
     });
     return 'ok';
   } catch (e) {
+    if (aiPromise) void aiPromise.catch(() => {});
     if (!stillCurrent()) return 'aborted';
     logHandlerError('deep_triplet', e);
     const detail = e instanceof Error ? e.message : String(e);
@@ -208,12 +237,16 @@ export async function runDeepFinal(ctx: Context, userId: number): Promise<void> 
     : deepBasicFinalPrompt(questions, summaries);
 
   try {
-    const raw = await withReadingProgress(ctx, 'reading', (onProgress) =>
-      completeChat(prompt, {
-        max_tokens: fullFinal ? 1200 : 550,
-        opsContext: fullFinal ? 'deep_final' : 'deep_final_basic',
-        onProgress,
-      }),
+    const raw = await withReadingProgress(
+      ctx,
+      'reading',
+      (onProgress) =>
+        completeChat(prompt, {
+          max_tokens: fullFinal ? 1200 : 550,
+          opsContext: fullFinal ? 'deep_final' : 'deep_final_basic',
+          onProgress,
+        }),
+      { thinkingPlaceholder: true },
     );
     if (!stillCurrent()) return;
     await sendReadingChunksToChat(ctx.telegram, userId, raw, intro.message_id, {

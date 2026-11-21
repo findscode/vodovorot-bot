@@ -101,6 +101,11 @@ export type DraftStreamerOptions = {
   stopWaitMs?: number;
   /** Каждая ошибка отправки (для логов); пауза или отключение решаются внутри. */
   onError?: (e: unknown) => void;
+  /**
+   * Сразу показать «Thinking…». После фото расклада лучше `false`: иначе черновик
+   * часто успевает появиться в клиенте раньше догруженной картинки.
+   */
+  thinkingOnStart?: boolean;
 };
 
 /**
@@ -131,11 +136,18 @@ export class DraftStreamer {
     this.stopWaitMs = opts.stopWaitMs ?? STOP_WAIT_MS;
   }
 
-  /** Показывает «Thinking…» и запускает подновление черновика. */
-  start(): void {
-    this.dirty = true;
-    this.latest = undefined;
-    void this.flush();
+  /**
+   * Запускает подновление черновика. «Thinking…» — только если `thinkingOnStart`
+   * (или аргумент `thinking`); после сообщения с картами по умолчанию ждём первый текст.
+   */
+  start(options?: { thinking?: boolean }): void {
+    this.lastSentAt = Date.now();
+    const thinking = options?.thinking ?? this.opts.thinkingOnStart ?? false;
+    if (thinking) {
+      this.dirty = true;
+      this.latest = undefined;
+      void this.flush();
+    }
     this.heartbeat = setInterval(
       () => {
         if (this.stopped || this.disabled || this.inFlight) return;

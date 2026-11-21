@@ -33,6 +33,14 @@ export async function withTypingWhile<T>(ctx: MinimalCtx, fn: () => Promise<T>):
   }
 }
 
+export type ReadingProgressOptions = {
+  /**
+   * Сразу показать «Thinking…». После фото расклада — `false` (по умолчанию),
+   * чтобы черновик не обгонял картинку в клиенте. Для финала deep без фото — `true`.
+   */
+  thinkingPlaceholder?: boolean;
+};
+
 /**
  * «Печатает…» и потоковый черновик ответа: пока ИИ пишет толкование, пользователь видит текст.
  * Если черновики недоступны, остаётся только «печатает…».
@@ -42,14 +50,16 @@ export async function withReadingProgress(
   ctx: MinimalCtx,
   mode: DraftMode,
   task: (onProgress: ReadingProgress) => Promise<string>,
+  options: ReadingProgressOptions = {},
 ): Promise<string> {
   const chatId = ctx.chat?.id;
   if (chatId === undefined) {
     return task(noopProgress);
   }
+  const thinking = options.thinkingPlaceholder ?? false;
   return withTypingWhile(ctx, async () => {
     const streamer = createTelegramDraftStreamer(ctx.telegram, chatId, mode);
-    streamer?.start();
+    streamer?.start({ thinking });
     try {
       return await task((raw) => streamer?.push(raw));
     } finally {

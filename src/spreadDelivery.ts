@@ -11,6 +11,8 @@ import { SPREAD_IMAGES_UNAVAILABLE_SUFFIX, SPREAD_DONE_HINT } from './botCopy.js
 import { keyboardMainOrDayOnly } from './botKeyboards.js';
 import { sendReadingChunksToChat } from './readingChunksDelivery.js';
 import type { AiRunner } from './readingDraft.js';
+import { settleAfterFaceBeforeDraft } from './readingFaceGate.js';
+import { createReadingProgressMux } from './readingProgressMux.js';
 import {
   releaseSpreadDrawSlotByIdSync,
   tryConsumeSpreadDrawSlotSync,
@@ -38,9 +40,8 @@ export type SpreadDeliveryResult =
   | 'aborted';
 
 /**
- * Полная выдача «три карты» (ПНБ): для basic — резерв слота, затем фото → поток ИИ → текст.
- * Premium и админ — без лимита и без записи в БД.
- * При сбое ИИ/доставки сессия сохраняется (можно повторить вопрос); слот откатывается.
+ * Полная выдача «три карты» (ПНБ): фото → пауза → поток → текст.
+ * ИИ может идти параллельно со сборкой фото; черновик Telegram — только после фото.
  */
 export async function deliverSpreadReading(
   telegram: Telegraf['telegram'],
@@ -84,10 +85,17 @@ export async function deliverSpreadReading(
     }
   };
 
+  const mux = createReadingProgressMux();
+  const aiPromise = completeChat(pastPresentFuturePrompt(cards, voice, question), {
+    opsContext: 'spread',
+    onProgress: mux.push,
+  });
+
   try {
     const photoPng = allExist ? (await tripletStripFrame(cards)).png : null;
     if (!stillCurrent()) {
       releaseIfNeeded();
+      void aiPromise.catch(() => {});
       return 'aborted';
     }
 
@@ -110,15 +118,25 @@ export async function deliverSpreadReading(
 
     if (!stillCurrent()) {
       releaseIfNeeded();
+      void aiPromise.catch(() => {});
       return 'aborted';
     }
 
-    const rawText = await runAi('reading', (onProgress) =>
-      completeChat(pastPresentFuturePrompt(cards, voice, question), {
-        opsContext: 'spread',
-        onProgress,
-      }),
-    );
+    await settleAfterFaceBeforeDraft();
+    if (!stillCurrent()) {
+      releaseIfNeeded();
+      void aiPromise.catch(() => {});
+      return 'aborted';
+    }
+
+    const rawText = await runAi('reading', async (onProgress) => {
+      const unbind = mux.bind(onProgress);
+      try {
+        return await aiPromise;
+      } finally {
+        unbind();
+      }
+    });
     if (!stillCurrent()) {
       releaseIfNeeded();
       return 'aborted';
@@ -138,12 +156,12 @@ export async function deliverSpreadReading(
     opsEvent('spread_completed');
     return 'ok';
   } catch (e) {
+    void aiPromise.catch(() => {});
     if (!stillCurrent()) {
       releaseIfNeeded();
       return 'aborted';
     }
     releaseIfNeeded();
-    // Сессию не сбрасываем: пользователь может повторить вопрос в том же раскладе.
     const detail = e instanceof Error ? e.message : String(e);
     if (isAiFailure(e)) {
       opsAiError('spread', detail);

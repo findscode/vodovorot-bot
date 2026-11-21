@@ -48,18 +48,27 @@ describe('DraftStreamer', () => {
     vi.useRealTimers();
   });
 
-  it('shows a placeholder on start and throttles updates', async () => {
+  it('does not send Thinking on start by default; throttles text updates', async () => {
     const send = vi.fn().mockResolvedValue(undefined);
     const s = new DraftStreamer({ send, mode: 'triplet', minIntervalMs: 1000 });
     s.start();
     await vi.advanceTimersByTimeAsync(0);
-    expect(send).toHaveBeenLastCalledWith(undefined, undefined);
+    expect(send).not.toHaveBeenCalled();
 
     s.push('раз');
     s.push('раз два');
     await vi.advanceTimersByTimeAsync(1000);
-    expect(send).toHaveBeenCalledTimes(2);
+    expect(send).toHaveBeenCalledTimes(1);
     expect(send).toHaveBeenLastCalledWith('раз два', 'HTML');
+    await s.stop();
+  });
+
+  it('shows Thinking when start({ thinking: true })', async () => {
+    const send = vi.fn().mockResolvedValue(undefined);
+    const s = new DraftStreamer({ send, mode: 'reading', minIntervalMs: 1000 });
+    s.start({ thinking: true });
+    await vi.advanceTimersByTimeAsync(0);
+    expect(send).toHaveBeenLastCalledWith(undefined, undefined);
     await s.stop();
   });
 
@@ -76,7 +85,10 @@ describe('DraftStreamer', () => {
       .mockResolvedValue(undefined);
     const s = new DraftStreamer({ send, mode: 'reading', minIntervalMs: 1000 });
     s.start();
-    s.push('текст');
+    s.push('один');
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(send).toHaveBeenCalledTimes(1);
+    s.push('два');
     await vi.advanceTimersByTimeAsync(800);
     finish();
     await vi.advanceTimersByTimeAsync(250);
@@ -87,7 +99,7 @@ describe('DraftStreamer', () => {
   it('refreshes the draft while the model is silent', async () => {
     const send = vi.fn().mockResolvedValue(undefined);
     const s = new DraftStreamer({ send, mode: 'reading', heartbeatMs: 8000 });
-    s.start();
+    s.start({ thinking: true });
     await vi.advanceTimersByTimeAsync(7000);
     expect(send).toHaveBeenCalledTimes(1);
     await vi.advanceTimersByTimeAsync(3100);
@@ -136,13 +148,11 @@ describe('DraftStreamer', () => {
   it('switches to plain text after a 400 and gives up after the second one', async () => {
     const send = vi
       .fn()
-      .mockResolvedValueOnce(undefined)
       .mockRejectedValueOnce(apiError(400))
       .mockResolvedValueOnce(undefined)
       .mockRejectedValue(apiError(400));
     const s = new DraftStreamer({ send, mode: 'reading', onError: vi.fn() });
     s.start();
-    await vi.advanceTimersByTimeAsync(0);
     s.push('Итог\nа < б');
     await vi.advanceTimersByTimeAsync(2500);
     expect(send).toHaveBeenLastCalledWith('Итог\nа < б', undefined);
@@ -150,7 +160,7 @@ describe('DraftStreamer', () => {
     await vi.advanceTimersByTimeAsync(1000);
     s.push('Итог\nа < б, ещё раз');
     await vi.advanceTimersByTimeAsync(3000);
-    expect(send).toHaveBeenCalledTimes(4);
+    expect(send).toHaveBeenCalledTimes(3);
     await s.stop();
   });
 
@@ -175,7 +185,7 @@ describe('DraftStreamer', () => {
     await s.stop();
     s.push('поздно');
     await vi.advanceTimersByTimeAsync(30_000);
-    expect(send).toHaveBeenCalledTimes(1);
+    expect(send).not.toHaveBeenCalled();
   });
 
   it('stop waits for the send in flight', async () => {
@@ -187,7 +197,7 @@ describe('DraftStreamer', () => {
         }),
     );
     const s = new DraftStreamer({ send, mode: 'reading' });
-    s.start();
+    s.start({ thinking: true });
     let stopped = false;
     const stopping = s.stop().then(() => {
       stopped = true;

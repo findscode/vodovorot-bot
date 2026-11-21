@@ -10,6 +10,8 @@ import { dayCardStripPng } from './spreadComposite.js';
 import { dayCardFaceCaptionHtml } from './readingTelegramHtml.js';
 import { sendReadingChunksToChat } from './readingChunksDelivery.js';
 import type { AiRunner } from './readingDraft.js';
+import { settleAfterFaceBeforeDraft } from './readingFaceGate.js';
+import { createReadingProgressMux } from './readingProgressMux.js';
 import { releaseDayDrawSlotSync, tryConsumeDayDrawSlotSync } from './db/dayDrawSlotsRepo.js';
 import { CARD_DAY_IMAGE_UNAVAILABLE_MESSAGE } from './botCopy.js';
 import { keyboardAfterDayReading } from './botKeyboards.js';
@@ -55,10 +57,8 @@ async function sendCardFaceMessage(
 }
 
 /**
- * Полная выдача «карты дня»: резерв слота, затем фото → поток ИИ → текст.
- * Черновик и итог не живут рядом с коллажем в одном сообщении: сначала лицо карты,
- * потом набор толкования и финальные чанки.
- * При сбое слот откатывается; при занятой дате — `slot_race` без сообщений в чат.
+ * Полная выдача «карты дня»: резерв слота, затем фото → пауза → поток ИИ → текст.
+ * ИИ может стартовать параллельно со сборкой фото, но Telegram-черновик — только после фото.
  */
 export async function deliverCardOfDayReading(
   telegram: Telegraf['telegram'],
@@ -76,13 +76,25 @@ export async function deliverCardOfDayReading(
   const captionHtml = dayCardFaceCaptionHtml(formatDrawnLine(drawn), voice.name);
   const afterReading = keyboardAfterDayReading(chatId);
 
+  const mux = createReadingProgressMux();
+  const aiPromise = completeChat(cardOfDayPrompt(drawn, voice), {
+    opsContext: 'day',
+    onProgress: mux.push,
+  });
+
   try {
     const photoPng = cardImageExists(drawn.card.id) ? await dayCardStripPng(drawn) : null;
     const faceId = await sendCardFaceMessage(telegram, chatId, photoPng, captionHtml);
+    await settleAfterFaceBeforeDraft();
 
-    const rawText = await runAi('reading', (onProgress) =>
-      completeChat(cardOfDayPrompt(drawn, voice), { opsContext: 'day', onProgress }),
-    );
+    const rawText = await runAi('reading', async (onProgress) => {
+      const unbind = mux.bind(onProgress);
+      try {
+        return await aiPromise;
+      } finally {
+        unbind();
+      }
+    });
 
     await sendReadingChunksToChat(telegram, chatId, rawText, faceId, {
       lastChunkExtra: afterReading,
@@ -90,6 +102,7 @@ export async function deliverCardOfDayReading(
     opsEvent('day_draw_delivered');
     return 'ok';
   } catch (e) {
+    void aiPromise.catch(() => {});
     releaseDayDrawSlotSync(chatId, todayKey);
     if (isAiFailure(e)) {
       opsAiError('day', e instanceof Error ? e.message : String(e));
