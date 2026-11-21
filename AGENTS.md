@@ -2,7 +2,7 @@
 
 Краткий ориентир для **Cursor-агентов** и разработчиков. Человекочитаемые детали — в `docs/`; здесь только «куда смотреть» и «куда писать».
 
-**Версия:** `package.json` → сейчас **4.5.1**. История — [CHANGELOG.md](CHANGELOG.md). Запуск фокус-группы — [docs/FOCUS-GROUP.md](docs/FOCUS-GROUP.md).
+**Версия:** `package.json` → сейчас **4.5.2**. История — [CHANGELOG.md](CHANGELOG.md). Запуск фокус-группы — [docs/FOCUS-GROUP.md](docs/FOCUS-GROUP.md).
 
 ## Правила Cursor (`.cursor/rules/`)
 
@@ -33,28 +33,28 @@
 
 ## Карта кода (проверять при правках)
 
-| Область                                | Путь                                                                                                                                           |
-| -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| Запуск бота                            | `src/bot.ts` → `registerHandlers()`                                                                                                            |
-| In-bot «Что нового»                    | `src/releaseNotes.ts`, `registerReleaseNotesHandlers.ts`, `users.last_seen_release`                                                            |
-| Команды, /help, /status                | `src/handlers/registerCommands.ts`, `src/statusCopy.ts`, `src/userHelpContent.ts`                                                              |
-| Ops / `/admin stats`                   | `src/opsLog.ts`, `src/adminStatsCopy.ts`, `registerAdminHandlers.ts`                                                                           |
-| «На день» + push                       | `registerDayHandlers.ts`, `cardOfDayDelivery.ts`, `dayPushScheduler.ts`, `dayPushTickLogic.ts`                                                 |
-| Названия раскладов в текстах           | `src/spreadLabels.ts` (`SPREAD_BUTTON_LABEL`)                                                                                                  |
-| Spread «Прошлое — настоящее — будущее» | `src/handlers/registerSpreadHandlers.ts`, `src/spreadComposite.ts`, `src/spreadSessionStore.ts` (фазы `intro` \| `awaiting_question`)          |
-| Карты + толкование одним сообщением    | `src/richReading.ts` (Rich Message: day / spread / deep-триплет; fallback на фото + текст), `src/telegramRawApi.ts` (методы вне Telegraf 4.16) |
-| Потоковый ответ ИИ                     | `src/readingDraft.ts` (`sendMessageDraft`, stop ждёт in-flight), `src/openRouterStream.ts` (SSE), `typingIndicator.ts` (`withReadingProgress`) |
-| Вёрстка разделов толкования            | `normalizeReadingLayout` / `prepareReadingPlain` в `brandFormat.ts` + `readingTelegramHtml.ts`                                                 |
-| Параллельные апдейты                   | `src/handlers/detachedUpdates.ts` (первый middleware), `registerErrorHandler.ts` (`handleUnhandledBotError`)                                   |
-| Чёрный фон фото карт                   | `src/compositeBackground.ts` (полосы, коллаж, `cardPhotoInput`)                                                                                |
-| Уровни доступа (модель C)              | `src/accessTier.ts`, `src/tierDisplay.ts`; промо — `promoCodeGenerator.ts`, `promoRedeemLimit.ts`; админ — `handlers/registerAdminHandlers.ts` |
-| Глубинная диагностика                  | `src/deepReading/*`, `src/handlers/registerDeepReadingHandlers.ts`                                                                             |
-| Блокировка во время deep               | `src/handlers/middleware.ts` (`registerDeepSessionMiddleware`)                                                                                 |
-| Клавиатуры                             | `src/botKeyboards.ts`                                                                                                                          |
-| Callback deep                          | `deep`, `deep_start`, `deep_cancel`, `deep_end` — `src/deepReading/constants.ts`                                                               |
-| Фазы deep                              | `intro` \| `awaiting_first_question` \| `awaiting_clarification` \| `in_chain` \| `awaiting_final_retry` — `sessionStore.ts`                   |
-| Коллаж 2–7 триплетов                   | `src/deepReading/compositeStack.ts` (наслоение `k × 12.5%` высоты карты)                                                                       |
-| 1-й триплет = spread                   | `tripletStripFrame()` в `spreadComposite.ts`                                                                                                   |
+| Область                                  | Путь                                                                                                                                                                                      |
+| ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Запуск бота                              | `src/bot.ts` → `registerHandlers()`                                                                                                                                                       |
+| In-bot «Что нового»                      | `src/releaseNotes.ts`, `registerReleaseNotesHandlers.ts`, `users.last_seen_release`                                                                                                       |
+| Команды, /help, /status                  | `src/handlers/registerCommands.ts`, `src/statusCopy.ts`, `src/userHelpContent.ts`                                                                                                         |
+| Ops / `/admin stats`                     | `src/opsLog.ts`, `src/adminStatsCopy.ts`, `registerAdminHandlers.ts`                                                                                                                      |
+| «На день» + push                         | `registerDayHandlers.ts`, `cardOfDayDelivery.ts`, `dayPushScheduler.ts`, `dayPushTickLogic.ts`                                                                                            |
+| Названия раскладов в текстах             | `src/spreadLabels.ts` (`SPREAD_BUTTON_LABEL`)                                                                                                                                             |
+| Spread «Прошлое — настоящее — будущее»   | `src/handlers/registerSpreadHandlers.ts`, `src/spreadComposite.ts`, `src/spreadSessionStore.ts` (фазы `intro` \| `awaiting_question`)                                                     |
+| Доставка расклада (фото → поток → текст) | `cardOfDayDelivery.ts`, `spreadDelivery.ts`, `deepReading/deepReadingDelivery.ts`; черновик — `readingDraft.ts` / `typingIndicator.ts`; rich helper — `richReading.ts` (не основной путь) |
+| Потоковый ответ ИИ                       | `src/readingDraft.ts` (`sendMessageDraft`, stop ждёт in-flight), `src/openRouterStream.ts` (SSE), `typingIndicator.ts` (`withReadingProgress`)                                            |
+| Вёрстка разделов толкования              | `normalizeReadingLayout` / `prepareReadingPlain` в `brandFormat.ts` + `readingTelegramHtml.ts`                                                                                            |
+| Параллельные апдейты                     | `src/handlers/detachedUpdates.ts` (первый middleware), `registerErrorHandler.ts` (`handleUnhandledBotError`)                                                                              |
+| Чёрный фон фото карт                     | `src/compositeBackground.ts` (полосы, коллаж, `cardPhotoInput`)                                                                                                                           |
+| Уровни доступа (модель C)                | `src/accessTier.ts`, `src/tierDisplay.ts`; промо — `promoCodeGenerator.ts`, `promoRedeemLimit.ts`; админ — `handlers/registerAdminHandlers.ts`                                            |
+| Глубинная диагностика                    | `src/deepReading/*`, `src/handlers/registerDeepReadingHandlers.ts`                                                                                                                        |
+| Блокировка во время deep                 | `src/handlers/middleware.ts` (`registerDeepSessionMiddleware`)                                                                                                                            |
+| Клавиатуры                               | `src/botKeyboards.ts`                                                                                                                                                                     |
+| Callback deep                            | `deep`, `deep_start`, `deep_cancel`, `deep_end` — `src/deepReading/constants.ts`                                                                                                          |
+| Фазы deep                                | `intro` \| `awaiting_first_question` \| `awaiting_clarification` \| `in_chain` \| `awaiting_final_retry` — `sessionStore.ts`                                                              |
+| Коллаж 2–7 триплетов                     | `src/deepReading/compositeStack.ts` (наслоение `k × 12.5%` высоты карты)                                                                                                                  |
+| 1-й триплет = spread                     | `tripletStripFrame()` в `spreadComposite.ts`                                                                                                                                              |
 
 ---
 
@@ -63,7 +63,7 @@
 - Только **личные** чаты (`private`).
 - Deep-сессия **in-memory**, TTL 24 ч; рестарт процесса сбрасывает сессию.
 - Нет `/deep`; вход — кнопка «Глубинная диагностика».
-- «На день» / ПНБ / шаг deep: ИИ → фото → текст (основной путь — одно rich message, запасной — фото и текст); лимит «На день» — календарные сутки в `DAY_DRAW_TIMEZONE`.
+- «На день» / ПНБ / шаг deep: **фото (коллаж) → поток толкования → текст**; коллаж и толкование — разные сообщения (не rich «всё в одном»); лимит «На день» — календарные сутки в `DAY_DRAW_TIMEZONE`.
 - Пользовательские тексты — HTML (`TELEGRAM_HTML_PARSE`), не MarkdownV2.
 
 ---

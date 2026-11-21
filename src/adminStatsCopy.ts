@@ -112,7 +112,7 @@ export function adminStatsHtml(): string {
     '<b>📨 Доставка</b>',
     `Сбоев после ответа ИИ (фото, Telegram): <b>${c.delivery_error ?? 0}</b>`,
     `По операциям: ${formatMap(ops.deliveryErrorsByContext, contextLabel)}`,
-    `Карты и толкование одним сообщением: <b>${c.rich_message_sent ?? 0}</b>, запасной путь — <b>${c.rich_message_fallback ?? 0}</b>`,
+    `Rich Message (legacy): отправлено <b>${c.rich_message_sent ?? 0}</b>, fallback — <b>${c.rich_message_fallback ?? 0}</b>`,
     `Сбоев потокового черновика: <b>${c.draft_stream_failed ?? 0}</b>`,
   ];
   return lines.join('\n');

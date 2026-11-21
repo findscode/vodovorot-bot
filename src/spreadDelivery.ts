@@ -10,7 +10,6 @@ import { tripletStripFrame } from './spreadComposite.js';
 import { SPREAD_IMAGES_UNAVAILABLE_SUFFIX, SPREAD_DONE_HINT } from './botCopy.js';
 import { keyboardMainOrDayOnly } from './botKeyboards.js';
 import { sendReadingChunksToChat } from './readingChunksDelivery.js';
-import { nonEmptyInlineMarkup, trySendRichReading } from './richReading.js';
 import type { AiRunner } from './readingDraft.js';
 import {
   releaseSpreadDrawSlotByIdSync,
@@ -19,7 +18,6 @@ import {
 import { dayDrawCalendarDate } from './dayDrawState.js';
 import {
   TELEGRAM_HTML_PARSE,
-  threeCardSpreadCaptionWithQuestionHtml,
   threeCardSpreadCaptionWithQuestionHtmlBounded,
 } from './readingTelegramHtml.js';
 import {
@@ -40,8 +38,7 @@ export type SpreadDeliveryResult =
   | 'aborted';
 
 /**
- * Полная выдача «три карты» (ПНБ): для basic — резерв слота, затем ИИ → фото + текст.
- * Основной путь — одно сообщение (rich message); запасной — фото и чанки текста.
+ * Полная выдача «три карты» (ПНБ): для basic — резерв слота, затем фото → поток ИИ → текст.
  * Premium и админ — без лимита и без записи в БД.
  * При сбое ИИ/доставки сессия сохраняется (можно повторить вопрос); слот откатывается.
  */
@@ -88,11 +85,34 @@ export async function deliverSpreadReading(
   };
 
   try {
-    // Фото собирается параллельно с ИИ, а отправляется только после текста.
-    const photoTask = allExist
-      ? tripletStripFrame(cards).then((f) => f.png)
-      : Promise.resolve(null);
-    photoTask.catch(() => {});
+    const photoPng = allExist ? (await tripletStripFrame(cards)).png : null;
+    if (!stillCurrent()) {
+      releaseIfNeeded();
+      return 'aborted';
+    }
+
+    let faceMessageId: number;
+    if (photoPng !== null) {
+      const faceMsg = await telegram.sendPhoto(
+        chatId,
+        Input.fromBuffer(photoPng, 'spread-past-present-future.png'),
+        { caption: captionHtml, ...TELEGRAM_HTML_PARSE },
+      );
+      faceMessageId = faceMsg.message_id;
+    } else {
+      const faceMsg = await telegram.sendMessage(
+        chatId,
+        `${captionHtml}\n\n${SPREAD_IMAGES_UNAVAILABLE_SUFFIX}`,
+        TELEGRAM_HTML_PARSE,
+      );
+      faceMessageId = faceMsg.message_id;
+    }
+
+    if (!stillCurrent()) {
+      releaseIfNeeded();
+      return 'aborted';
+    }
+
     const rawText = await runAi('reading', (onProgress) =>
       completeChat(pastPresentFuturePrompt(cards, voice, question), {
         opsContext: 'spread',
@@ -104,57 +124,11 @@ export async function deliverSpreadReading(
       return 'aborted';
     }
 
-    const photoPng = await photoTask;
-    if (!stillCurrent()) {
-      releaseIfNeeded();
-      return 'aborted';
-    }
-
-    const sentAsOne =
-      photoPng !== null &&
-      (await trySendRichReading(
-        telegram,
-        chatId,
-        {
-          photoPng,
-          // В одном сообщении лимита подписи (1024) нет — шапка целиком, с полной темой.
-          headHtml: threeCardSpreadCaptionWithQuestionHtml(question, lines, voice.name),
-          readingRaw: rawText,
-          footerHtml: SPREAD_DONE_HINT,
-          replyMarkup: nonEmptyInlineMarkup(keyboardMainOrDayOnly(userId)),
-        },
-        'spread',
-      ));
-
-    if (!sentAsOne) {
-      let faceMessageId: number;
-      if (photoPng !== null) {
-        const faceMsg = await telegram.sendPhoto(
-          chatId,
-          Input.fromBuffer(photoPng, 'spread-past-present-future.png'),
-          { caption: captionHtml, ...TELEGRAM_HTML_PARSE },
-        );
-        faceMessageId = faceMsg.message_id;
-      } else {
-        const faceMsg = await telegram.sendMessage(
-          chatId,
-          `${captionHtml}\n\n${SPREAD_IMAGES_UNAVAILABLE_SUFFIX}`,
-          TELEGRAM_HTML_PARSE,
-        );
-        faceMessageId = faceMsg.message_id;
-      }
-
-      if (!stillCurrent()) {
-        releaseIfNeeded();
-        return 'aborted';
-      }
-
-      await sendReadingChunksToChat(telegram, chatId, rawText, faceMessageId, {
-        lastChunkSuffix: SPREAD_DONE_HINT,
-        lastChunkExtra: keyboardMainOrDayOnly(userId),
-        shouldContinue: stillCurrent,
-      });
-    }
+    await sendReadingChunksToChat(telegram, chatId, rawText, faceMessageId, {
+      lastChunkSuffix: SPREAD_DONE_HINT,
+      lastChunkExtra: keyboardMainOrDayOnly(userId),
+      shouldContinue: stillCurrent,
+    });
     if (!stillCurrent()) {
       releaseIfNeeded();
       return 'aborted';

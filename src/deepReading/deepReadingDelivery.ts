@@ -40,15 +40,12 @@ import {
 import { shuffledDeckIds } from './sessionDeck.js';
 import { TELEGRAM_HTML_PARSE } from '../readingTelegramHtml.js';
 import { sendReadingChunksToChat } from '../readingChunksDelivery.js';
-import { nonEmptyInlineMarkup, trySendRichReading } from '../richReading.js';
 import { withReadingProgress } from '../typingIndicator.js';
 import { logHandlerError } from '../handlers/botHelpers.js';
 import { isAiFailure } from '../aiErrors.js';
 import { opsAiError, opsDeliveryError, opsEvent } from '../opsLog.js';
 
 const TG_CAPTION_MAX = 1024;
-/** Шапка в rich message: до 7 вопросов по 900 символов помещаются целиком. */
-const RICH_HEAD_MAX = 8000;
 const DEEP_MAX_QUESTION_CHARS = 900;
 
 export function beginDeepSession(userId: number, chatId: number): void {
@@ -94,17 +91,35 @@ export async function deliverDeepTriplet(
       : null;
 
   try {
-    // Коллаж собирается параллельно с ИИ, а отправляется только после текста:
-    // при сбое ИИ нет «осиротевшего» коллажа, шаг не засчитан.
-    const imageTask = (async () => {
-      const newStrip = await tripletStripFrame(drawn);
-      const frame = previous
-        ? await stackTripletOnPrevious(previous, newStrip, tripletIndex)
-        : newStrip;
-      const png = allExist ? await fitCompositeForTelegram(frame) : null;
-      return { frame, png };
-    })();
-    imageTask.catch(() => {});
+    // Коллаж сначала, затем поток толкования: черновик не пересекается с фото+текстом в одном сообщении.
+    const newStrip = await tripletStripFrame(drawn);
+    const frame = previous
+      ? await stackTripletOnPrevious(previous, newStrip, tripletIndex)
+      : newStrip;
+    const png = allExist ? await fitCompositeForTelegram(frame) : null;
+    if (!stillCurrent()) return 'aborted';
+
+    if (tripletIndex >= 4) {
+      await ctx.reply(DEEP_COLLAGE_HINT_MESSAGE, TELEGRAM_HTML_PARSE);
+      if (!stillCurrent()) return 'aborted';
+    }
+
+    let faceMessageId: number;
+    if (png !== null) {
+      const photo = Input.fromBuffer(png, `deep-triplet-${tripletIndex + 1}.png`);
+      const faceMsg = await ctx.replyWithPhoto(photo, {
+        caption: captionHtml,
+        ...TELEGRAM_HTML_PARSE,
+      });
+      faceMessageId = faceMsg.message_id;
+    } else {
+      const faceMsg = await ctx.reply(
+        `${captionHtml}\n\n${DEEP_IMAGES_UNAVAILABLE_SUFFIX}`,
+        TELEGRAM_HTML_PARSE,
+      );
+      faceMessageId = faceMsg.message_id;
+    }
+    if (!stillCurrent()) return 'aborted';
 
     const raw =
       pending?.raw ??
@@ -115,66 +130,15 @@ export async function deliverDeepTriplet(
         }),
       ));
     if (!stillCurrent()) return 'aborted';
-    // До доставки: если фото или отправка упадут, повтор возьмёт этот ответ.
+    // До доставки текста: если чанки упадут, повтор возьмёт этот ответ без нового запроса к модели.
     setPendingReading(userId, { question, raw, drawn, remaining, voice });
 
     const { userText, summary } = splitTripletModelOutput(raw);
 
-    if (tripletIndex >= 4) {
-      await ctx.reply(DEEP_COLLAGE_HINT_MESSAGE, TELEGRAM_HTML_PARSE);
-      if (!stillCurrent()) return 'aborted';
-    }
-
-    const { frame, png } = await imageTask;
+    await sendReadingChunksToChat(ctx.telegram, userId, userText, faceMessageId, {
+      shouldContinue: stillCurrent,
+    });
     if (!stillCurrent()) return 'aborted';
-
-    const chainContinues = tripletIndex + 1 < maxTriplets;
-    const sentAsOne =
-      png !== null &&
-      (await trySendRichReading(
-        ctx.telegram,
-        userId,
-        {
-          photoPng: png,
-          // В одном сообщении лимита подписи (1024) нет — вопросы целиком, текущий жирным.
-          headHtml: deepReadingCaptionHtmlBounded(
-            questions,
-            tripletIndex,
-            RICH_HEAD_MAX,
-            tier,
-            voice.name,
-          ),
-          readingRaw: userText,
-          footerHtml: chainContinues ? DEEP_CONTINUE_HINT_MESSAGE : undefined,
-          replyMarkup: chainContinues ? nonEmptyInlineMarkup(keyboardDeepInChain()) : undefined,
-        },
-        'deep_triplet',
-      ));
-    if (!stillCurrent()) return 'aborted';
-
-    if (!sentAsOne) {
-      let faceMessageId: number;
-      if (png !== null) {
-        const photo = Input.fromBuffer(png, `deep-triplet-${tripletIndex + 1}.png`);
-        const faceMsg = await ctx.replyWithPhoto(photo, {
-          caption: captionHtml,
-          ...TELEGRAM_HTML_PARSE,
-        });
-        faceMessageId = faceMsg.message_id;
-      } else {
-        const faceMsg = await ctx.reply(
-          `${captionHtml}\n\n${DEEP_IMAGES_UNAVAILABLE_SUFFIX}`,
-          TELEGRAM_HTML_PARSE,
-        );
-        faceMessageId = faceMsg.message_id;
-      }
-      if (!stillCurrent()) return 'aborted';
-
-      await sendReadingChunksToChat(ctx.telegram, userId, userText, faceMessageId, {
-        shouldContinue: stillCurrent,
-      });
-      if (!stillCurrent()) return 'aborted';
-    }
 
     // Триплет в сессию только после успешной доставки текста.
     appendTriplet(
@@ -197,12 +161,10 @@ export async function deliverDeepTriplet(
       return 'ok';
     }
 
-    if (!sentAsOne) {
-      await ctx.reply(DEEP_CONTINUE_HINT_MESSAGE, {
-        ...keyboardDeepInChain(),
-        ...TELEGRAM_HTML_PARSE,
-      });
-    }
+    await ctx.reply(DEEP_CONTINUE_HINT_MESSAGE, {
+      ...keyboardDeepInChain(),
+      ...TELEGRAM_HTML_PARSE,
+    });
     return 'ok';
   } catch (e) {
     if (!stillCurrent()) return 'aborted';

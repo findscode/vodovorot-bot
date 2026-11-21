@@ -9,7 +9,6 @@ import { cardImageExists } from './cardAssets.js';
 import { dayCardStripPng } from './spreadComposite.js';
 import { dayCardFaceCaptionHtml } from './readingTelegramHtml.js';
 import { sendReadingChunksToChat } from './readingChunksDelivery.js';
-import { nonEmptyInlineMarkup, trySendRichReading } from './richReading.js';
 import type { AiRunner } from './readingDraft.js';
 import { releaseDayDrawSlotSync, tryConsumeDayDrawSlotSync } from './db/dayDrawSlotsRepo.js';
 import { CARD_DAY_IMAGE_UNAVAILABLE_MESSAGE } from './botCopy.js';
@@ -26,7 +25,7 @@ export type DeliverCardOfDayOptions = {
   at?: Date;
 };
 
-/** Запасной путь: фото (или текстовая заглушка) отдельным сообщением; возвращает его id. */
+/** Фото карты (или текстовая заглушка); возвращает id сообщения. */
 async function sendCardFaceMessage(
   telegram: Telegraf['telegram'],
   chatId: number,
@@ -56,8 +55,9 @@ async function sendCardFaceMessage(
 }
 
 /**
- * Полная выдача «карты дня»: резерв слота, затем ИИ → фото + текст.
- * Основной путь — одно сообщение (rich message); запасной — фото и чанки текста.
+ * Полная выдача «карты дня»: резерв слота, затем фото → поток ИИ → текст.
+ * Черновик и итог не живут рядом с коллажем в одном сообщении: сначала лицо карты,
+ * потом набор толкования и финальные чанки.
  * При сбое слот откатывается; при занятой дате — `slot_race` без сообщений в чат.
  */
 export async function deliverCardOfDayReading(
@@ -77,36 +77,16 @@ export async function deliverCardOfDayReading(
   const afterReading = keyboardAfterDayReading(chatId);
 
   try {
-    // Фото собирается параллельно с ИИ, а отправляется только после текста.
-    const photoTask = cardImageExists(drawn.card.id)
-      ? dayCardStripPng(drawn)
-      : Promise.resolve(null);
-    photoTask.catch(() => {});
+    const photoPng = cardImageExists(drawn.card.id) ? await dayCardStripPng(drawn) : null;
+    const faceId = await sendCardFaceMessage(telegram, chatId, photoPng, captionHtml);
+
     const rawText = await runAi('reading', (onProgress) =>
       completeChat(cardOfDayPrompt(drawn, voice), { opsContext: 'day', onProgress }),
     );
-    const photoPng = await photoTask;
 
-    const sentAsOne =
-      photoPng !== null &&
-      (await trySendRichReading(
-        telegram,
-        chatId,
-        {
-          photoPng,
-          headHtml: captionHtml,
-          readingRaw: rawText,
-          replyMarkup: nonEmptyInlineMarkup(afterReading),
-        },
-        'day',
-      ));
-
-    if (!sentAsOne) {
-      const faceId = await sendCardFaceMessage(telegram, chatId, photoPng, captionHtml);
-      await sendReadingChunksToChat(telegram, chatId, rawText, faceId, {
-        lastChunkExtra: afterReading,
-      });
-    }
+    await sendReadingChunksToChat(telegram, chatId, rawText, faceId, {
+      lastChunkExtra: afterReading,
+    });
     opsEvent('day_draw_delivered');
     return 'ok';
   } catch (e) {
