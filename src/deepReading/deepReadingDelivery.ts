@@ -40,12 +40,15 @@ import {
 import { shuffledDeckIds } from './sessionDeck.js';
 import { TELEGRAM_HTML_PARSE } from '../readingTelegramHtml.js';
 import { sendReadingChunksToChat } from '../readingChunksDelivery.js';
+import { nonEmptyInlineMarkup, trySendRichReading } from '../richReading.js';
 import { withReadingProgress } from '../typingIndicator.js';
 import { logHandlerError } from '../handlers/botHelpers.js';
 import { isAiFailure } from '../aiErrors.js';
 import { opsAiError, opsDeliveryError, opsEvent } from '../opsLog.js';
 
 const TG_CAPTION_MAX = 1024;
+/** Шапка в rich message: до 7 вопросов по 900 символов помещаются целиком. */
+const RICH_HEAD_MAX = 8000;
 const DEEP_MAX_QUESTION_CHARS = 900;
 
 export function beginDeepSession(userId: number, chatId: number): void {
@@ -79,30 +82,30 @@ export async function deliverDeepTriplet(
     voice.name,
   );
 
-  const newStrip = await tripletStripFrame(drawn);
-  if (!stillCurrent()) return 'aborted';
-
-  let frame =
-    tripletIndex === 0
-      ? newStrip
-      : session.lastCompositePng !== null
-        ? await stackTripletOnPrevious(
-            {
-              png: session.lastCompositePng,
-              width: session.lastCompositeWidth,
-              height: session.lastCompositeHeight,
-            },
-            newStrip,
-            tripletIndex,
-          )
-        : newStrip;
-  if (!stillCurrent()) return 'aborted';
-
   const allExist = drawn.every((d) => cardImageExists(d.card.id));
   const priorSummaries = session.triplets.map((t) => t.summary);
+  const previous =
+    tripletIndex > 0 && session.lastCompositePng !== null
+      ? {
+          png: session.lastCompositePng,
+          width: session.lastCompositeWidth,
+          height: session.lastCompositeHeight,
+        }
+      : null;
 
   try {
-    // ИИ до фото: при сбое нет «осиротевшего» коллажа, шаг не засчитан.
+    // Коллаж собирается параллельно с ИИ, а отправляется только после текста:
+    // при сбое ИИ нет «осиротевшего» коллажа, шаг не засчитан.
+    const imageTask = (async () => {
+      const newStrip = await tripletStripFrame(drawn);
+      const frame = previous
+        ? await stackTripletOnPrevious(previous, newStrip, tripletIndex)
+        : newStrip;
+      const png = allExist ? await fitCompositeForTelegram(frame) : null;
+      return { frame, png };
+    })();
+    imageTask.catch(() => {});
+
     const raw =
       pending?.raw ??
       (await withReadingProgress(ctx, 'triplet', (onProgress) =>
@@ -122,37 +125,64 @@ export async function deliverDeepTriplet(
       if (!stillCurrent()) return 'aborted';
     }
 
-    let faceMessageId: number;
-    if (allExist) {
-      const png = await fitCompositeForTelegram(frame);
-      if (!stillCurrent()) return 'aborted';
-      const photo = Input.fromBuffer(png, `deep-triplet-${tripletIndex + 1}.png`);
-      const faceMsg = await ctx.replyWithPhoto(photo, {
-        caption: captionHtml,
-        ...TELEGRAM_HTML_PARSE,
-      });
-      faceMessageId = faceMsg.message_id;
-      frame = { png, width: frame.width, height: frame.height };
-    } else {
-      const faceMsg = await ctx.reply(
-        `${captionHtml}\n\n${DEEP_IMAGES_UNAVAILABLE_SUFFIX}`,
-        TELEGRAM_HTML_PARSE,
-      );
-      faceMessageId = faceMsg.message_id;
-    }
+    const { frame, png } = await imageTask;
     if (!stillCurrent()) return 'aborted';
 
-    await sendReadingChunksToChat(ctx.telegram, userId, userText, faceMessageId, {
-      shouldContinue: stillCurrent,
-    });
+    const chainContinues = tripletIndex + 1 < maxTriplets;
+    const sentAsOne =
+      png !== null &&
+      (await trySendRichReading(
+        ctx.telegram,
+        userId,
+        {
+          photoPng: png,
+          // В одном сообщении лимита подписи (1024) нет — вопросы целиком, текущий жирным.
+          headHtml: deepReadingCaptionHtmlBounded(
+            questions,
+            tripletIndex,
+            RICH_HEAD_MAX,
+            tier,
+            voice.name,
+          ),
+          readingRaw: userText,
+          footerHtml: chainContinues ? DEEP_CONTINUE_HINT_MESSAGE : undefined,
+          replyMarkup: chainContinues ? nonEmptyInlineMarkup(keyboardDeepInChain()) : undefined,
+        },
+        'deep_triplet',
+      ));
     if (!stillCurrent()) return 'aborted';
+
+    if (!sentAsOne) {
+      let faceMessageId: number;
+      if (png !== null) {
+        const photo = Input.fromBuffer(png, `deep-triplet-${tripletIndex + 1}.png`);
+        const faceMsg = await ctx.replyWithPhoto(photo, {
+          caption: captionHtml,
+          ...TELEGRAM_HTML_PARSE,
+        });
+        faceMessageId = faceMsg.message_id;
+      } else {
+        const faceMsg = await ctx.reply(
+          `${captionHtml}\n\n${DEEP_IMAGES_UNAVAILABLE_SUFFIX}`,
+          TELEGRAM_HTML_PARSE,
+        );
+        faceMessageId = faceMsg.message_id;
+      }
+      if (!stillCurrent()) return 'aborted';
+
+      await sendReadingChunksToChat(ctx.telegram, userId, userText, faceMessageId, {
+        shouldContinue: stillCurrent,
+      });
+      if (!stillCurrent()) return 'aborted';
+    }
 
     // Триплет в сессию только после успешной доставки текста.
-    appendTriplet(userId, { question, cards: drawn, summary }, remaining, {
-      png: frame.png,
-      width: frame.width,
-      height: frame.height,
-    });
+    appendTriplet(
+      userId,
+      { question, cards: drawn, summary },
+      remaining,
+      png !== null ? { png, width: frame.width, height: frame.height } : frame,
+    );
 
     const updated = getDeepSession(userId);
     if (updated && updated.triplets.length >= maxTriplets) {
@@ -167,10 +197,12 @@ export async function deliverDeepTriplet(
       return 'ok';
     }
 
-    await ctx.reply(DEEP_CONTINUE_HINT_MESSAGE, {
-      ...keyboardDeepInChain(),
-      ...TELEGRAM_HTML_PARSE,
-    });
+    if (!sentAsOne) {
+      await ctx.reply(DEEP_CONTINUE_HINT_MESSAGE, {
+        ...keyboardDeepInChain(),
+        ...TELEGRAM_HTML_PARSE,
+      });
+    }
     return 'ok';
   } catch (e) {
     if (!stillCurrent()) return 'aborted';

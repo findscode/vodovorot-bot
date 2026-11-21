@@ -83,6 +83,30 @@ export function sanitizeReadingModelText(plain: string): string {
   return out.join('\n').replace(/\n{3,}/g, '\n\n');
 }
 
+/**
+ * Единая вёрстка толкования для всех раскладов и путей доставки:
+ * метка и первый абзац её текста — соседние строки; любой следующий абзац,
+ * метка или финальная фраза без метки — через ровно одну пустую строку.
+ */
+export function normalizeReadingLayout(plain: string): string {
+  const units: string[] = [];
+  let openLabel = false;
+  for (const raw of plain.split('\n')) {
+    const line = raw.trim();
+    if (line === '') continue;
+    if (isReadingSectionLabelLine(line)) {
+      units.push(line);
+      openLabel = true;
+    } else if (openLabel) {
+      units[units.length - 1] += `\n${line}`;
+      openLabel = false;
+    } else {
+      units.push(line);
+    }
+  }
+  return units.join('\n\n');
+}
+
 /** Главное — вывод; по отдельным картам коротко и по сути. */
 const BREVITY_RULE = `Вес ответа — в выводе. По отдельным картам пиши сухо и коротко: один образ и один смысл, без перечня символов, цифр и деталей рисунка. Не повторяй одну мысль в разных блоках.`;
 

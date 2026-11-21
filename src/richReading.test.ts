@@ -48,6 +48,16 @@ describe('buildRichReadingHtml', () => {
     expect(html.indexOf('Расклад')).toBeLessThan(html.indexOf('Первый абзац'));
     expect(html.indexOf('Второй абзац')).toBeLessThan(html.indexOf('Подсказка'));
   });
+
+  it('makes each section a paragraph with the label on the first line', () => {
+    const html = buildRichReadingHtml({
+      ...input,
+      readingRaw: 'Слева\nОбраз.\nВывод\nГлавное.\nЗакрытие.',
+    });
+    expect(html).toContain(
+      '<p><b>Слева</b><br>Образ.</p>\n<p><b>Вывод</b><br>Главное.</p>\n<p>Закрытие.</p>',
+    );
+  });
 });
 
 describe('nonEmptyInlineMarkup', () => {

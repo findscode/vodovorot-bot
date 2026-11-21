@@ -37,4 +37,18 @@ describe('readingChunksDelivery', () => {
     expect(html).toContain('<b>Вывод</b>');
     expect(html).toContain('&lt;один&gt;');
   });
+
+  it('separates sections and the suffix with one empty line', async () => {
+    const sendMessage = vi.fn().mockResolvedValue({ message_id: 1 });
+    await sendReadingChunksToChat(
+      { sendMessage } as never,
+      1,
+      'Общая картина\nСуть.\nИтог\nГлавное.\nЗакрытие.',
+      10,
+      { lastChunkSuffix: 'Хвост' },
+    );
+    expect(sendMessage.mock.calls[0]![1]).toBe(
+      '<b>Общая картина</b>\nСуть.\n\n<b>Итог</b>\nГлавное.\n\nЗакрытие.\n\nХвост',
+    );
+  });
 });

@@ -88,6 +88,11 @@ export async function deliverSpreadReading(
   };
 
   try {
+    // Фото собирается параллельно с ИИ, а отправляется только после текста.
+    const photoTask = allExist
+      ? tripletStripFrame(cards).then((f) => f.png)
+      : Promise.resolve(null);
+    photoTask.catch(() => {});
     const rawText = await runAi('reading', (onProgress) =>
       completeChat(pastPresentFuturePrompt(cards, voice, question), {
         opsContext: 'spread',
@@ -99,7 +104,7 @@ export async function deliverSpreadReading(
       return 'aborted';
     }
 
-    const photoPng = allExist ? (await tripletStripFrame(cards)).png : null;
+    const photoPng = await photoTask;
     if (!stillCurrent()) {
       releaseIfNeeded();
       return 'aborted';

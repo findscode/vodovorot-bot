@@ -77,10 +77,15 @@ export async function deliverCardOfDayReading(
   const afterReading = keyboardAfterDayReading(chatId);
 
   try {
+    // Фото собирается параллельно с ИИ, а отправляется только после текста.
+    const photoTask = cardImageExists(drawn.card.id)
+      ? dayCardStripPng(drawn)
+      : Promise.resolve(null);
+    photoTask.catch(() => {});
     const rawText = await runAi('reading', (onProgress) =>
       completeChat(cardOfDayPrompt(drawn, voice), { opsContext: 'day', onProgress }),
     );
-    const photoPng = cardImageExists(drawn.card.id) ? await dayCardStripPng(drawn) : null;
+    const photoPng = await photoTask;
 
     const sentAsOne =
       photoPng !== null &&

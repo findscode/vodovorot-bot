@@ -2,7 +2,7 @@
 
 Краткий ориентир для **Cursor-агентов** и разработчиков. Человекочитаемые детали — в `docs/`; здесь только «куда смотреть» и «куда писать».
 
-**Версия:** `package.json` → сейчас **4.5.0**. История — [CHANGELOG.md](CHANGELOG.md). Запуск фокус-группы — [docs/FOCUS-GROUP.md](docs/FOCUS-GROUP.md).
+**Версия:** `package.json` → сейчас **4.5.1**. История — [CHANGELOG.md](CHANGELOG.md). Запуск фокус-группы — [docs/FOCUS-GROUP.md](docs/FOCUS-GROUP.md).
 
 ## Правила Cursor (`.cursor/rules/`)
 
@@ -42,8 +42,9 @@
 | «На день» + push                       | `registerDayHandlers.ts`, `cardOfDayDelivery.ts`, `dayPushScheduler.ts`, `dayPushTickLogic.ts`                                                 |
 | Названия раскладов в текстах           | `src/spreadLabels.ts` (`SPREAD_BUTTON_LABEL`)                                                                                                  |
 | Spread «Прошлое — настоящее — будущее» | `src/handlers/registerSpreadHandlers.ts`, `src/spreadComposite.ts`, `src/spreadSessionStore.ts` (фазы `intro` \| `awaiting_question`)          |
-| Карты + толкование одним сообщением    | `src/richReading.ts` (Rich Message, fallback на фото + текст), `src/telegramRawApi.ts` (методы вне Telegraf 4.16)                              |
-| Потоковый ответ ИИ                     | `src/readingDraft.ts` (`sendMessageDraft`), `src/openRouterStream.ts` (SSE), `typingIndicator.ts` (`withReadingProgress`)                      |
+| Карты + толкование одним сообщением    | `src/richReading.ts` (Rich Message: day / spread / deep-триплет; fallback на фото + текст), `src/telegramRawApi.ts` (методы вне Telegraf 4.16) |
+| Потоковый ответ ИИ                     | `src/readingDraft.ts` (`sendMessageDraft`, stop ждёт in-flight), `src/openRouterStream.ts` (SSE), `typingIndicator.ts` (`withReadingProgress`) |
+| Вёрстка разделов толкования            | `normalizeReadingLayout` / `prepareReadingPlain` в `brandFormat.ts` + `readingTelegramHtml.ts`                                                 |
 | Параллельные апдейты                   | `src/handlers/detachedUpdates.ts` (первый middleware), `registerErrorHandler.ts` (`handleUnhandledBotError`)                                   |
 | Чёрный фон фото карт                   | `src/compositeBackground.ts` (полосы, коллаж, `cardPhotoInput`)                                                                                |
 | Уровни доступа (модель C)              | `src/accessTier.ts`, `src/tierDisplay.ts`; промо — `promoCodeGenerator.ts`, `promoRedeemLimit.ts`; админ — `handlers/registerAdminHandlers.ts` |
@@ -62,7 +63,7 @@
 - Только **личные** чаты (`private`).
 - Deep-сессия **in-memory**, TTL 24 ч; рестарт процесса сбрасывает сессию.
 - Нет `/deep`; вход — кнопка «Глубинная диагностика».
-- «На день»: ИИ → фото → текст (основной путь — одно rich message, запасной — фото и текст); лимит — календарные сутки в `DAY_DRAW_TIMEZONE`.
+- «На день» / ПНБ / шаг deep: ИИ → фото → текст (основной путь — одно rich message, запасной — фото и текст); лимит «На день» — календарные сутки в `DAY_DRAW_TIMEZONE`.
 - Пользовательские тексты — HTML (`TELEGRAM_HTML_PARSE`), не MarkdownV2.
 
 ---

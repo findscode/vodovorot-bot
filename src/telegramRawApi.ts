@@ -19,14 +19,18 @@ export type RawFile = {
 };
 
 export class TelegramRawApiError extends Error {
+  /** Для 429: через сколько секунд Telegram разрешит следующий вызов. */
+  readonly retryAfterSec?: number;
+
   constructor(
     message: string,
     /** HTTP/Bot API код; `undefined` — сеть или таймаут. */
     readonly code?: number,
-    options?: { cause?: unknown },
+    options?: { cause?: unknown; retryAfterSec?: number },
   ) {
-    super(message, options);
+    super(message, options?.cause === undefined ? undefined : { cause: options.cause });
     this.name = 'TelegramRawApiError';
+    this.retryAfterSec = options?.retryAfterSec;
   }
 }
 
@@ -35,6 +39,7 @@ type ApiResponse<T> = {
   result?: T;
   error_code?: number;
   description?: string;
+  parameters?: { retry_after?: number };
 };
 
 function appendFormValue(form: FormData, key: string, value: unknown): void {
@@ -115,6 +120,7 @@ export async function callTelegramRaw<T = unknown>(
     throw new TelegramRawApiError(
       `${method}: ${data.description ?? 'ошибка Bot API'}`,
       data.error_code ?? res.status,
+      { retryAfterSec: data.parameters?.retry_after },
     );
   }
   return data.result as T;

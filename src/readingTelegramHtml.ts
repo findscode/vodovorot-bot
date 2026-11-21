@@ -3,7 +3,11 @@
  * Метки разделов — строки из READING_SECTION_LABELS (см. brandFormat.ts), без тире в конце.
  */
 
-import { isReadingSectionLabelLine, sanitizeReadingModelText } from './brandFormat.js';
+import {
+  isReadingSectionLabelLine,
+  normalizeReadingLayout,
+  sanitizeReadingModelText,
+} from './brandFormat.js';
 
 /** Заголовки в подписи к фото (без HTML — экранируются в шаблонах). */
 export const DAY_CARD_FACE_TITLE = 'Карта на день';
@@ -122,12 +126,16 @@ export function threeCardSpreadCaptionWithQuestionHtmlBounded(
   }
 }
 
+/** Текст модели без артефактов и в единой вёрстке разделов (до нарезки и HTML). */
+export function prepareReadingPlain(plain: string): string {
+  return normalizeReadingLayout(stripModelFormatArtifacts(plain));
+}
+
 /**
  * Плоский текст от модели → безопасный HTML: экранирование + <b> для строк-меток.
  */
 export function formatReadingForTelegram(plain: string): string {
-  const stripped = stripModelFormatArtifacts(plain);
-  const escaped = escapeTelegramHtml(stripped);
+  const escaped = escapeTelegramHtml(prepareReadingPlain(plain));
   return escaped
     .split('\n')
     .map((line) => (isReadingSectionLabelLine(line) ? `<b>${line.trim()}</b>` : line))

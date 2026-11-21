@@ -36,6 +36,7 @@ export async function withTypingWhile<T>(ctx: MinimalCtx, fn: () => Promise<T>):
 /**
  * «Печатает…» и потоковый черновик ответа: пока ИИ пишет толкование, пользователь видит текст.
  * Если черновики недоступны, остаётся только «печатает…».
+ * Возврат — только после остановки черновика: итог не обгонит запоздалое обновление.
  */
 export async function withReadingProgress(
   ctx: MinimalCtx,
@@ -52,7 +53,7 @@ export async function withReadingProgress(
     try {
       return await task((raw) => streamer?.push(raw));
     } finally {
-      streamer?.stop();
+      await streamer?.stop();
     }
   });
 }

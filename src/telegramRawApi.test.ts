@@ -59,6 +59,29 @@ describe('callTelegramRaw', () => {
     expect((err as TelegramRawApiError).code).toBe(404);
   });
 
+  it('keeps retry_after from a 429 answer', async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(
+      jsonResponse(
+        {
+          ok: false,
+          error_code: 429,
+          description: 'Too Many Requests',
+          parameters: { retry_after: 3 },
+        },
+        429,
+      ),
+    );
+    const err = await callTelegramRaw(
+      target,
+      'x',
+      {},
+      {},
+      fetchImpl as unknown as typeof fetch,
+    ).catch((e: unknown) => e);
+    expect((err as TelegramRawApiError).code).toBe(429);
+    expect((err as TelegramRawApiError).retryAfterSec).toBe(3);
+  });
+
   it('throws without code on network failure', async () => {
     const fetchImpl = vi.fn().mockRejectedValue(new Error('offline'));
     const err = await callTelegramRaw(

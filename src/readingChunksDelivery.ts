@@ -1,7 +1,7 @@
 import type { Telegraf } from 'telegraf';
 import {
   formatReadingForTelegram,
-  stripModelFormatArtifacts,
+  prepareReadingPlain,
   TELEGRAM_HTML_PARSE,
 } from './readingTelegramHtml.js';
 import { splitForTelegram } from './telegramChunks.js';
@@ -24,7 +24,7 @@ export async function sendReadingChunksToChat(
   replyToMessageId: number,
   options: ReadingChunksOptions = {},
 ): Promise<void> {
-  const normalized = stripModelFormatArtifacts(rawText);
+  const normalized = prepareReadingPlain(rawText);
   const parts = splitForTelegram(normalized);
   const formatted = parts.map((c) => formatReadingForTelegram(c));
   const reply = { reply_parameters: { message_id: replyToMessageId } };

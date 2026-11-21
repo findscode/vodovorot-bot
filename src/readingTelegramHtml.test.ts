@@ -65,6 +65,13 @@ describe('readingTelegramHtml', () => {
     expect(out).toContain('Текст блока.');
   });
 
+  it('formats sections with one empty line between them and the closing phrase apart', () => {
+    const plain = 'О чём здесь речь\n\nСмысл.\nКоротко о дне\nВывод дня.\nФраза.';
+    expect(formatReadingForTelegram(plain)).toBe(
+      '<b>О чём здесь речь</b>\nСмысл.\n\n<b>Коротко о дне</b>\nВывод дня.\n\nФраза.',
+    );
+  });
+
   it('split then format: сырой текст режется до лимита, затем HTML не раздувает первую часть критично', () => {
     const label = 'О чём здесь речь';
     const filler = 'word '.repeat(2500);

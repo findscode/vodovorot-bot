@@ -27,6 +27,9 @@ export function richMessagesEnabled(env: NodeJS.ProcessEnv = process.env): boole
 /**
  * Telegram-HTML (только `<b>` и экранированный текст) → абзацы rich HTML.
  * Пустая строка — новый абзац, одиночный перенос — `<br>`.
+ * Раздел толкования — отдельный `<p>` (между абзацами клиент ставит отступ, как пустая строка
+ * в обычном сообщении); метка и первый абзац её текста — один `<p>` через `<br>`.
+ * Пустые `<p>` и `&nbsp;`-абзацы не нужны: вёрстку задаёт `normalizeReadingLayout`.
  */
 export function telegramHtmlToRichParagraphs(html: string): string {
   return html
