@@ -8,24 +8,27 @@
 
 ## В работе (4.x)
 
-| ID    | Issue                                                       | Эпик                                    | Волна  |
-| ----- | ----------------------------------------------------------- | --------------------------------------- | ------ |
-| v4-1  | [#53](https://github.com/findscode/vodovorot-bot/issues/53) | P1 — промпты: safety и тон              | 4.1 ✅ |
-| v4-2  | [#54](https://github.com/findscode/vodovorot-bot/issues/54) | P1 — уточнение вопроса (модель)         | 4.1 ✅ |
-| v4-6  | [#58](https://github.com/findscode/vodovorot-bot/issues/58) | P1 — fail-open при сбое clarity         | 4.1 ✅ |
-| v4-7  | [#59](https://github.com/findscode/vodovorot-bot/issues/59) | P1 — регрессия safety/disclaimer        | 4.1 ✅ |
-| v4-3  | [#55](https://github.com/findscode/vodovorot-bot/issues/55) | P2 — Mini App «Настройки» v1            | 4.2 ✅ |
-| v4-4  | [#56](https://github.com/findscode/vodovorot-bot/issues/56) | P2 — UX при потере deep/spread-сессии   | 4.2 ✅ |
-| v4-5  | [#57](https://github.com/findscode/vodovorot-bot/issues/57) | P2 — Mini App v2, один источник правды  | 4.3 ✅ |
-| v4-8  | [#60](https://github.com/findscode/vodovorot-bot/issues/60) | P2 — deep: укороченный финал на basic   | 4.3 ✅ |
-| v4-9  | [#61](https://github.com/findscode/vodovorot-bot/issues/61) | P2 ops — логи и счётчики                | 4.3 ✅ |
-| v4-10 | [#62](https://github.com/findscode/vodovorot-bot/issues/62) | P2 ops — `/admin stats`                 | 4.3 ✅ |
-| v4-11 | _TBD_                                                       | P2 — Mini App hub: запуск раскладов     | 4.4 ✅ |
-| v4-12 | _TBD_                                                       | P1 — качество ИИ, доставка, толкователь | 4.5 ✅ |
+| ID    | Issue                                                       | Эпик                                                     | Волна  |
+| ----- | ----------------------------------------------------------- | -------------------------------------------------------- | ------ |
+| v4-1  | [#53](https://github.com/findscode/vodovorot-bot/issues/53) | P1 — промпты: safety и тон                               | 4.1 ✅ |
+| v4-2  | [#54](https://github.com/findscode/vodovorot-bot/issues/54) | P1 — уточнение вопроса (модель)                          | 4.1 ✅ |
+| v4-6  | [#58](https://github.com/findscode/vodovorot-bot/issues/58) | P1 — fail-open при сбое clarity                          | 4.1 ✅ |
+| v4-7  | [#59](https://github.com/findscode/vodovorot-bot/issues/59) | P1 — регрессия safety/disclaimer                         | 4.1 ✅ |
+| v4-3  | [#55](https://github.com/findscode/vodovorot-bot/issues/55) | P2 — Mini App «Настройки» v1                             | 4.2 ✅ |
+| v4-4  | [#56](https://github.com/findscode/vodovorot-bot/issues/56) | P2 — UX при потере deep/spread-сессии                    | 4.2 ✅ |
+| v4-5  | [#57](https://github.com/findscode/vodovorot-bot/issues/57) | P2 — Mini App v2, один источник правды                   | 4.3 ✅ |
+| v4-8  | [#60](https://github.com/findscode/vodovorot-bot/issues/60) | P2 — deep: укороченный финал на basic                    | 4.3 ✅ |
+| v4-9  | [#61](https://github.com/findscode/vodovorot-bot/issues/61) | P2 ops — логи и счётчики                                 | 4.3 ✅ |
+| v4-10 | [#62](https://github.com/findscode/vodovorot-bot/issues/62) | P2 ops — `/admin stats`                                  | 4.3 ✅ |
+| v4-11 | _TBD_                                                       | P2 — Mini App hub: запуск раскладов                      | 4.4 ✅ |
+| v4-12 | _TBD_                                                       | P1 — качество ИИ, доставка, толкователь                  | 4.5 ✅ |
+| v4-13 | _TBD_                                                       | Оплата Бусти вместо промокодов; free/Premium под воронку | next   |
 
 **Tier A «один фокус»** в intro — в scope [#53](https://github.com/findscode/vodovorot-bot/issues/53) (`tierDisplay.ts`), отдельный issue не нужен.
 
 Milestone: [v4.x](https://github.com/findscode/vodovorot-bot/milestone/14). Backlog push: [v2.16.0](https://github.com/findscode/vodovorot-bot/milestone/12) — [DEPLOY](./DEPLOY.md).
+
+Бренд, канал, Бусти, коммьюнити (superior вне кода): private-репо [`vodovorot-brand`](https://github.com/findscode/vodovorot-brand). Решения про продукт оттуда **обязаны** попадать сюда в ROADMAP / DEPLOY / GLOSSARY / CHANGELOG `[Unreleased]` (см. AGENTS.md § синхронизация).
 
 ---
 
@@ -120,7 +123,7 @@ App → intro в чат → «Начать» → результат; после 
 | **Deep / spread после обрыва** | **Без** SQLite для сессий. Явные тексты в intro и при «висящем» вводе. После abort/ошибки старый in-flight delivery не пишет в новую сессию (session id + deep in-flight). При сбое ИИ сессия сохраняется для retry того же шага; `bot.catch` не рвёт сессию. → [#56](https://github.com/findscode/vodovorot-bot/issues/56), §4.5                        |
 | **Deep на basic**              | До **3** триплетов; **укороченный** общий финал (2–3 абзаца). Premium — 7 + полный финал. → [#60](https://github.com/findscode/vodovorot-bot/issues/60)                                                                                                                                                                                                  |
 | **Ops / аналитика**            | Структурированные логи (`question_clarity_skip`, `spread_limit_hit`, latency ИИ) → [#61](https://github.com/findscode/vodovorot-bot/issues/61); агрегаты в `/admin stats` → [#62](https://github.com/findscode/vodovorot-bot/issues/62)                                                                                                                  |
-| **Рост и оплата**              | **Вне плана** (рефералы, Stars — только «на будущее»).                                                                                                                                                                                                                                                                                                   |
+| **Рост и оплата**              | **Бусти вместо промокодов** — в работе (см. § ниже). Рефералы / Stars — по-прежнему не в фокусе.                                                                                                                                                                                                                                                         |
 
 **Сверка P1:** [FOCUS-GROUP §2.1](./FOCUS-GUIDE.md#21-сложные-карты-и-баланс-тона).
 
@@ -145,7 +148,33 @@ App → intro в чат → «Начать» → результат; после 
 | **premium** | да        | ∞       | 7 + финал                   |
 | **admin**   | да        | ∞       | как premium                 |
 
-`accessTier.ts`, `tierDisplay.ts`; промо — `/promo`, `/admin promo`.
+`accessTier.ts`, `tierDisplay.ts`; промо — `/promo`, `/admin promo` (**уходят** → Бусти, см. § ниже).
+
+---
+
+## Далее — оплата и доступы (Бусти)
+
+**Статус:** в работе (решения зафиксированы в [`vodovorot-brand`](https://github.com/findscode/vodovorot-brand); код — ещё нет). **Issue:** TBD (v4-13).
+
+### Решение
+
+- Система **промокодов уходит**. Выдача Premium — через подписку **Бусти** ([boosty.to/vortextarot](https://boosty.to/vortextarot)).
+- Тарифы: **«Полный доступ»** 20 BYN / **«Ближний круг»** 30 BYN (круг = то же + закрытый чат).
+- На Бусти обязателен Telegram `@username`; по нему Premium в боте + заявка в чат круга.
+- **Срок Premium v1:** +**31** день за каждый оплаченный месяц Бусти (`premium_until = max(now, current) + 31`). Позже — синхрон статуса подписки Бусти.
+- Промокоды и кнопка `/promo` уходят **в том же релизе**, что живой Бусти. **`/admin grant`** оставляем (ops). Таблицу `promo_codes` можно не дропать сразу.
+- Апгрейд тарифа Бусти 20→30 в том же периоде: чат без повторного +31.
+- Перед новой схемой: **откат всех на free кроме админов** (тестовые Premium не сохраняем); объявление in-bot / «Что нового» + приглашение в канал. Ближайшим — точечный `/admin grant` (не массовый подарок).
+- Выдача Premium после Бусти (v1): без жёсткого SLA на витрине; быстрее тем, кто пишет в ЛС; иначе после сверки `@`.
+- Возврат/чарджбек: как отмена — доступ до конца уже выданного `premium_until`, не мгновенный срез.
+- Free к промо: **«На день»** + ПНБ **1/сутки**; deep и лишний ПНБ — зона оплаты («Полный доступ»).
+- Дисклеймер: новая универсальная формулировка в brand `disclaimer.md` → перенос в `DISCLAIMER_HELP`.
+- Канал: https://t.me/VortexTarotChannel ; бот: `@VortexTarotBot`. Подпись к раскладу (редко, 1/7): нейтрально ссылка на канал.
+- BotFather: в Description/About — бот + канал; Бусти не в About как главный CTA.
+
+### Не в этом эпике (бренд/ops вне бота)
+
+Тексты канала, витрина Бусти, модерация чата — `vodovorot-brand`. Здесь только доступы, лимиты, выдача Premium, тексты бота, BotFather.
 
 ---
 

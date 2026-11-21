@@ -2,6 +2,8 @@
 
 Краткий runbook: выкат, Premium, smoke. Деплой — [DEPLOY.md](./DEPLOY.md); уровни — [ROADMAP § модель C](./ROADMAP.md#модель-c--уровни-доступа).
 
+**Оплата:** промокоды в этом чеклисте — **временный** путь. Цель — Бусти вместо `/promo` (см. [ROADMAP § Бусти](./ROADMAP.md#далее--оплата-и-доступы-бусти), [`vodovorot-brand`](https://github.com/findscode/vodovorot-brand)).
+
 ## Перед стартом (оператор)
 
 | #   | Действие                                                                          | Готово |

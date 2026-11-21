@@ -4,11 +4,12 @@
 
 ## Старт
 
-| Документ                           | Зачем                                                                                               |
-| ---------------------------------- | --------------------------------------------------------------------------------------------------- |
-| [AGENTS.md](../AGENTS.md)          | Навигация, карта кода, инварианты, CI                                                               |
-| [ROADMAP.md](./ROADMAP.md)         | План **4.x** (issues [#53–#56](https://github.com/findscode/vodovorot-bot/milestone/14)), §3.0 deep |
-| [BRAND-GUIDE.md](./BRAND-GUIDE.md) | Тон, §2.1 safety, формат толкований                                                                 |
+| Документ                                                                    | Зачем                                                                                                        |
+| --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| [AGENTS.md](../AGENTS.md)                                                   | Навигация, карта кода, инварианты, CI                                                                        |
+| [ROADMAP.md](./ROADMAP.md)                                                  | План **4.x** (issues [#53–#56](https://github.com/findscode/vodovorot-bot/milestone/14)), §3.0 deep, § Бусти |
+| [BRAND-GUIDE.md](./BRAND-GUIDE.md)                                          | Тон, §2.1 safety, формат толкований                                                                          |
+| [`vodovorot-brand`](https://github.com/findscode/vodovorot-brand) (private) | Бренд, канал, Бусти, коммьюнити — superior; продуктовые решения синхронизировать сюда                        |
 
 Не создавать `*-PLAN.md` — см. [.cursor/rules/](../.cursor/rules/).
 

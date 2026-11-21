@@ -1,0 +1,11 @@
+---
+description: Sync product decisions from vodovorot-brand into bot docs
+alwaysApply: true
+---
+
+# Синхронизация с vodovorot-brand
+
+- Superior бренд/оффер/SMM: `D:\Projects\vodovorot-brand` / https://github.com/findscode/vodovorot-brand
+- Если в brand-репо зафиксировали решение про **бота** (free/Premium, Бусти вместо промо, дисклеймер, канал в BotFather, сброс tier) — **сразу** отрази это в этом репо: `docs/ROADMAP.md`, `CHANGELOG.md` `[Unreleased]`, при нужде `DEPLOY.md` / `GLOSSARY.md` / `BRAND-GUIDE.md` / `BOTFATHER.md` / `AGENTS.md`.
+- Не копируй сюда контент-планы и тексты канала целиком.
+- Промокоды — legacy; целевая оплата — Бусти (см. ROADMAP § Бусти).

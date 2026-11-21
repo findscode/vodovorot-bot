@@ -7,3 +7,4 @@ alwaysApply: true
 
 - Навигация и таблица «куда писать» — только [AGENTS.md](../../AGENTS.md), не дублировать в чате или новых md.
 - История релизов и эпики — [docs/ROADMAP.md](../../docs/ROADMAP.md) и [CHANGELOG.md](../../CHANGELOG.md). Отдельные `*-PLAN.md` не создавать.
+- Бренд / канал / Бусти / коммьюнити — superior в private **`vodovorot-brand`**. Если решение оттуда меняет бота (лимиты, Premium, оплата, дисклеймер, BotFather): **в том же изменении** обновить ROADMAP и/или CHANGELOG `[Unreleased]` (и DEPLOY/GLOSSARY/BRAND-GUIDE при необходимости). Не оставлять продуктовую правду только в brand-репо.

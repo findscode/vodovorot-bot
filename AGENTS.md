@@ -6,28 +6,38 @@
 
 ## Правила Cursor (`.cursor/rules/`)
 
-Краткие guardrails; полная карта — в этом файле и `docs/`. **alwaysApply:** `core.mdc`, `documentation.mdc`, `scripts-cleanup.mdc`. **По открытым файлам:** `bot-copy.mdc`, `deep-reading.mdc`, `card-flows.mdc`, `ai-prompts.mdc`, `testing.mdc`, `release-notes.mdc`.
+Краткие guardrails; полная карта — в этом файле и `docs/`. **alwaysApply:** `core.mdc`, `documentation.mdc`, `scripts-cleanup.mdc`, `brand-repo-sync.mdc`. **По открытым файлам:** `bot-copy.mdc`, `deep-reading.mdc`, `card-flows.mdc`, `ai-prompts.mdc`, `testing.mdc`, `release-notes.mdc`.
 
 ---
 
 ## Куда нести изменения (без новых `*-PLAN.md`)
 
-| Задача                                  | Документ                                           | Код (типично)                                                                      |
-| --------------------------------------- | -------------------------------------------------- | ---------------------------------------------------------------------------------- |
-| Продукт, поток, визуал, ограничения 3.x | [docs/ROADMAP.md](docs/ROADMAP.md) §3.0            | `src/deepReading/`, `src/handlers/`                                                |
-| Эпики 4.x (issues)                      | [docs/ROADMAP.md](docs/ROADMAP.md), milestone v4.x | см. [#53–#56](https://github.com/findscode/vodovorot-bot/milestone/14)             |
-| Тон, «ты», строки UI, emoji tiers       | [docs/BRAND-GUIDE.md](docs/BRAND-GUIDE.md) §1, §4  | `src/botCopy.ts`, `src/spreadLabels.ts`, `src/statusCopy.ts`, `src/tierDisplay.ts` |
-| Термины ↔ код                           | [docs/GLOSSARY.md](docs/GLOSSARY.md)               | по смыслу                                                                          |
-| Формат толкований ИИ                    | [docs/BRAND-GUIDE.md](docs/BRAND-GUIDE.md) §4–5    | `src/brandFormat.ts`, `src/prompts.ts`                                             |
-| Подписи к фото                          | BRAND-GUIDE §3                                     | `src/readingTelegramHtml.ts`                                                       |
-| Релиз                                   | [CHANGELOG.md](CHANGELOG.md) + `package.json`      | SemVer — [CONTRIBUTING.md](CONTRIBUTING.md)                                        |
-| In-bot «Что нового»                     | [CHANGELOG.md](CHANGELOG.md) § релиз               | `src/releaseNotes.ts`, `src/releaseNotesDelivery.ts`, `users.last_seen_release`    |
-| Деплой, env, ops                        | [docs/DEPLOY.md](docs/DEPLOY.md)                   | Docker, workflow                                                                   |
-| Фокус-группа                            | [docs/FOCUS-GROUP.md](docs/FOCUS-GROUP.md)         | Smoke, промокоды, бриф                                                             |
-| BotFather-тексты                        | [docs/BOTFATHER.md](docs/BOTFATHER.md)             | вне кода                                                                           |
-| Индекс всех доков                       | [docs/README.md](docs/README.md)                   | —                                                                                  |
+| Задача                                  | Документ                                                                  | Код (типично)                                                                      |
+| --------------------------------------- | ------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| Продукт, поток, визуал, ограничения 3.x | [docs/ROADMAP.md](docs/ROADMAP.md) §3.0                                   | `src/deepReading/`, `src/handlers/`                                                |
+| Эпики 4.x (issues)                      | [docs/ROADMAP.md](docs/ROADMAP.md), milestone v4.x                        | см. [#53–#56](https://github.com/findscode/vodovorot-bot/milestone/14)             |
+| Тон, «ты», строки UI, emoji tiers       | [docs/BRAND-GUIDE.md](docs/BRAND-GUIDE.md) §1, §4                         | `src/botCopy.ts`, `src/spreadLabels.ts`, `src/statusCopy.ts`, `src/tierDisplay.ts` |
+| Термины ↔ код                           | [docs/GLOSSARY.md](docs/GLOSSARY.md)                                      | по смыслу                                                                          |
+| Формат толкований ИИ                    | [docs/BRAND-GUIDE.md](docs/BRAND-GUIDE.md) §4–5                           | `src/brandFormat.ts`, `src/prompts.ts`                                             |
+| Подписи к фото                          | BRAND-GUIDE §3                                                            | `src/readingTelegramHtml.ts`                                                       |
+| Релиз                                   | [CHANGELOG.md](CHANGELOG.md) + `package.json`                             | SemVer — [CONTRIBUTING.md](CONTRIBUTING.md)                                        |
+| In-bot «Что нового»                     | [CHANGELOG.md](CHANGELOG.md) § релиз                                      | `src/releaseNotes.ts`, `src/releaseNotesDelivery.ts`, `users.last_seen_release`    |
+| Деплой, env, ops                        | [docs/DEPLOY.md](docs/DEPLOY.md)                                          | Docker, workflow                                                                   |
+| Фокус-группа                            | [docs/FOCUS-GROUP.md](docs/FOCUS-GROUP.md)                                | Smoke, промокоды (уходят → Бусти), бриф                                            |
+| BotFather-тексты                        | [docs/BOTFATHER.md](docs/BOTFATHER.md)                                    | вне кода                                                                           |
+| Бренд, канал, Бусти, коммьюнити         | private [`vodovorot-brand`](https://github.com/findscode/vodovorot-brand) | не дублировать SMM сюда; **продуктовые** решения — синхронизировать сюда           |
+| Индекс всех доков                       | [docs/README.md](docs/README.md)                                          | —                                                                                  |
 
 Временный чеклист — секция **«В работе»** в ROADMAP или пункты в CHANGELOG `[Unreleased]`, не отдельный plan-файл.
+
+### Синхронизация с `vodovorot-brand`
+
+Superior по бренду/офферу/каналу/кругу — **vodovorot-brand**.  
+Любое решение оттуда, которое меняет **поведение бота, доступы, лимиты, оплату, дисклеймер, BotFather, деплой**:
+
+1. Обновить здесь: `docs/ROADMAP.md` и/или `CHANGELOG.md` `[Unreleased]`, при необходимости `DEPLOY.md`, `GLOSSARY.md`, `BRAND-GUIDE.md`, `BOTFATHER.md`.
+2. Не оставлять правду только в brand-репо, если код бота обязан ей следовать.
+3. Обратно: SMM и тексты канала в этот репо не тащить.
 
 ---
 
@@ -47,7 +57,7 @@
 | Вёрстка разделов толкования              | `normalizeReadingLayout` / `prepareReadingPlain` в `brandFormat.ts` + `readingTelegramHtml.ts`                                                                                            |
 | Параллельные апдейты                     | `src/handlers/detachedUpdates.ts` (первый middleware), `registerErrorHandler.ts` (`handleUnhandledBotError`)                                                                              |
 | Чёрный фон фото карт                     | `src/compositeBackground.ts` (полосы, коллаж, `cardPhotoInput`)                                                                                                                           |
-| Уровни доступа (модель C)                | `src/accessTier.ts`, `src/tierDisplay.ts`; промо — `promoCodeGenerator.ts`, `promoRedeemLimit.ts`; админ — `handlers/registerAdminHandlers.ts`                                            |
+| Уровни доступа (модель C)                | `src/accessTier.ts`, `src/tierDisplay.ts`; промо — `promoCodeGenerator.ts`, `promoRedeemLimit.ts` (**уходят → Бусти**, ROADMAP § Бусти); админ — `handlers/registerAdminHandlers.ts`      |
 | Глубинная диагностика                    | `src/deepReading/*`, `src/handlers/registerDeepReadingHandlers.ts`                                                                                                                        |
 | Блокировка во время deep                 | `src/handlers/middleware.ts` (`registerDeepSessionMiddleware`)                                                                                                                            |
 | Клавиатуры                               | `src/botKeyboards.ts`                                                                                                                                                                     |
